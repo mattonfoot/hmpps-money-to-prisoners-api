@@ -87,24 +87,31 @@ docker compose pull && docker compose up --scale hmpps-money-to-prisoners-api=0
 src/
   main/
     kotlin/uk/gov/justice/digital/hmpps/
-      config/         # Spring configuration classes
-      resource/       # REST controllers (account, credit, disbursement,
-                      #   payment, prison, security, transaction, etc.)
-      service/        # Business logic services
-      model/          # JPA entities
-      repository/     # Spring Data JPA repositories
-      dto/            # Data transfer objects / request-response models
+      config/               # Spring configuration classes
+      dto/                  # Data transfer objects / request-response models
+      jpa/entities/         # JPA entities
+      jpa/repositories/     # Spring Data JPA repositories
+      resources/             # REST controllers (account, credit, disbursement,
+                            #   payment, prison, security, transaction, etc.)
+      services/              # Business logic services
     resources/
-      application.yml           # default Spring config
-      application-dev.yml       # local dev profile overrides
+      application.yml       # default Spring config
+      application-dev.yml   # local dev profile overrides
   test/
     kotlin/uk/gov/justice/digital/hmpps/
-      integration/    # Integration tests (WebFlux test client, WireMock)
-      unit/           # Unit tests
-helm_deploy/          # Helm chart + values-{dev,preprod,prod}.yaml
-build.gradle.kts      # Build configuration and dependencies
-docker-compose.yml    # Local dev services (app, auth, database)
-Dockerfile            # Multi-stage container build
+      config/               # Unit tests for Spring configuration classes
+      dto/                  # Unit tests for Data transfer objects / request-response models
+      integration/          # Integration tests (WebFlux test client, WireMock)
+      integration/wiremock/ # WireMock configuration
+      jpa/entities/         # Unit tests for JPA entities
+      jpa/repositories/     # Unit tests for Spring Data JPA repositories
+      resources/            # Unit tests for REST controllers (account, credit, disbursement,
+                            #   payment, prison, security, transaction, etc.)
+      services/             # Unit tests for Business logic services
+helm_deploy/                # Helm chart + values-{dev,preprod,prod}.yaml
+build.gradle.kts            # Build configuration and dependencies
+docker-compose.yml          # Local dev services (app, auth, database)
+Dockerfile                  # Multi-stage container build
 ```
 
 ## Testing Notes
@@ -138,3 +145,4 @@ Dockerfile            # Multi-stage container build
 - `springdoc-openapi-starter-webmvc-ui` — OpenAPI/Swagger documentation
 - Spring Boot WebFlux — reactive HTTP client for inter-service calls
 - Spring Data JPA + PostgreSQL — database access
+- Flyway — database setup and migrations

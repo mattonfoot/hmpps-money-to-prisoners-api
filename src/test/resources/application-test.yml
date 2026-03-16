@@ -1,20 +1,17 @@
-spring:
-  datasource:
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.H2Dialect
-
 server:
   shutdown: immediate
 
 management.endpoint:
   health.cache.time-to-live: 0
   info.cache.time-to-live: 0
+
+spring:
+  jpa:
+    show-sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:/db/migrations/common
 
 hmpps-auth:
   url: "http://localhost:8090/auth"
