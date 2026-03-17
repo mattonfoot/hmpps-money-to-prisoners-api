@@ -133,11 +133,11 @@ class CreditResourceTest {
 
     @Test
     fun `passes prison filter to service`() {
-      whenever(creditService.listCredits(prison = "LEI")).thenReturn(emptyList())
+      whenever(creditService.listCredits(prisons = listOf("LEI"))).thenReturn(emptyList())
 
-      creditResource.listCredits(prison = "LEI")
+      creditResource.listCredits(prison = listOf("LEI"))
 
-      verify(creditService).listCredits(prison = "LEI")
+      verify(creditService).listCredits(prisons = listOf("LEI"))
     }
 
     @Test
@@ -221,6 +221,43 @@ class CreditResourceTest {
       creditResource.listCredits(prisonIsNull = true)
 
       verify(creditService).listCredits(prisonIsNull = true)
+    }
+
+    @Test
+    fun `CRD-041 passes multiple prison IDs to service`() {
+      val prisons = listOf("LEI", "MDI")
+      whenever(creditService.listCredits(prisons = prisons)).thenReturn(emptyList())
+
+      creditResource.listCredits(prison = prisons)
+
+      verify(creditService).listCredits(prisons = prisons)
+    }
+
+    @Test
+    fun `CRD-043 passes prison_region filter to service`() {
+      whenever(creditService.listCredits(prisonRegion = "Yorkshire")).thenReturn(emptyList())
+
+      creditResource.listCredits(prisonRegion = "Yorkshire")
+
+      verify(creditService).listCredits(prisonRegion = "Yorkshire")
+    }
+
+    @Test
+    fun `CRD-044 passes prison_category filter to service`() {
+      whenever(creditService.listCredits(prisonCategory = "Category B")).thenReturn(emptyList())
+
+      creditResource.listCredits(prisonCategory = "Category B")
+
+      verify(creditService).listCredits(prisonCategory = "Category B")
+    }
+
+    @Test
+    fun `CRD-045 passes prison_population filter to service`() {
+      whenever(creditService.listCredits(prisonPopulation = "Adult")).thenReturn(emptyList())
+
+      creditResource.listCredits(prisonPopulation = "Adult")
+
+      verify(creditService).listCredits(prisonPopulation = "Adult")
     }
   }
 }

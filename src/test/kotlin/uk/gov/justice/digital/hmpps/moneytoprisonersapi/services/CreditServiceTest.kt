@@ -17,7 +17,11 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonCategory
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPopulation
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -26,6 +30,9 @@ class CreditServiceTest {
 
   @Mock
   private lateinit var creditRepository: CreditRepository
+
+  @Mock
+  private lateinit var prisonRepository: PrisonRepository
 
   @InjectMocks
   private lateinit var creditService: CreditService
@@ -356,13 +363,13 @@ class CreditServiceTest {
     }
 
     @Test
-    fun `filters by prison`() {
+    fun `CRD-040 filters by prison`() {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
       val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
       whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
         .thenReturn(listOf(lei, mdi))
 
-      val result = creditService.listCredits(prison = "LEI")
+      val result = creditService.listCredits(prisons = listOf("LEI"))
 
       assertThat(result).hasSize(1)
       assertThat(result[0].prison).isEqualTo("LEI")
@@ -387,7 +394,144 @@ class CreditServiceTest {
       whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
         .thenReturn(listOf(lei))
 
-      val result = creditService.listCredits(prison = "NONEXISTENT")
+      val result = creditService.listCredits(prisons = listOf("NONEXISTENT"))
+
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `CRD-041 filters by multiple prison IDs`() {
+      val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
+      val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
+      val bxi = createCredit(id = 3, prison = "BXI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(lei, mdi, bxi))
+
+      val result = creditService.listCredits(prisons = listOf("LEI", "MDI"))
+
+      assertThat(result).hasSize(2)
+      assertThat(result.map { it.prison }).containsExactlyInAnyOrder("LEI", "MDI")
+    }
+
+    @Test
+    fun `CRD-041 single value in prison list works as exact match`() {
+      val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
+      val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(lei, mdi))
+
+      val result = creditService.listCredits(prisons = listOf("LEI"))
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].prison).isEqualTo("LEI")
+    }
+
+    @Test
+    fun `CRD-043 filters by prison region`() {
+      val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
+      val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
+      val bxi = createCredit(id = 3, prison = "BXI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(lei, mdi, bxi))
+
+      val leiPrison = Prison(nomisId = "LEI", region = "Yorkshire and Humber")
+      val mdiPrison = Prison(nomisId = "MDI", region = "Yorkshire and Humber")
+      whenever(prisonRepository.findByRegionContainingIgnoreCase("Yorkshire"))
+        .thenReturn(listOf(leiPrison, mdiPrison))
+
+      val result = creditService.listCredits(prisonRegion = "Yorkshire")
+
+      assertThat(result).hasSize(2)
+      assertThat(result.map { it.prison }).containsExactlyInAnyOrder("LEI", "MDI")
+    }
+
+    @Test
+    fun `CRD-043 prison region filter is case-insensitive`() {
+      val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(lei))
+
+      val leiPrison = Prison(nomisId = "LEI", region = "Yorkshire and Humber")
+      whenever(prisonRepository.findByRegionContainingIgnoreCase("yorkshire"))
+        .thenReturn(listOf(leiPrison))
+
+      val result = creditService.listCredits(prisonRegion = "yorkshire")
+
+      assertThat(result).hasSize(1)
+    }
+
+    @Test
+    fun `CRD-043 prison region no match returns empty set`() {
+      val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(lei))
+      whenever(prisonRepository.findByRegionContainingIgnoreCase("NonExistent"))
+        .thenReturn(emptyList())
+
+      val result = creditService.listCredits(prisonRegion = "NonExistent")
+
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `CRD-044 filters by prison category`() {
+      val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
+      val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
+      val bxi = createCredit(id = 3, prison = "BXI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(lei, mdi, bxi))
+
+      val catB = PrisonCategory(id = 1, name = "Category B")
+      val leiPrison = Prison(nomisId = "LEI").also { it.categories = mutableSetOf(catB) }
+      whenever(prisonRepository.findByCategoryName("Category B"))
+        .thenReturn(listOf(leiPrison))
+
+      val result = creditService.listCredits(prisonCategory = "Category B")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].prison).isEqualTo("LEI")
+    }
+
+    @Test
+    fun `CRD-044 prison category no match returns empty set`() {
+      val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(lei))
+      whenever(prisonRepository.findByCategoryName("NonExistent"))
+        .thenReturn(emptyList())
+
+      val result = creditService.listCredits(prisonCategory = "NonExistent")
+
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `CRD-045 filters by prison population`() {
+      val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
+      val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(lei, mdi))
+
+      val adult = PrisonPopulation(id = 1, name = "Adult")
+      val leiPrison = Prison(nomisId = "LEI").also { it.populations = mutableSetOf(adult) }
+      val mdiPrison = Prison(nomisId = "MDI").also { it.populations = mutableSetOf(adult) }
+      whenever(prisonRepository.findByPopulationName("Adult"))
+        .thenReturn(listOf(leiPrison, mdiPrison))
+
+      val result = creditService.listCredits(prisonPopulation = "Adult")
+
+      assertThat(result).hasSize(2)
+    }
+
+    @Test
+    fun `CRD-045 prison population no match returns empty set`() {
+      val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(lei))
+      whenever(prisonRepository.findByPopulationName("NonExistent"))
+        .thenReturn(emptyList())
+
+      val result = creditService.listCredits(prisonPopulation = "NonExistent")
 
       assertThat(result).isEmpty()
     }

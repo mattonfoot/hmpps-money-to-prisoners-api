@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -13,6 +14,7 @@ class CreditNotFoundException(id: Long) : RuntimeException("Credit not found wit
 @Service
 class CreditService(
   private val creditRepository: CreditRepository,
+  private val prisonRepository: PrisonRepository,
 ) {
 
   fun listCompletedCredits(): List<Credit> = creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED))
@@ -21,8 +23,11 @@ class CreditService(
 
   fun listCredits(
     status: CreditStatus? = null,
-    prison: String? = null,
+    prisons: List<String>? = null,
     prisonIsNull: Boolean? = null,
+    prisonRegion: String? = null,
+    prisonCategory: String? = null,
+    prisonPopulation: String? = null,
     amount: Long? = null,
     amountGte: Long? = null,
     amountLte: Long? = null,
@@ -54,12 +59,34 @@ class CreditService(
       }
     }
 
-    if (prison != null) {
-      credits = credits.filter { it.prison == prison }
+    if (!prisons.isNullOrEmpty()) {
+      val prisonSet = prisons.toSet()
+      credits = credits.filter { it.prison in prisonSet }
     }
 
     if (prisonIsNull == true) {
       credits = credits.filter { it.prison == null }
+    }
+
+    if (prisonRegion != null) {
+      val matchingPrisonIds = prisonRepository.findByRegionContainingIgnoreCase(prisonRegion)
+        .map { it.nomisId }
+        .toSet()
+      credits = credits.filter { it.prison in matchingPrisonIds }
+    }
+
+    if (prisonCategory != null) {
+      val matchingPrisonIds = prisonRepository.findByCategoryName(prisonCategory)
+        .map { it.nomisId }
+        .toSet()
+      credits = credits.filter { it.prison in matchingPrisonIds }
+    }
+
+    if (prisonPopulation != null) {
+      val matchingPrisonIds = prisonRepository.findByPopulationName(prisonPopulation)
+        .map { it.nomisId }
+        .toSet()
+      credits = credits.filter { it.prison in matchingPrisonIds }
     }
 
     if (amount != null) {

@@ -8,7 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonCategory
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPopulation
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonCategoryRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonPopulationRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -17,9 +23,34 @@ class CreditResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var creditRepository: CreditRepository
 
+  @Autowired
+  private lateinit var prisonRepository: PrisonRepository
+
+  @Autowired
+  private lateinit var prisonCategoryRepository: PrisonCategoryRepository
+
+  @Autowired
+  private lateinit var prisonPopulationRepository: PrisonPopulationRepository
+
   @BeforeEach
   fun setUp() {
     creditRepository.deleteAll()
+    prisonRepository.deleteAll()
+    prisonCategoryRepository.deleteAll()
+    prisonPopulationRepository.deleteAll()
+  }
+
+  private fun createAndSavePrison(
+    nomisId: String,
+    name: String = "",
+    region: String = "",
+    categories: Set<PrisonCategory> = emptySet(),
+    populations: Set<PrisonPopulation> = emptySet(),
+  ): Prison {
+    val prison = Prison(nomisId = nomisId, name = name, region = region)
+    prison.categories = categories.toMutableSet()
+    prison.populations = populations.toMutableSet()
+    return prisonRepository.save(prison)
   }
 
   private fun createAndSaveCredit(
@@ -37,6 +68,9 @@ class CreditResourceTest : IntegrationTestBase() {
     incompleteSenderInfo: Boolean = false,
     source: CreditSource = CreditSource.BANK_TRANSFER,
   ): Credit {
+    if (prison != null && !prisonRepository.existsById(prison)) {
+      createAndSavePrison(nomisId = prison)
+    }
     val credit = Credit(
       amount = amount,
       prisonerNumber = prisonerNumber,
@@ -341,6 +375,170 @@ class CreditResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/credits/?prison=NONEXISTENT")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(0)
+    }
+
+    @Test
+    @DisplayName("CRD-041 - Filter prison={id1}&prison={id2} multiple prison IDs")
+    fun `should filter by multiple prison IDs`() {
+      createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING)
+      createAndSaveCredit(prison = "MDI", resolution = CreditResolution.PENDING)
+      createAndSaveCredit(prison = "BXI", resolution = CreditResolution.PENDING)
+
+      webTestClient.get()
+        .uri("/credits/?prison=LEI&prison=MDI")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(2)
+    }
+
+    @Test
+    @DisplayName("CRD-041 - Single value in prison list works as exact match")
+    fun `should filter by single prison in list`() {
+      createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING)
+      createAndSaveCredit(prison = "MDI", resolution = CreditResolution.PENDING)
+
+      webTestClient.get()
+        .uri("/credits/?prison=LEI")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].prison").isEqualTo("LEI")
+    }
+
+    @Test
+    @DisplayName("CRD-043 - Filter prison_region case-insensitive substring")
+    fun `should filter by prison region`() {
+      val leiPrison = createAndSavePrison(nomisId = "LEI", name = "Leeds", region = "Yorkshire and Humber")
+      val mdiPrison = createAndSavePrison(nomisId = "MDI", name = "Moorland", region = "Yorkshire and Humber")
+      createAndSavePrison(nomisId = "BXI", name = "Brixton", region = "London")
+      createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING)
+      createAndSaveCredit(prison = "MDI", resolution = CreditResolution.PENDING)
+      createAndSaveCredit(prison = "BXI", resolution = CreditResolution.PENDING)
+
+      webTestClient.get()
+        .uri("/credits/?prison_region=Yorkshire")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(2)
+    }
+
+    @Test
+    @DisplayName("CRD-043 - Prison region filter is case-insensitive")
+    fun `should filter by prison region case-insensitively`() {
+      createAndSavePrison(nomisId = "LEI", region = "Yorkshire and Humber")
+      createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING)
+
+      webTestClient.get()
+        .uri("/credits/?prison_region=yorkshire")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-043 - Non-matching region returns empty set")
+    fun `should return empty for non-matching region`() {
+      createAndSavePrison(nomisId = "LEI", region = "Yorkshire and Humber")
+      createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING)
+
+      webTestClient.get()
+        .uri("/credits/?prison_region=Scotland")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(0)
+    }
+
+    @Test
+    @DisplayName("CRD-044 - Filter prison_category matches any category")
+    fun `should filter by prison category`() {
+      val catB = prisonCategoryRepository.save(PrisonCategory(name = "Category B"))
+      val catC = prisonCategoryRepository.save(PrisonCategory(name = "Category C"))
+      createAndSavePrison(nomisId = "LEI", categories = setOf(catB))
+      createAndSavePrison(nomisId = "MDI", categories = setOf(catC))
+      createAndSavePrison(nomisId = "BXI", categories = setOf(catB, catC))
+      createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING)
+      createAndSaveCredit(prison = "MDI", resolution = CreditResolution.PENDING)
+      createAndSaveCredit(prison = "BXI", resolution = CreditResolution.PENDING)
+
+      webTestClient.get()
+        .uri("/credits/?prison_category=Category B")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(2)
+    }
+
+    @Test
+    @DisplayName("CRD-044 - Non-matching category returns empty set")
+    fun `should return empty for non-matching category`() {
+      val catB = prisonCategoryRepository.save(PrisonCategory(name = "Category B"))
+      createAndSavePrison(nomisId = "LEI", categories = setOf(catB))
+      createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING)
+
+      webTestClient.get()
+        .uri("/credits/?prison_category=Category A")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(0)
+    }
+
+    @Test
+    @DisplayName("CRD-045 - Filter prison_population matches any population")
+    fun `should filter by prison population`() {
+      val adult = prisonPopulationRepository.save(PrisonPopulation(name = "Adult"))
+      val young = prisonPopulationRepository.save(PrisonPopulation(name = "Young Offender"))
+      createAndSavePrison(nomisId = "LEI", populations = setOf(adult))
+      createAndSavePrison(nomisId = "MDI", populations = setOf(adult, young))
+      createAndSavePrison(nomisId = "BXI", populations = setOf(young))
+      createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING)
+      createAndSaveCredit(prison = "MDI", resolution = CreditResolution.PENDING)
+      createAndSaveCredit(prison = "BXI", resolution = CreditResolution.PENDING)
+
+      webTestClient.get()
+        .uri("/credits/?prison_population=Adult")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(2)
+    }
+
+    @Test
+    @DisplayName("CRD-045 - Non-matching population returns empty set")
+    fun `should return empty for non-matching population`() {
+      val adult = prisonPopulationRepository.save(PrisonPopulation(name = "Adult"))
+      createAndSavePrison(nomisId = "LEI", populations = setOf(adult))
+      createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING)
+
+      webTestClient.get()
+        .uri("/credits/?prison_population=Juvenile")
         .headers(setAuthorisation())
         .exchange()
         .expectStatus()

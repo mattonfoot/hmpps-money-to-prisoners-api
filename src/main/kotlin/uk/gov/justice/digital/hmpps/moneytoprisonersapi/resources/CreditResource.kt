@@ -33,8 +33,8 @@ class CreditResource(
   @Operation(
     summary = "List credits",
     description = "Returns a paginated list of credits, excluding initial and failed resolutions. " +
-      "Supports filtering by status, prison, amount, prisoner details, resolution, review state, " +
-      "received date range, owner, and validity. " +
+      "Supports filtering by status, prison (single, multiple, region, category, population), " +
+      "amount, prisoner details, resolution, review state, received date range, owner, and validity. " +
       "Each credit includes a computed `status` field derived from the resolution, prison assignment, " +
       "blocked state, and sender information completeness. " +
       "Possible status values: credit_pending, credited, refund_pending, refunded, failed.",
@@ -64,12 +64,21 @@ class CreditResource(
     @Parameter(description = "Filter by computed status (credit_pending, credited, refund_pending, refunded, failed)")
     @RequestParam("status")
     status: CreditStatus? = null,
-    @Parameter(description = "Filter by prison NOMIS ID (exact match)", example = "LEI")
+    @Parameter(description = "Filter by prison NOMIS ID(s). Pass once for exact match, repeat for multiple (e.g. prison=LEI&prison=MDI)", example = "LEI")
     @RequestParam("prison")
-    prison: String? = null,
+    prison: List<String>? = null,
     @Parameter(description = "Filter for credits with no prison assigned")
     @RequestParam("prison__isnull")
     prisonIsNull: Boolean? = null,
+    @Parameter(description = "Filter by prison region (case-insensitive substring match)", example = "Yorkshire")
+    @RequestParam("prison_region")
+    prisonRegion: String? = null,
+    @Parameter(description = "Filter by prison category name (matches any category assigned to the prison)", example = "Category B")
+    @RequestParam("prison_category")
+    prisonCategory: String? = null,
+    @Parameter(description = "Filter by prison population type (matches any population assigned to the prison)", example = "Adult")
+    @RequestParam("prison_population")
+    prisonPopulation: String? = null,
     @Parameter(description = "Filter by exact amount in pence", example = "5000")
     @RequestParam("amount")
     amount: Long? = null,
@@ -108,8 +117,11 @@ class CreditResource(
   ): PaginatedResponse<CreditDto> {
     val credits = creditService.listCredits(
       status = status,
-      prison = prison,
+      prisons = prison,
       prisonIsNull = prisonIsNull,
+      prisonRegion = prisonRegion,
+      prisonCategory = prisonCategory,
+      prisonPopulation = prisonPopulation,
       amount = amount,
       amountGte = amountGte,
       amountLte = amountLte,

@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -23,13 +24,21 @@ import java.time.LocalDateTime
 @DisplayName("Credit Repository")
 class CreditRepositoryTest @Autowired constructor(
   val creditRepository: CreditRepository,
+  val prisonRepository: PrisonRepository,
   private val entityManager: TestEntityManager,
 ) {
 
   @BeforeEach
   fun setup() {
     creditRepository.deleteAll()
+    prisonRepository.deleteAll()
     entityManager.clear()
+  }
+
+  private fun ensurePrisonExists(nomisId: String) {
+    if (!prisonRepository.existsById(nomisId)) {
+      prisonRepository.save(Prison(nomisId = nomisId))
+    }
   }
 
   private fun createCredit(
@@ -44,19 +53,22 @@ class CreditRepositoryTest @Autowired constructor(
     reconciled: Boolean = false,
     receivedAt: LocalDateTime? = null,
     owner: String? = null,
-  ): Credit = Credit(
-    amount = amount,
-    prisonerNumber = prisonerNumber,
-    prisonerName = prisonerName,
-    prisonerDob = prisonerDob,
-    prison = prison,
-    resolution = resolution,
-    blocked = blocked,
-    reviewed = reviewed,
-    reconciled = reconciled,
-    receivedAt = receivedAt,
-    owner = owner,
-  )
+  ): Credit {
+    if (prison != null) ensurePrisonExists(prison)
+    return Credit(
+      amount = amount,
+      prisonerNumber = prisonerNumber,
+      prisonerName = prisonerName,
+      prisonerDob = prisonerDob,
+      prison = prison,
+      resolution = resolution,
+      blocked = blocked,
+      reviewed = reviewed,
+      reconciled = reconciled,
+      receivedAt = receivedAt,
+      owner = owner,
+    )
+  }
 
   @Nested
   @DisplayName("Save and retrieve")
