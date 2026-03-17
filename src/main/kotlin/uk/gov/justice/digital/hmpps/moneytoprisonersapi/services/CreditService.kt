@@ -19,6 +19,88 @@ class CreditService(
 
   fun listAllCredits(): List<Credit> = creditRepository.findAll()
 
+  fun listCredits(
+    status: CreditStatus? = null,
+    prison: String? = null,
+    prisonIsNull: Boolean? = null,
+    amount: Long? = null,
+    amountGte: Long? = null,
+    amountLte: Long? = null,
+    prisonerName: String? = null,
+    prisonerNumber: String? = null,
+    user: String? = null,
+    resolution: CreditResolution? = null,
+    reviewed: Boolean? = null,
+    receivedAtGte: LocalDateTime? = null,
+    receivedAtLt: LocalDateTime? = null,
+    valid: Boolean? = null,
+  ): List<Credit> {
+    var credits = listCompletedCredits()
+
+    if (status != null) {
+      credits = credits.filter { CreditStatus.computeFrom(it) == status }
+    }
+
+    if (valid != null) {
+      val validStatuses = setOf(CreditStatus.CREDIT_PENDING, CreditStatus.CREDITED)
+      credits = if (valid) {
+        credits.filter { CreditStatus.computeFrom(it) in validStatuses }
+      } else {
+        credits.filter { CreditStatus.computeFrom(it) !in validStatuses }
+      }
+    }
+
+    if (prison != null) {
+      credits = credits.filter { it.prison == prison }
+    }
+
+    if (prisonIsNull == true) {
+      credits = credits.filter { it.prison == null }
+    }
+
+    if (amount != null) {
+      credits = credits.filter { it.amount == amount }
+    }
+
+    if (amountGte != null) {
+      credits = credits.filter { it.amount >= amountGte }
+    }
+
+    if (amountLte != null) {
+      credits = credits.filter { it.amount <= amountLte }
+    }
+
+    if (prisonerName != null) {
+      credits = credits.filter { it.prisonerName?.contains(prisonerName, ignoreCase = true) == true }
+    }
+
+    if (prisonerNumber != null) {
+      credits = credits.filter { it.prisonerNumber == prisonerNumber }
+    }
+
+    if (user != null) {
+      credits = credits.filter { it.owner == user }
+    }
+
+    if (resolution != null) {
+      credits = credits.filter { it.resolution == resolution }
+    }
+
+    if (reviewed != null) {
+      credits = credits.filter { it.reviewed == reviewed }
+    }
+
+    if (receivedAtGte != null) {
+      credits = credits.filter { it.receivedAt != null && !it.receivedAt!!.isBefore(receivedAtGte) }
+    }
+
+    if (receivedAtLt != null) {
+      credits = credits.filter { it.receivedAt != null && it.receivedAt!!.isBefore(receivedAtLt) }
+    }
+
+    return credits
+  }
+
   fun createCredit(
     amount: Long,
     prisonerNumber: String?,

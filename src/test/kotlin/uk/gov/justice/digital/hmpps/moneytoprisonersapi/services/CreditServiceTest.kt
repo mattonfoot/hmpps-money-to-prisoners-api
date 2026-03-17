@@ -269,6 +269,282 @@ class CreditServiceTest {
   }
 
   @Nested
+  @DisplayName("CRD-020: listCredits with filters")
+  inner class ListCreditsFiltered {
+
+    @Test
+    fun `returns all completed credits when no filters`() {
+      val credits = listOf(
+        createCredit(id = 1, resolution = CreditResolution.PENDING, prison = "LEI"),
+        createCredit(id = 2, resolution = CreditResolution.CREDITED),
+      )
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED))).thenReturn(credits)
+
+      val result = creditService.listCredits()
+
+      assertThat(result).hasSize(2)
+    }
+
+    @Test
+    fun `filters by status credit_pending`() {
+      val creditPending = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
+      val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(creditPending, credited))
+
+      val result = creditService.listCredits(status = CreditStatus.CREDIT_PENDING)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `filters by status credited`() {
+      val creditPending = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
+      val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(creditPending, credited))
+
+      val result = creditService.listCredits(status = CreditStatus.CREDITED)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(2L)
+    }
+
+    @Test
+    fun `filters by status refund_pending`() {
+      val refundPending = createCredit(id = 1, prison = null, resolution = CreditResolution.PENDING)
+      val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(refundPending, credited))
+
+      val result = creditService.listCredits(status = CreditStatus.REFUND_PENDING)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `filters by status refunded`() {
+      val refunded = createCredit(id = 1, resolution = CreditResolution.REFUNDED)
+      val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(refunded, credited))
+
+      val result = creditService.listCredits(status = CreditStatus.REFUNDED)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-035 invalid status returns empty set`() {
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(createCredit(id = 1, resolution = CreditResolution.CREDITED)))
+
+      val result = creditService.listCredits(status = CreditStatus.FAILED)
+
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `filters by prison`() {
+      val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
+      val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(lei, mdi))
+
+      val result = creditService.listCredits(prison = "LEI")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].prison).isEqualTo("LEI")
+    }
+
+    @Test
+    fun `CRD-042 filters by prison__isnull=true`() {
+      val noPrison = createCredit(id = 1, prison = null, resolution = CreditResolution.PENDING)
+      val withPrison = createCredit(id = 2, prison = "LEI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(noPrison, withPrison))
+
+      val result = creditService.listCredits(prisonIsNull = true)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].prison).isNull()
+    }
+
+    @Test
+    fun `CRD-046 invalid prison returns empty set`() {
+      val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(lei))
+
+      val result = creditService.listCredits(prison = "NONEXISTENT")
+
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `CRD-050 filters by exact amount`() {
+      val c1 = createCredit(id = 1, amount = 1000, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, amount = 2000, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(amount = 1000L)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].amount).isEqualTo(1000L)
+    }
+
+    @Test
+    fun `CRD-051 filters by amount__gte`() {
+      val c1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, amount = 1000, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, amount = 1500, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(amountGte = 1000L)
+
+      assertThat(result).hasSize(2)
+    }
+
+    @Test
+    fun `CRD-052 filters by amount__lte`() {
+      val c1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, amount = 1000, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, amount = 1500, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(amountLte = 1000L)
+
+      assertThat(result).hasSize(2)
+    }
+
+    @Test
+    fun `CRD-080 filters by prisoner_name case-insensitive substring`() {
+      val c1 = createCredit(id = 1, prisonerName = "John Smith", resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, prisonerName = "Jane Doe", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(prisonerName = "john")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].prisonerName).isEqualTo("John Smith")
+    }
+
+    @Test
+    fun `CRD-081 filters by prisoner_number exact match`() {
+      val c1 = createCredit(id = 1, prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, prisonerNumber = "B5678DE", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(prisonerNumber = "A1234BC")
+
+      assertThat(result).hasSize(1)
+    }
+
+    @Test
+    fun `CRD-082 filters by user (owner)`() {
+      val c1 = createCredit(id = 1, owner = "clerk1", resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, owner = "clerk2", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(user = "clerk1")
+
+      assertThat(result).hasSize(1)
+    }
+
+    @Test
+    fun `CRD-083 filters by resolution`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.PENDING)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(resolution = CreditResolution.CREDITED)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].resolution).isEqualTo(CreditResolution.CREDITED)
+    }
+
+    @Test
+    fun `CRD-084 filters by reviewed=true`() {
+      val c1 = createCredit(id = 1, reviewed = true, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, reviewed = false, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(reviewed = true)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].reviewed).isTrue()
+    }
+
+    @Test
+    fun `CRD-085 filters by received_at__gte and received_at__lt`() {
+      val now = LocalDateTime.of(2024, 3, 15, 10, 0)
+      val c1 = createCredit(id = 1, receivedAt = now.minusDays(1), resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, receivedAt = now, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, receivedAt = now.plusDays(1), resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(receivedAtGte = now, receivedAtLt = now.plusDays(1))
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(2L)
+    }
+
+    @Test
+    fun `CRD-057 multiple amount filters combine with AND`() {
+      val c1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, amount = 1000, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, amount = 1500, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(amountGte = 800L, amountLte = 1200L)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].amount).isEqualTo(1000L)
+    }
+
+    @Test
+    fun `CRD-036 filter valid=true returns credit_pending or credited`() {
+      val creditPending = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
+      val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      val refundPending = createCredit(id = 3, prison = null, resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(creditPending, credited, refundPending))
+
+      val result = creditService.listCredits(valid = true)
+
+      assertThat(result).hasSize(2)
+      assertThat(result.map { it.id }).containsExactlyInAnyOrder(1L, 2L)
+    }
+
+    @Test
+    fun `CRD-037 filter valid=false returns non-valid credits`() {
+      val creditPending = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
+      val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      val refundPending = createCredit(id = 3, prison = null, resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(creditPending, credited, refundPending))
+
+      val result = creditService.listCredits(valid = false)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(3L)
+    }
+  }
+
+  @Nested
   @DisplayName("CRD-006: Resolution transition via service")
   inner class TransitionResolution {
 

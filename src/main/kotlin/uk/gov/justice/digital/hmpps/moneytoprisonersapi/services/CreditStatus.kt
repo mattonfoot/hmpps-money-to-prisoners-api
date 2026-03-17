@@ -1,9 +1,10 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 
+import com.fasterxml.jackson.annotation.JsonValue
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 
-enum class CreditStatus(val value: String) {
+enum class CreditStatus(@JsonValue val value: String) {
   INITIAL("initial"),
   CREDIT_PENDING("credit_pending"),
   CREDITED("credited"),

@@ -1,20 +1,26 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.resources
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
+import java.time.LocalDateTime
 
 @RestController
 @RequestMapping("/credits", produces = ["application/json"])
@@ -27,6 +33,8 @@ class CreditResource(
   @Operation(
     summary = "List credits",
     description = "Returns a paginated list of credits, excluding initial and failed resolutions. " +
+      "Supports filtering by status, prison, amount, prisoner details, resolution, review state, " +
+      "received date range, owner, and validity. " +
       "Each credit includes a computed `status` field derived from the resolution, prison assignment, " +
       "blocked state, and sender information completeness. " +
       "Possible status values: credit_pending, credited, refund_pending, refunded, failed.",
@@ -43,12 +51,77 @@ class CreditResource(
         description = "Unauthorized - requires a valid OAuth2 token",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden - requires VIEW_CREDIT permission and a valid client (Cashbook, NomsOps, or BankAdmin)",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
     ],
   )
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/")
-  fun listCredits(): PaginatedResponse<CreditDto> {
-    val credits = creditService.listCompletedCredits()
+  fun listCredits(
+    @Parameter(description = "Filter by computed status (credit_pending, credited, refund_pending, refunded, failed)")
+    @RequestParam("status")
+    status: CreditStatus? = null,
+    @Parameter(description = "Filter by prison NOMIS ID (exact match)", example = "LEI")
+    @RequestParam("prison")
+    prison: String? = null,
+    @Parameter(description = "Filter for credits with no prison assigned")
+    @RequestParam("prison__isnull")
+    prisonIsNull: Boolean? = null,
+    @Parameter(description = "Filter by exact amount in pence", example = "5000")
+    @RequestParam("amount")
+    amount: Long? = null,
+    @Parameter(description = "Filter by minimum amount (inclusive) in pence", example = "1000")
+    @RequestParam("amount__gte")
+    amountGte: Long? = null,
+    @Parameter(description = "Filter by maximum amount (inclusive) in pence", example = "10000")
+    @RequestParam("amount__lte")
+    amountLte: Long? = null,
+    @Parameter(description = "Filter by prisoner name (case-insensitive substring match)", example = "Smith")
+    @RequestParam("prisoner_name")
+    prisonerName: String? = null,
+    @Parameter(description = "Filter by prisoner number (exact match)", example = "A1234BC")
+    @RequestParam("prisoner_number")
+    prisonerNumber: String? = null,
+    @Parameter(description = "Filter by credit owner/user", example = "clerk1")
+    @RequestParam("user")
+    user: String? = null,
+    @Parameter(description = "Filter by resolution status (exact match)")
+    @RequestParam("resolution")
+    resolution: CreditResolution? = null,
+    @Parameter(description = "Filter by reviewed flag")
+    @RequestParam("reviewed")
+    reviewed: Boolean? = null,
+    @Parameter(description = "Filter credits received on or after this datetime (inclusive, ISO format)", example = "2024-01-01T00:00:00")
+    @RequestParam("received_at__gte")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    receivedAtGte: LocalDateTime? = null,
+    @Parameter(description = "Filter credits received before this datetime (exclusive, ISO format)", example = "2024-02-01T00:00:00")
+    @RequestParam("received_at__lt")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    receivedAtLt: LocalDateTime? = null,
+    @Parameter(description = "Filter by validity: true = credit_pending or credited, false = all others")
+    @RequestParam("valid")
+    valid: Boolean? = null,
+  ): PaginatedResponse<CreditDto> {
+    val credits = creditService.listCredits(
+      status = status,
+      prison = prison,
+      prisonIsNull = prisonIsNull,
+      amount = amount,
+      amountGte = amountGte,
+      amountLte = amountLte,
+      prisonerName = prisonerName,
+      prisonerNumber = prisonerNumber,
+      user = user,
+      resolution = resolution,
+      reviewed = reviewed,
+      receivedAtGte = receivedAtGte,
+      receivedAtLt = receivedAtLt,
+      valid = valid,
+    )
     val results = credits.map { CreditDto.from(it) }
     return PaginatedResponse(
       count = results.size,
