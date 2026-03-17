@@ -43,6 +43,20 @@ class CreditService(
     receivedAtGte: LocalDateTime? = null,
     receivedAtLt: LocalDateTime? = null,
     valid: Boolean? = null,
+    senderName: String? = null,
+    senderSortCode: String? = null,
+    senderAccountNumber: String? = null,
+    senderRollNumber: String? = null,
+    senderNameIsBlank: Boolean? = null,
+    senderSortCodeIsBlank: Boolean? = null,
+    senderEmail: String? = null,
+    senderIpAddress: String? = null,
+    cardNumberFirstDigits: String? = null,
+    cardNumberLastDigits: String? = null,
+    cardExpiryDate: String? = null,
+    senderPostcode: String? = null,
+    paymentReference: String? = null,
+    source: CreditSource? = null,
   ): List<Credit> {
     var credits = if (status != null || valid != null) {
       listAllCredits()
@@ -149,6 +163,81 @@ class CreditService(
 
     if (receivedAtLt != null) {
       credits = credits.filter { it.receivedAt != null && it.receivedAt!!.isBefore(receivedAtLt) }
+    }
+
+    if (senderName != null) {
+      credits = credits.filter {
+        it.transaction?.senderName?.contains(senderName, ignoreCase = true) == true ||
+          it.payment?.cardholderName?.contains(senderName, ignoreCase = true) == true
+      }
+    }
+
+    if (senderSortCode != null) {
+      credits = credits.filter { it.transaction?.senderSortCode == senderSortCode }
+    }
+
+    if (senderAccountNumber != null) {
+      credits = credits.filter { it.transaction?.senderAccountNumber == senderAccountNumber }
+    }
+
+    if (senderRollNumber != null) {
+      credits = credits.filter { it.transaction?.senderRollNumber == senderRollNumber }
+    }
+
+    if (senderNameIsBlank == true) {
+      credits = credits.filter {
+        it.transaction != null && it.transaction!!.senderName.isNullOrEmpty()
+      }
+    }
+
+    if (senderSortCodeIsBlank == true) {
+      credits = credits.filter {
+        it.transaction != null && it.transaction!!.senderSortCode.isNullOrEmpty()
+      }
+    }
+
+    if (senderEmail != null) {
+      credits = credits.filter {
+        it.payment?.email?.contains(senderEmail, ignoreCase = true) == true
+      }
+    }
+
+    if (senderIpAddress != null) {
+      credits = credits.filter { it.payment?.ipAddress == senderIpAddress }
+    }
+
+    if (cardNumberFirstDigits != null) {
+      credits = credits.filter { it.payment?.cardNumberFirstDigits == cardNumberFirstDigits }
+    }
+
+    if (cardNumberLastDigits != null) {
+      credits = credits.filter { it.payment?.cardNumberLastDigits == cardNumberLastDigits }
+    }
+
+    if (cardExpiryDate != null) {
+      credits = credits.filter { it.payment?.cardExpiryDate == cardExpiryDate }
+    }
+
+    if (senderPostcode != null) {
+      val normalizedFilter = senderPostcode.replace("\\s".toRegex(), "").lowercase()
+      credits = credits.filter {
+        val postcode = it.payment?.billingAddress?.postcode
+        postcode != null && postcode.replace("\\s".toRegex(), "").lowercase() == normalizedFilter
+      }
+    }
+
+    if (paymentReference != null) {
+      credits = credits.filter {
+        it.payment?.uuid?.toString()?.startsWith(paymentReference) == true
+      }
+    }
+
+    if (source != null) {
+      credits = when (source) {
+        CreditSource.BANK_TRANSFER -> credits.filter { it.transaction != null }
+        CreditSource.ONLINE -> credits.filter { it.payment != null }
+        CreditSource.UNKNOWN -> credits.filter { it.transaction == null && it.payment == null }
+      }
     }
 
     return credits

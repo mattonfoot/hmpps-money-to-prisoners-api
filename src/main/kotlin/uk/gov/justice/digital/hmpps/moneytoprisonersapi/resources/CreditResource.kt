@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -34,7 +35,8 @@ class CreditResource(
     summary = "List credits",
     description = "Returns a paginated list of credits, excluding initial and failed resolutions. " +
       "Supports filtering by status, prison (single, multiple, region, category, population), " +
-      "amount (exact, range, endswith, regex, and exclusions), prisoner details, resolution, review state, received date range, owner, and validity. " +
+      "amount (exact, range, endswith, regex, and exclusions), prisoner details, resolution, review state, received date range, owner, validity, " +
+      "sender/payment details (name, sort code, account number, roll number, email, IP address, card details, postcode, payment reference), and source type. " +
       "Each credit includes a computed `status` field derived from the resolution, prison assignment, " +
       "blocked state, and sender information completeness. " +
       "Possible status values: credit_pending, credited, refund_pending, refunded, failed.",
@@ -126,6 +128,48 @@ class CreditResource(
     @Parameter(description = "Filter by validity: true = credit_pending or credited, false = all others")
     @RequestParam("valid")
     valid: Boolean? = null,
+    @Parameter(description = "Filter by sender name (case-insensitive substring match on transaction sender_name or payment cardholder_name)", example = "Smith")
+    @RequestParam("sender_name")
+    senderName: String? = null,
+    @Parameter(description = "Filter by sender sort code (exact match on transaction field)", example = "112233")
+    @RequestParam("sender_sort_code")
+    senderSortCode: String? = null,
+    @Parameter(description = "Filter by sender account number (exact match on transaction field)", example = "12345678")
+    @RequestParam("sender_account_number")
+    senderAccountNumber: String? = null,
+    @Parameter(description = "Filter by sender roll number (exact match on transaction field)", example = "ROLL001")
+    @RequestParam("sender_roll_number")
+    senderRollNumber: String? = null,
+    @Parameter(description = "Filter for credits with blank sender name from transactions")
+    @RequestParam("sender_name__isblank")
+    senderNameIsBlank: Boolean? = null,
+    @Parameter(description = "Filter for credits with blank sender sort code from transactions")
+    @RequestParam("sender_sort_code__isblank")
+    senderSortCodeIsBlank: Boolean? = null,
+    @Parameter(description = "Filter by sender email (case-insensitive substring match on payment email)", example = "john@example.com")
+    @RequestParam("sender_email")
+    senderEmail: String? = null,
+    @Parameter(description = "Filter by sender IP address (exact match on payment field)", example = "192.168.1.1")
+    @RequestParam("sender_ip_address")
+    senderIpAddress: String? = null,
+    @Parameter(description = "Filter by card number first digits (exact match on payment field)", example = "411111")
+    @RequestParam("card_number_first_digits")
+    cardNumberFirstDigits: String? = null,
+    @Parameter(description = "Filter by card number last digits (exact match on payment field)", example = "1234")
+    @RequestParam("card_number_last_digits")
+    cardNumberLastDigits: String? = null,
+    @Parameter(description = "Filter by card expiry date (exact match on payment field)", example = "12/25")
+    @RequestParam("card_expiry_date")
+    cardExpiryDate: String? = null,
+    @Parameter(description = "Filter by sender postcode (normalized matching, ignores spaces and case, on payment billing address)", example = "SW1A 1AA")
+    @RequestParam("sender_postcode")
+    senderPostcode: String? = null,
+    @Parameter(description = "Filter by payment reference (prefix match on first 8 chars of payment UUID)", example = "abcdef12")
+    @RequestParam("payment_reference")
+    paymentReference: String? = null,
+    @Parameter(description = "Filter by credit source type: bank_transfer (has transaction), online (has payment), unknown (neither)")
+    @RequestParam("source")
+    source: CreditSource? = null,
   ): PaginatedResponse<CreditDto> {
     val credits = creditService.listCredits(
       status = status,
@@ -149,6 +193,20 @@ class CreditResource(
       receivedAtGte = receivedAtGte,
       receivedAtLt = receivedAtLt,
       valid = valid,
+      senderName = senderName,
+      senderSortCode = senderSortCode,
+      senderAccountNumber = senderAccountNumber,
+      senderRollNumber = senderRollNumber,
+      senderNameIsBlank = senderNameIsBlank,
+      senderSortCodeIsBlank = senderSortCodeIsBlank,
+      senderEmail = senderEmail,
+      senderIpAddress = senderIpAddress,
+      cardNumberFirstDigits = cardNumberFirstDigits,
+      cardNumberLastDigits = cardNumberLastDigits,
+      cardExpiryDate = cardExpiryDate,
+      senderPostcode = senderPostcode,
+      paymentReference = paymentReference,
+      source = source,
     )
     val results = credits.map { CreditDto.from(it) }
     return PaginatedResponse(

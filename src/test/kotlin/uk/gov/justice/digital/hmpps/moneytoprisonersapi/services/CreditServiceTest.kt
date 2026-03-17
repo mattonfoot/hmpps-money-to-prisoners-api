@@ -13,13 +13,16 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.BillingAddress
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Payment
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonCategory
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPopulation
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Transaction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import java.time.LocalDate
@@ -780,6 +783,299 @@ class CreditServiceTest {
       whenever(creditRepository.findAll()).thenReturn(listOf(creditPending, credited, refundPending))
 
       val result = creditService.listCredits(valid = false)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(3L)
+    }
+
+    @Test
+    fun `CRD-060 filters by sender_name case-insensitive on transaction sender_name`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.transaction = Transaction(id = 1, senderName = "John Smith", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.transaction = Transaction(id = 2, senderName = "Jane Doe", credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(senderName = "john")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-060 filters by sender_name case-insensitive on payment cardholder_name`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.payment = Payment(cardholderName = "Alice Jones", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(cardholderName = "Bob Brown", credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(senderName = "alice")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-060 sender_name matches across transaction and payment`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.transaction = Transaction(id = 1, senderName = "John Smith", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(cardholderName = "John Doe", credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(senderName = "john")
+
+      assertThat(result).hasSize(2)
+    }
+
+    @Test
+    fun `CRD-061 filters by sender_sort_code exact match`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.transaction = Transaction(id = 1, senderSortCode = "112233", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.transaction = Transaction(id = 2, senderSortCode = "445566", credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(senderSortCode = "112233")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-062 filters by sender_account_number exact match`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.transaction = Transaction(id = 1, senderAccountNumber = "12345678", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.transaction = Transaction(id = 2, senderAccountNumber = "87654321", credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(senderAccountNumber = "12345678")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-063 filters by sender_roll_number exact match`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.transaction = Transaction(id = 1, senderRollNumber = "ROLL001", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.transaction = Transaction(id = 2, senderRollNumber = "ROLL002", credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(senderRollNumber = "ROLL001")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-064 filters by sender_name__isblank=true for blank transaction sender_name`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.transaction = Transaction(id = 1, senderName = "", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.transaction = Transaction(id = 2, senderName = "John", credit = c2)
+      val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
+      c3.transaction = Transaction(id = 3, senderName = null, credit = c3)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(senderNameIsBlank = true)
+
+      assertThat(result).hasSize(2)
+      assertThat(result.map { it.id }).containsExactlyInAnyOrder(1L, 3L)
+    }
+
+    @Test
+    fun `CRD-065 filters by sender_sort_code__isblank=true for blank sort code`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.transaction = Transaction(id = 1, senderSortCode = "", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.transaction = Transaction(id = 2, senderSortCode = "112233", credit = c2)
+      val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
+      c3.transaction = Transaction(id = 3, senderSortCode = null, credit = c3)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(senderSortCodeIsBlank = true)
+
+      assertThat(result).hasSize(2)
+      assertThat(result.map { it.id }).containsExactlyInAnyOrder(1L, 3L)
+    }
+
+    @Test
+    fun `CRD-066 filters by sender_email case-insensitive substring on payment email`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.payment = Payment(email = "John@Example.com", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(email = "jane@other.com", credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(senderEmail = "example")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-067 filters by sender_ip_address exact match on payment ip_address`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.payment = Payment(ipAddress = "192.168.1.1", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(ipAddress = "10.0.0.1", credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(senderIpAddress = "192.168.1.1")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-068 filters by card_number_first_digits exact match`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.payment = Payment(cardNumberFirstDigits = "411111", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(cardNumberFirstDigits = "522222", credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(cardNumberFirstDigits = "411111")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-069 filters by card_number_last_digits exact match`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.payment = Payment(cardNumberLastDigits = "1234", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(cardNumberLastDigits = "5678", credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(cardNumberLastDigits = "1234")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-070 filters by card_expiry_date exact match`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.payment = Payment(cardExpiryDate = "12/25", credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(cardExpiryDate = "06/26", credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(cardExpiryDate = "12/25")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-071 filters by sender_postcode normalized matching`() {
+      val addr1 = BillingAddress(id = 1, postcode = "SW1A 1AA")
+      val addr2 = BillingAddress(id = 2, postcode = "EC2A 4NE")
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.payment = Payment(billingAddress = addr1, credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(billingAddress = addr2, credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(senderPostcode = "sw1a1aa")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-071 sender_postcode handles spaces and case differences`() {
+      val addr1 = BillingAddress(id = 1, postcode = "sw1a1aa")
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.payment = Payment(billingAddress = addr1, credit = c1)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1))
+
+      val result = creditService.listCredits(senderPostcode = "SW1A 1AA")
+
+      assertThat(result).hasSize(1)
+    }
+
+    @Test
+    fun `CRD-072 filters by payment_reference prefix match on payment uuid`() {
+      val uuid1 = java.util.UUID.fromString("abcdef12-3456-7890-abcd-ef1234567890")
+      val uuid2 = java.util.UUID.fromString("12345678-abcd-ef12-3456-7890abcdef12")
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.payment = Payment(uuid = uuid1, credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(uuid = uuid2, credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(paymentReference = "abcdef12")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-073 filters by source=bank_transfer returns credits with transactions`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.transaction = Transaction(id = 1, credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(credit = c2)
+      val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(source = CreditSource.BANK_TRANSFER)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-074 filters by source=online returns credits with payments`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.transaction = Transaction(id = 1, credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(credit = c2)
+      val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(source = CreditSource.ONLINE)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(2L)
+    }
+
+    @Test
+    fun `CRD-075 filters by source=unknown returns credits with neither`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.transaction = Transaction(id = 1, credit = c1)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.payment = Payment(credit = c2)
+      val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(source = CreditSource.UNKNOWN)
 
       assertThat(result).hasSize(1)
       assertThat(result[0].id).isEqualTo(3L)

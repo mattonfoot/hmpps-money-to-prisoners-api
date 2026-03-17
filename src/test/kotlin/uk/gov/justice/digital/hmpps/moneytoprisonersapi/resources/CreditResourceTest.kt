@@ -12,6 +12,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import java.time.LocalDate
@@ -294,6 +295,150 @@ class CreditResourceTest {
       creditResource.listCredits(prisonPopulation = "Adult")
 
       verify(creditService).listCredits(prisonPopulation = "Adult")
+    }
+
+    @Test
+    fun `CRD-060 passes sender_name filter to service`() {
+      whenever(creditService.listCredits(senderName = "John")).thenReturn(emptyList())
+
+      creditResource.listCredits(senderName = "John")
+
+      verify(creditService).listCredits(senderName = "John")
+    }
+
+    @Test
+    fun `CRD-061 passes sender_sort_code filter to service`() {
+      whenever(creditService.listCredits(senderSortCode = "112233")).thenReturn(emptyList())
+
+      creditResource.listCredits(senderSortCode = "112233")
+
+      verify(creditService).listCredits(senderSortCode = "112233")
+    }
+
+    @Test
+    fun `CRD-062 passes sender_account_number filter to service`() {
+      whenever(creditService.listCredits(senderAccountNumber = "12345678")).thenReturn(emptyList())
+
+      creditResource.listCredits(senderAccountNumber = "12345678")
+
+      verify(creditService).listCredits(senderAccountNumber = "12345678")
+    }
+
+    @Test
+    fun `CRD-063 passes sender_roll_number filter to service`() {
+      whenever(creditService.listCredits(senderRollNumber = "ROLL001")).thenReturn(emptyList())
+
+      creditResource.listCredits(senderRollNumber = "ROLL001")
+
+      verify(creditService).listCredits(senderRollNumber = "ROLL001")
+    }
+
+    @Test
+    fun `CRD-064 passes sender_name__isblank filter to service`() {
+      whenever(creditService.listCredits(senderNameIsBlank = true)).thenReturn(emptyList())
+
+      creditResource.listCredits(senderNameIsBlank = true)
+
+      verify(creditService).listCredits(senderNameIsBlank = true)
+    }
+
+    @Test
+    fun `CRD-065 passes sender_sort_code__isblank filter to service`() {
+      whenever(creditService.listCredits(senderSortCodeIsBlank = true)).thenReturn(emptyList())
+
+      creditResource.listCredits(senderSortCodeIsBlank = true)
+
+      verify(creditService).listCredits(senderSortCodeIsBlank = true)
+    }
+
+    @Test
+    fun `CRD-066 passes sender_email filter to service`() {
+      whenever(creditService.listCredits(senderEmail = "test@example.com")).thenReturn(emptyList())
+
+      creditResource.listCredits(senderEmail = "test@example.com")
+
+      verify(creditService).listCredits(senderEmail = "test@example.com")
+    }
+
+    @Test
+    fun `CRD-067 passes sender_ip_address filter to service`() {
+      whenever(creditService.listCredits(senderIpAddress = "192.168.1.1")).thenReturn(emptyList())
+
+      creditResource.listCredits(senderIpAddress = "192.168.1.1")
+
+      verify(creditService).listCredits(senderIpAddress = "192.168.1.1")
+    }
+
+    @Test
+    fun `CRD-068 passes card_number_first_digits filter to service`() {
+      whenever(creditService.listCredits(cardNumberFirstDigits = "411111")).thenReturn(emptyList())
+
+      creditResource.listCredits(cardNumberFirstDigits = "411111")
+
+      verify(creditService).listCredits(cardNumberFirstDigits = "411111")
+    }
+
+    @Test
+    fun `CRD-069 passes card_number_last_digits filter to service`() {
+      whenever(creditService.listCredits(cardNumberLastDigits = "1234")).thenReturn(emptyList())
+
+      creditResource.listCredits(cardNumberLastDigits = "1234")
+
+      verify(creditService).listCredits(cardNumberLastDigits = "1234")
+    }
+
+    @Test
+    fun `CRD-070 passes card_expiry_date filter to service`() {
+      whenever(creditService.listCredits(cardExpiryDate = "12/25")).thenReturn(emptyList())
+
+      creditResource.listCredits(cardExpiryDate = "12/25")
+
+      verify(creditService).listCredits(cardExpiryDate = "12/25")
+    }
+
+    @Test
+    fun `CRD-071 passes sender_postcode filter to service`() {
+      whenever(creditService.listCredits(senderPostcode = "SW1A 1AA")).thenReturn(emptyList())
+
+      creditResource.listCredits(senderPostcode = "SW1A 1AA")
+
+      verify(creditService).listCredits(senderPostcode = "SW1A 1AA")
+    }
+
+    @Test
+    fun `CRD-072 passes payment_reference filter to service`() {
+      whenever(creditService.listCredits(paymentReference = "abcdef12")).thenReturn(emptyList())
+
+      creditResource.listCredits(paymentReference = "abcdef12")
+
+      verify(creditService).listCredits(paymentReference = "abcdef12")
+    }
+
+    @Test
+    fun `CRD-073 passes source=bank_transfer filter to service`() {
+      whenever(creditService.listCredits(source = CreditSource.BANK_TRANSFER)).thenReturn(emptyList())
+
+      creditResource.listCredits(source = CreditSource.BANK_TRANSFER)
+
+      verify(creditService).listCredits(source = CreditSource.BANK_TRANSFER)
+    }
+
+    @Test
+    fun `CRD-074 passes source=online filter to service`() {
+      whenever(creditService.listCredits(source = CreditSource.ONLINE)).thenReturn(emptyList())
+
+      creditResource.listCredits(source = CreditSource.ONLINE)
+
+      verify(creditService).listCredits(source = CreditSource.ONLINE)
+    }
+
+    @Test
+    fun `CRD-075 passes source=unknown filter to service`() {
+      whenever(creditService.listCredits(source = CreditSource.UNKNOWN)).thenReturn(emptyList())
+
+      creditResource.listCredits(source = CreditSource.UNKNOWN)
+
+      verify(creditService).listCredits(source = CreditSource.UNKNOWN)
     }
   }
 }
