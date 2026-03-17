@@ -31,6 +31,10 @@ class CreditService(
     amount: Long? = null,
     amountGte: Long? = null,
     amountLte: Long? = null,
+    amountEndswith: String? = null,
+    amountRegex: String? = null,
+    excludeAmountEndswith: String? = null,
+    excludeAmountRegex: String? = null,
     prisonerName: String? = null,
     prisonerNumber: String? = null,
     user: String? = null,
@@ -99,6 +103,24 @@ class CreditService(
 
     if (amountLte != null) {
       credits = credits.filter { it.amount <= amountLte }
+    }
+
+    if (amountEndswith != null) {
+      credits = credits.filter { it.amount.toString().endsWith(amountEndswith) }
+    }
+
+    if (amountRegex != null) {
+      val regex = Regex(amountRegex)
+      credits = credits.filter { regex.containsMatchIn(it.amount.toString()) }
+    }
+
+    if (excludeAmountEndswith != null) {
+      credits = credits.filter { !it.amount.toString().endsWith(excludeAmountEndswith) }
+    }
+
+    if (excludeAmountRegex != null) {
+      val regex = Regex(excludeAmountRegex)
+      credits = credits.filter { !regex.containsMatchIn(it.amount.toString()) }
     }
 
     if (prisonerName != null) {

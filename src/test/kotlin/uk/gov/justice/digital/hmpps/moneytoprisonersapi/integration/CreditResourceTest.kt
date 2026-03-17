@@ -604,6 +604,91 @@ class CreditResourceTest : IntegrationTestBase() {
     }
 
     @Test
+    @DisplayName("CRD-053 - Filter amount__endswith")
+    fun `should filter by amount endswith`() {
+      createAndSaveCredit(amount = 1050, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 2050, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 1099, resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?amount__endswith=50")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(2)
+    }
+
+    @Test
+    @DisplayName("CRD-053 - amount__endswith with no matches returns empty")
+    fun `should return empty for amount endswith with no matches`() {
+      createAndSaveCredit(amount = 1000, resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?amount__endswith=99")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(0)
+    }
+
+    @Test
+    @DisplayName("CRD-054 - Filter amount__regex")
+    fun `should filter by amount regex`() {
+      createAndSaveCredit(amount = 1000, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 2000, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 1500, resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri { it.path("/credits/").queryParam("amount__regex", "^1.*").build() }
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(2)
+    }
+
+    @Test
+    @DisplayName("CRD-055 - Filter exclude_amount__endswith")
+    fun `should exclude by amount endswith`() {
+      createAndSaveCredit(amount = 1050, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 2050, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 1099, resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?exclude_amount__endswith=50")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].amount").isEqualTo(1099)
+    }
+
+    @Test
+    @DisplayName("CRD-056 - Filter exclude_amount__regex")
+    fun `should exclude by amount regex`() {
+      createAndSaveCredit(amount = 1000, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 2000, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 1500, resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri { it.path("/credits/").queryParam("exclude_amount__regex", "^1.*").build() }
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].amount").isEqualTo(2000)
+    }
+
+    @Test
     @DisplayName("CRD-057 - Multiple amount filters combine with AND")
     fun `should combine amount filters with AND`() {
       createAndSaveCredit(amount = 500, resolution = CreditResolution.CREDITED)
@@ -619,6 +704,24 @@ class CreditResourceTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.count").isEqualTo(1)
         .jsonPath("$.results[0].amount").isEqualTo(1000)
+    }
+
+    @Test
+    @DisplayName("CRD-057 - endswith and regex combine with AND")
+    fun `should combine endswith and regex filters with AND`() {
+      createAndSaveCredit(amount = 1050, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 2050, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 1099, resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri { it.path("/credits/").queryParam("amount__endswith", "50").queryParam("amount__regex", "^1.*").build() }
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].amount").isEqualTo(1050)
     }
   }
 

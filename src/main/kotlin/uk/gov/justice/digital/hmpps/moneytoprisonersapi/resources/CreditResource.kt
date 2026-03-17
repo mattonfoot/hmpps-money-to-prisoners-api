@@ -34,7 +34,7 @@ class CreditResource(
     summary = "List credits",
     description = "Returns a paginated list of credits, excluding initial and failed resolutions. " +
       "Supports filtering by status, prison (single, multiple, region, category, population), " +
-      "amount, prisoner details, resolution, review state, received date range, owner, and validity. " +
+      "amount (exact, range, endswith, regex, and exclusions), prisoner details, resolution, review state, received date range, owner, and validity. " +
       "Each credit includes a computed `status` field derived from the resolution, prison assignment, " +
       "blocked state, and sender information completeness. " +
       "Possible status values: credit_pending, credited, refund_pending, refunded, failed.",
@@ -88,6 +88,18 @@ class CreditResource(
     @Parameter(description = "Filter by maximum amount (inclusive) in pence", example = "10000")
     @RequestParam("amount__lte")
     amountLte: Long? = null,
+    @Parameter(description = "Filter by last digits of amount in pence (endswith match)", example = "50")
+    @RequestParam("amount__endswith")
+    amountEndswith: String? = null,
+    @Parameter(description = "Filter by regex pattern on amount in pence", example = "^1.*")
+    @RequestParam("amount__regex")
+    amountRegex: String? = null,
+    @Parameter(description = "Exclude credits where amount ends with the given suffix", example = "00")
+    @RequestParam("exclude_amount__endswith")
+    excludeAmountEndswith: String? = null,
+    @Parameter(description = "Exclude credits where amount matches the given regex pattern", example = "^1.*")
+    @RequestParam("exclude_amount__regex")
+    excludeAmountRegex: String? = null,
     @Parameter(description = "Filter by prisoner name (case-insensitive substring match)", example = "Smith")
     @RequestParam("prisoner_name")
     prisonerName: String? = null,
@@ -125,6 +137,10 @@ class CreditResource(
       amount = amount,
       amountGte = amountGte,
       amountLte = amountLte,
+      amountEndswith = amountEndswith,
+      amountRegex = amountRegex,
+      excludeAmountEndswith = excludeAmountEndswith,
+      excludeAmountRegex = excludeAmountRegex,
       prisonerName = prisonerName,
       prisonerNumber = prisonerNumber,
       user = user,

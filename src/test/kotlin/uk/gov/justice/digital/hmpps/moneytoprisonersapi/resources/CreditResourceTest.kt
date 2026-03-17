@@ -168,6 +168,42 @@ class CreditResourceTest {
     }
 
     @Test
+    fun `CRD-053 passes amount__endswith filter to service`() {
+      whenever(creditService.listCredits(amountEndswith = "50")).thenReturn(emptyList())
+
+      creditResource.listCredits(amountEndswith = "50")
+
+      verify(creditService).listCredits(amountEndswith = "50")
+    }
+
+    @Test
+    fun `CRD-054 passes amount__regex filter to service`() {
+      whenever(creditService.listCredits(amountRegex = "^1.*")).thenReturn(emptyList())
+
+      creditResource.listCredits(amountRegex = "^1.*")
+
+      verify(creditService).listCredits(amountRegex = "^1.*")
+    }
+
+    @Test
+    fun `CRD-055 passes exclude_amount__endswith filter to service`() {
+      whenever(creditService.listCredits(excludeAmountEndswith = "00")).thenReturn(emptyList())
+
+      creditResource.listCredits(excludeAmountEndswith = "00")
+
+      verify(creditService).listCredits(excludeAmountEndswith = "00")
+    }
+
+    @Test
+    fun `CRD-056 passes exclude_amount__regex filter to service`() {
+      whenever(creditService.listCredits(excludeAmountRegex = "^1.*")).thenReturn(emptyList())
+
+      creditResource.listCredits(excludeAmountRegex = "^1.*")
+
+      verify(creditService).listCredits(excludeAmountRegex = "^1.*")
+    }
+
+    @Test
     fun `passes resolution filter to service`() {
       whenever(creditService.listCredits(resolution = CreditResolution.CREDITED)).thenReturn(emptyList())
 

@@ -654,6 +654,84 @@ class CreditServiceTest {
     }
 
     @Test
+    fun `CRD-053 filters by amount__endswith`() {
+      val c1 = createCredit(id = 1, amount = 1050, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, amount = 2050, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, amount = 1099, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(amountEndswith = "50")
+
+      assertThat(result).hasSize(2)
+      assertThat(result.map { it.id }).containsExactlyInAnyOrder(1L, 2L)
+    }
+
+    @Test
+    fun `CRD-053 amount__endswith with no matches returns empty`() {
+      val c1 = createCredit(id = 1, amount = 1000, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1))
+
+      val result = creditService.listCredits(amountEndswith = "99")
+
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `CRD-054 filters by amount__regex`() {
+      val c1 = createCredit(id = 1, amount = 1000, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, amount = 2000, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, amount = 1500, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(amountRegex = "^1.*")
+
+      assertThat(result).hasSize(2)
+      assertThat(result.map { it.id }).containsExactlyInAnyOrder(1L, 3L)
+    }
+
+    @Test
+    fun `CRD-054 amount__regex with no matches returns empty`() {
+      val c1 = createCredit(id = 1, amount = 1000, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1))
+
+      val result = creditService.listCredits(amountRegex = "^9.*")
+
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `CRD-055 filters by exclude_amount__endswith`() {
+      val c1 = createCredit(id = 1, amount = 1050, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, amount = 2050, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, amount = 1099, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(excludeAmountEndswith = "50")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(3L)
+    }
+
+    @Test
+    fun `CRD-056 filters by exclude_amount__regex`() {
+      val c1 = createCredit(id = 1, amount = 1000, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, amount = 2000, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, amount = 1500, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(excludeAmountRegex = "^1.*")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(2L)
+    }
+
+    @Test
     fun `CRD-057 multiple amount filters combine with AND`() {
       val c1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, amount = 1000, resolution = CreditResolution.CREDITED)
@@ -665,6 +743,20 @@ class CreditServiceTest {
 
       assertThat(result).hasSize(1)
       assertThat(result[0].amount).isEqualTo(1000L)
+    }
+
+    @Test
+    fun `CRD-057 endswith and regex combine with AND`() {
+      val c1 = createCredit(id = 1, amount = 1050, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, amount = 2050, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, amount = 1099, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(amountEndswith = "50", amountRegex = "^1.*")
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
     }
 
     @Test
