@@ -440,5 +440,61 @@ class CreditResourceTest {
 
       verify(creditService).listCredits(source = CreditSource.UNKNOWN)
     }
+
+    @Test
+    fun `CRD-086 passes logged_at__gte and logged_at__lt filters to service`() {
+      val gte = LocalDateTime.of(2024, 3, 15, 0, 0)
+      val lt = LocalDateTime.of(2024, 3, 16, 0, 0)
+      whenever(creditService.listCredits(loggedAtGte = gte, loggedAtLt = lt)).thenReturn(emptyList())
+
+      creditResource.listCredits(loggedAtGte = gte, loggedAtLt = lt)
+
+      verify(creditService).listCredits(loggedAtGte = gte, loggedAtLt = lt)
+    }
+
+    @Test
+    fun `CRD-087 passes security_check__isnull filter to service`() {
+      whenever(creditService.listCredits(securityCheckIsnull = true)).thenReturn(emptyList())
+
+      creditResource.listCredits(securityCheckIsnull = true)
+
+      verify(creditService).listCredits(securityCheckIsnull = true)
+    }
+
+    @Test
+    fun `CRD-088 passes security_check__actioned_by__isnull filter to service`() {
+      whenever(creditService.listCredits(securityCheckActionedByIsnull = true)).thenReturn(emptyList())
+
+      creditResource.listCredits(securityCheckActionedByIsnull = true)
+
+      verify(creditService).listCredits(securityCheckActionedByIsnull = true)
+    }
+
+    @Test
+    fun `CRD-089 passes exclude_credit__in filter to service`() {
+      whenever(creditService.listCredits(excludeCreditIn = listOf(1L, 2L))).thenReturn(emptyList())
+
+      creditResource.listCredits(excludeCreditIn = listOf(1L, 2L))
+
+      verify(creditService).listCredits(excludeCreditIn = listOf(1L, 2L))
+    }
+
+    @Test
+    fun `CRD-090 passes monitored filter to service`() {
+      whenever(creditService.listCredits(monitored = true)).thenReturn(emptyList())
+
+      creditResource.listCredits(monitored = true)
+
+      verify(creditService).listCredits(monitored = true)
+    }
+
+    @Test
+    fun `CRD-091 passes pk filter to service`() {
+      whenever(creditService.listCredits(pk = listOf(1L, 3L))).thenReturn(emptyList())
+
+      creditResource.listCredits(pk = listOf(1L, 3L))
+
+      verify(creditService).listCredits(pk = listOf(1L, 3L))
+    }
   }
 }

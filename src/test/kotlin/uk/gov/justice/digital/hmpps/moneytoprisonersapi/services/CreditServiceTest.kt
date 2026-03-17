@@ -18,13 +18,18 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Payment
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonCategory
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPopulation
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Transaction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -36,6 +41,12 @@ class CreditServiceTest {
 
   @Mock
   private lateinit var prisonRepository: PrisonRepository
+
+  @Mock
+  private lateinit var senderProfileRepository: SenderProfileRepository
+
+  @Mock
+  private lateinit var prisonerProfileRepository: PrisonerProfileRepository
 
   @InjectMocks
   private lateinit var creditService: CreditService
@@ -1079,6 +1090,210 @@ class CreditServiceTest {
 
       assertThat(result).hasSize(1)
       assertThat(result[0].id).isEqualTo(3L)
+    }
+
+    @Test
+    fun `CRD-086 filters by logged_at__gte truncated to UTC date`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59) })
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.logs.add(Log(id = 2, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) })
+      val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
+      c3.logs.add(Log(id = 3, action = LogAction.CREDITED, credit = c3).also { it.created = LocalDateTime.of(2024, 3, 16, 8, 0) })
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(loggedAtGte = LocalDateTime.of(2024, 3, 15, 0, 0))
+
+      assertThat(result).hasSize(2)
+      assertThat(result.map { it.id }).containsExactlyInAnyOrder(2L, 3L)
+    }
+
+    @Test
+    fun `CRD-086 filters by logged_at__lt truncated to UTC date`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59) })
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.logs.add(Log(id = 2, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) })
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(loggedAtLt = LocalDateTime.of(2024, 3, 15, 0, 0))
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-086 logged_at filter uses date truncation ignoring time component`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c1).also { it.created = LocalDateTime.of(2024, 3, 15, 0, 0) })
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.logs.add(Log(id = 2, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 23, 59) })
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(
+        loggedAtGte = LocalDateTime.of(2024, 3, 15, 0, 0),
+        loggedAtLt = LocalDateTime.of(2024, 3, 16, 0, 0),
+      )
+
+      assertThat(result).hasSize(2)
+    }
+
+    @Test
+    fun `CRD-086 credits with no logs are excluded by logged_at filter`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) })
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(loggedAtGte = LocalDateTime.of(2024, 3, 15, 0, 0))
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(2L)
+    }
+
+    @Test
+    fun `CRD-087 filters security_check__isnull=true returns credits without security check`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.securityCheck = SecurityCheck(id = 1, credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(securityCheckIsnull = true)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-087 filters security_check__isnull=false returns credits with security check`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.securityCheck = SecurityCheck(id = 1, credit = c2)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(securityCheckIsnull = false)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(2L)
+    }
+
+    @Test
+    fun `CRD-088 filters security_check__actioned_by__isnull=true returns checks not yet actioned`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.securityCheck = SecurityCheck(id = 1, credit = c1, actionedBy = null)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.securityCheck = SecurityCheck(id = 2, credit = c2, actionedBy = "admin1")
+      val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(securityCheckActionedByIsnull = true)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-088 filters security_check__actioned_by__isnull=false returns checks that have been actioned`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      c1.securityCheck = SecurityCheck(id = 1, credit = c1, actionedBy = null)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      c2.securityCheck = SecurityCheck(id = 2, credit = c2, actionedBy = "admin1")
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(securityCheckActionedByIsnull = false)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(2L)
+    }
+
+    @Test
+    fun `CRD-089 filters exclude_credit__in excludes specific credit IDs`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(excludeCreditIn = listOf(1L, 3L))
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(2L)
+    }
+
+    @Test
+    fun `CRD-089 exclude_credit__in with empty list returns all`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(excludeCreditIn = emptyList())
+
+      assertThat(result).hasSize(2)
+    }
+
+    @Test
+    fun `CRD-090 filters monitored=true returns credits linked to monitored profiles`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+      whenever(senderProfileRepository.findCreditIdsWithMonitoredSenderProfiles()).thenReturn(setOf(1L))
+      whenever(prisonerProfileRepository.findCreditIdsWithMonitoredPrisonerProfiles()).thenReturn(setOf(2L))
+
+      val result = creditService.listCredits(monitored = true)
+
+      assertThat(result).hasSize(2)
+      assertThat(result.map { it.id }).containsExactlyInAnyOrder(1L, 2L)
+    }
+
+    @Test
+    fun `CRD-090 filters monitored=true with no monitored profiles returns empty`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1))
+      whenever(senderProfileRepository.findCreditIdsWithMonitoredSenderProfiles()).thenReturn(emptySet())
+      whenever(prisonerProfileRepository.findCreditIdsWithMonitoredPrisonerProfiles()).thenReturn(emptySet())
+
+      val result = creditService.listCredits(monitored = true)
+
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `CRD-091 filters by pk (multiple credit IDs)`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2, c3))
+
+      val result = creditService.listCredits(pk = listOf(1L, 3L))
+
+      assertThat(result).hasSize(2)
+      assertThat(result.map { it.id }).containsExactlyInAnyOrder(1L, 3L)
+    }
+
+    @Test
+    fun `CRD-091 pk with single ID returns one credit`() {
+      val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+        .thenReturn(listOf(c1, c2))
+
+      val result = creditService.listCredits(pk = listOf(2L))
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(2L)
     }
   }
 

@@ -36,7 +36,8 @@ class CreditResource(
     description = "Returns a paginated list of credits, excluding initial and failed resolutions. " +
       "Supports filtering by status, prison (single, multiple, region, category, population), " +
       "amount (exact, range, endswith, regex, and exclusions), prisoner details, resolution, review state, received date range, owner, validity, " +
-      "sender/payment details (name, sort code, account number, roll number, email, IP address, card details, postcode, payment reference), and source type. " +
+      "sender/payment details (name, sort code, account number, roll number, email, IP address, card details, postcode, payment reference), source type, " +
+      "log creation date range, security check presence and actioned state, credit ID inclusion/exclusion, and monitored profile linkage. " +
       "Each credit includes a computed `status` field derived from the resolution, prison assignment, " +
       "blocked state, and sender information completeness. " +
       "Possible status values: credit_pending, credited, refund_pending, refunded, failed.",
@@ -170,6 +171,29 @@ class CreditResource(
     @Parameter(description = "Filter by credit source type: bank_transfer (has transaction), online (has payment), unknown (neither)")
     @RequestParam("source")
     source: CreditSource? = null,
+    @Parameter(description = "Filter by log creation date on or after this datetime (truncated to UTC date, inclusive)", example = "2024-01-01T00:00:00")
+    @RequestParam("logged_at__gte")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    loggedAtGte: LocalDateTime? = null,
+    @Parameter(description = "Filter by log creation date before this datetime (truncated to UTC date, exclusive)", example = "2024-02-01T00:00:00")
+    @RequestParam("logged_at__lt")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    loggedAtLt: LocalDateTime? = null,
+    @Parameter(description = "Filter by presence of security check: true = no check exists, false = check exists")
+    @RequestParam("security_check__isnull")
+    securityCheckIsnull: Boolean? = null,
+    @Parameter(description = "Filter by security check actioned state: true = not yet actioned, false = has been actioned")
+    @RequestParam("security_check__actioned_by__isnull")
+    securityCheckActionedByIsnull: Boolean? = null,
+    @Parameter(description = "Exclude specific credit IDs from results. Pass multiple values (e.g. exclude_credit__in=1&exclude_credit__in=2)")
+    @RequestParam("exclude_credit__in")
+    excludeCreditIn: List<Long>? = null,
+    @Parameter(description = "Filter for credits linked to monitored sender or prisoner profiles")
+    @RequestParam("monitored")
+    monitored: Boolean? = null,
+    @Parameter(description = "Filter by specific credit IDs. Pass multiple values (e.g. pk=1&pk=3)")
+    @RequestParam("pk")
+    pk: List<Long>? = null,
   ): PaginatedResponse<CreditDto> {
     val credits = creditService.listCredits(
       status = status,
@@ -207,6 +231,13 @@ class CreditResource(
       senderPostcode = senderPostcode,
       paymentReference = paymentReference,
       source = source,
+      loggedAtGte = loggedAtGte,
+      loggedAtLt = loggedAtLt,
+      securityCheckIsnull = securityCheckIsnull,
+      securityCheckActionedByIsnull = securityCheckActionedByIsnull,
+      excludeCreditIn = excludeCreditIn,
+      monitored = monitored,
+      pk = pk,
     )
     val results = credits.map { CreditDto.from(it) }
     return PaginatedResponse(

@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Index
+import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
@@ -90,6 +91,12 @@ class Credit(
 
   @OneToOne(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   var payment: Payment? = null
+
+  @OneToMany(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  var logs: MutableList<Log> = mutableListOf()
+
+  @OneToOne(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  var securityCheck: SecurityCheck? = null
 
   @PrePersist
   fun onCreate() {

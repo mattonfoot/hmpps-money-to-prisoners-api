@@ -8,13 +8,22 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonCategory
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPopulation
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerProfile
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SenderProfile
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonCategoryRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonPopulationRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -32,8 +41,24 @@ class CreditResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var prisonPopulationRepository: PrisonPopulationRepository
 
+  @Autowired
+  private lateinit var logRepository: LogRepository
+
+  @Autowired
+  private lateinit var securityCheckRepository: SecurityCheckRepository
+
+  @Autowired
+  private lateinit var senderProfileRepository: SenderProfileRepository
+
+  @Autowired
+  private lateinit var prisonerProfileRepository: PrisonerProfileRepository
+
   @BeforeEach
   fun setUp() {
+    senderProfileRepository.deleteAll()
+    prisonerProfileRepository.deleteAll()
+    logRepository.deleteAll()
+    securityCheckRepository.deleteAll()
     creditRepository.deleteAll()
     prisonRepository.deleteAll()
     prisonCategoryRepository.deleteAll()
@@ -828,6 +853,161 @@ class CreditResourceTest : IntegrationTestBase() {
         .isOk
         .expectBody()
         .jsonPath("$.count").isEqualTo(1)
+    }
+  }
+
+  @Nested
+  @DisplayName("Credit List Filters - Other (CRD-086 to CRD-091)")
+  inner class CreditListFiltersOtherExtended {
+
+    @Test
+    @DisplayName("CRD-086 - Filter logged_at__gte truncated to UTC date")
+    fun `should filter by logged_at__gte`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      logRepository.save(Log(action = LogAction.CREDITED, credit = credit1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59) })
+      logRepository.save(Log(action = LogAction.CREDITED, credit = credit2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) })
+
+      webTestClient.get()
+        .uri("/credits/?logged_at__gte=2024-03-15T00:00:00")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-086 - Filter logged_at__lt truncated to UTC date")
+    fun `should filter by logged_at__lt`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      logRepository.save(Log(action = LogAction.CREDITED, credit = credit1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59) })
+      logRepository.save(Log(action = LogAction.CREDITED, credit = credit2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) })
+
+      webTestClient.get()
+        .uri("/credits/?logged_at__lt=2024-03-15T00:00:00")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-087 - Filter security_check__isnull=true returns credits without security check")
+    fun `should filter security_check__isnull true`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      securityCheckRepository.save(SecurityCheck(credit = credit2))
+
+      webTestClient.get()
+        .uri("/credits/?security_check__isnull=true")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-087 - Filter security_check__isnull=false returns credits with security check")
+    fun `should filter security_check__isnull false`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      securityCheckRepository.save(SecurityCheck(credit = credit2))
+
+      webTestClient.get()
+        .uri("/credits/?security_check__isnull=false")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-088 - Filter security_check__actioned_by__isnull=true returns unactioned checks")
+    fun `should filter security_check actioned_by isnull true`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      securityCheckRepository.save(SecurityCheck(credit = credit1, actionedBy = null))
+      securityCheckRepository.save(SecurityCheck(credit = credit2, actionedBy = "admin1"))
+
+      webTestClient.get()
+        .uri("/credits/?security_check__actioned_by__isnull=true")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-089 - Filter exclude_credit__in excludes specific credit IDs")
+    fun `should exclude specific credit IDs`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val credit3 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?exclude_credit__in=${credit1.id}&exclude_credit__in=${credit3.id}")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].id").isEqualTo(credit2.id!!.toInt())
+    }
+
+    @Test
+    @DisplayName("CRD-090 - Filter monitored=true returns credits linked to monitored profiles")
+    fun `should filter monitored credits`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val credit3 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+
+      val senderProfile = SenderProfile()
+      senderProfile.credits.add(credit1)
+      senderProfile.monitoringUsers.add("user1")
+      senderProfileRepository.save(senderProfile)
+
+      val prisonerProfile = PrisonerProfile(prisonerNumber = "A1234BC")
+      prisonerProfile.credits.add(credit2)
+      prisonerProfile.monitoringUsers.add("user2")
+      prisonerProfileRepository.save(prisonerProfile)
+
+      webTestClient.get()
+        .uri("/credits/?monitored=true")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(2)
+    }
+
+    @Test
+    @DisplayName("CRD-091 - Filter pk={id1,id2} returns specific credits")
+    fun `should filter by pk`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val credit3 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?pk=${credit1.id}&pk=${credit3.id}")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(2)
     }
   }
 

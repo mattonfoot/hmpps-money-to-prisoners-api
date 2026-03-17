@@ -6,6 +6,8 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResol
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -15,6 +17,8 @@ class CreditNotFoundException(id: Long) : RuntimeException("Credit not found wit
 class CreditService(
   private val creditRepository: CreditRepository,
   private val prisonRepository: PrisonRepository,
+  private val senderProfileRepository: SenderProfileRepository,
+  private val prisonerProfileRepository: PrisonerProfileRepository,
 ) {
 
   fun listCompletedCredits(): List<Credit> = creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED))
@@ -57,6 +61,13 @@ class CreditService(
     senderPostcode: String? = null,
     paymentReference: String? = null,
     source: CreditSource? = null,
+    loggedAtGte: LocalDateTime? = null,
+    loggedAtLt: LocalDateTime? = null,
+    securityCheckIsnull: Boolean? = null,
+    securityCheckActionedByIsnull: Boolean? = null,
+    excludeCreditIn: List<Long>? = null,
+    monitored: Boolean? = null,
+    pk: List<Long>? = null,
   ): List<Credit> {
     var credits = if (status != null || valid != null) {
       listAllCredits()
@@ -238,6 +249,52 @@ class CreditService(
         CreditSource.ONLINE -> credits.filter { it.payment != null }
         CreditSource.UNKNOWN -> credits.filter { it.transaction == null && it.payment == null }
       }
+    }
+
+    if (loggedAtGte != null) {
+      val gteDate = loggedAtGte.toLocalDate()
+      credits = credits.filter { credit ->
+        credit.logs.any { log -> log.created != null && !log.created!!.toLocalDate().isBefore(gteDate) }
+      }
+    }
+
+    if (loggedAtLt != null) {
+      val ltDate = loggedAtLt.toLocalDate()
+      credits = credits.filter { credit ->
+        credit.logs.any { log -> log.created != null && log.created!!.toLocalDate().isBefore(ltDate) }
+      }
+    }
+
+    if (securityCheckIsnull != null) {
+      credits = if (securityCheckIsnull) {
+        credits.filter { it.securityCheck == null }
+      } else {
+        credits.filter { it.securityCheck != null }
+      }
+    }
+
+    if (securityCheckActionedByIsnull != null) {
+      credits = if (securityCheckActionedByIsnull) {
+        credits.filter { it.securityCheck != null && it.securityCheck!!.actionedBy == null }
+      } else {
+        credits.filter { it.securityCheck != null && it.securityCheck!!.actionedBy != null }
+      }
+    }
+
+    if (!excludeCreditIn.isNullOrEmpty()) {
+      val excludeSet = excludeCreditIn.toSet()
+      credits = credits.filter { it.id !in excludeSet }
+    }
+
+    if (monitored == true) {
+      val monitoredCreditIds = senderProfileRepository.findCreditIdsWithMonitoredSenderProfiles() +
+        prisonerProfileRepository.findCreditIdsWithMonitoredPrisonerProfiles()
+      credits = credits.filter { it.id in monitoredCreditIds }
+    }
+
+    if (!pk.isNullOrEmpty()) {
+      val pkSet = pk.toSet()
+      credits = credits.filter { it.id in pkSet }
     }
 
     return credits
