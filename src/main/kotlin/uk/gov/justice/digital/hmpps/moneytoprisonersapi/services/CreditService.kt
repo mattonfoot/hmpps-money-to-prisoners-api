@@ -35,7 +35,11 @@ class CreditService(
     receivedAtLt: LocalDateTime? = null,
     valid: Boolean? = null,
   ): List<Credit> {
-    var credits = listCompletedCredits()
+    var credits = if (status != null || valid != null) {
+      listAllCredits()
+    } else {
+      listCompletedCredits()
+    }
 
     if (status != null) {
       credits = credits.filter { CreditStatus.computeFrom(it) == status }

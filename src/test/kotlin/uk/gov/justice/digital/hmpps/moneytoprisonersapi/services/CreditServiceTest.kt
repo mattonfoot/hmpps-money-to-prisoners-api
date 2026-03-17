@@ -289,8 +289,7 @@ class CreditServiceTest {
     fun `filters by status credit_pending`() {
       val creditPending = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
       val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
-        .thenReturn(listOf(creditPending, credited))
+      whenever(creditRepository.findAll()).thenReturn(listOf(creditPending, credited))
 
       val result = creditService.listCredits(status = CreditStatus.CREDIT_PENDING)
 
@@ -302,8 +301,7 @@ class CreditServiceTest {
     fun `filters by status credited`() {
       val creditPending = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
       val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
-        .thenReturn(listOf(creditPending, credited))
+      whenever(creditRepository.findAll()).thenReturn(listOf(creditPending, credited))
 
       val result = creditService.listCredits(status = CreditStatus.CREDITED)
 
@@ -315,8 +313,7 @@ class CreditServiceTest {
     fun `filters by status refund_pending`() {
       val refundPending = createCredit(id = 1, prison = null, resolution = CreditResolution.PENDING)
       val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
-        .thenReturn(listOf(refundPending, credited))
+      whenever(creditRepository.findAll()).thenReturn(listOf(refundPending, credited))
 
       val result = creditService.listCredits(status = CreditStatus.REFUND_PENDING)
 
@@ -328,8 +325,7 @@ class CreditServiceTest {
     fun `filters by status refunded`() {
       val refunded = createCredit(id = 1, resolution = CreditResolution.REFUNDED)
       val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
-        .thenReturn(listOf(refunded, credited))
+      whenever(creditRepository.findAll()).thenReturn(listOf(refunded, credited))
 
       val result = creditService.listCredits(status = CreditStatus.REFUNDED)
 
@@ -338,8 +334,20 @@ class CreditServiceTest {
     }
 
     @Test
-    fun `CRD-035 invalid status returns empty set`() {
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+    fun `CRD-034 filters by status failed`() {
+      val failed = createCredit(id = 1, resolution = CreditResolution.FAILED)
+      val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findAll()).thenReturn(listOf(failed, credited))
+
+      val result = creditService.listCredits(status = CreditStatus.FAILED)
+
+      assertThat(result).hasSize(1)
+      assertThat(result[0].id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `CRD-035 invalid status returns empty set when no matching credits`() {
+      whenever(creditRepository.findAll())
         .thenReturn(listOf(createCredit(id = 1, resolution = CreditResolution.CREDITED)))
 
       val result = creditService.listCredits(status = CreditStatus.FAILED)
@@ -520,8 +528,7 @@ class CreditServiceTest {
       val creditPending = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
       val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       val refundPending = createCredit(id = 3, prison = null, resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
-        .thenReturn(listOf(creditPending, credited, refundPending))
+      whenever(creditRepository.findAll()).thenReturn(listOf(creditPending, credited, refundPending))
 
       val result = creditService.listCredits(valid = true)
 
@@ -534,8 +541,7 @@ class CreditServiceTest {
       val creditPending = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
       val credited = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       val refundPending = createCredit(id = 3, prison = null, resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
-        .thenReturn(listOf(creditPending, credited, refundPending))
+      whenever(creditRepository.findAll()).thenReturn(listOf(creditPending, credited, refundPending))
 
       val result = creditService.listCredits(valid = false)
 

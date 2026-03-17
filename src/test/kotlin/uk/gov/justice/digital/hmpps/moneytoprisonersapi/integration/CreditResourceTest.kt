@@ -230,6 +230,23 @@ class CreditResourceTest : IntegrationTestBase() {
     }
 
     @Test
+    @DisplayName("CRD-034 - Filter status=failed")
+    fun `should filter by status failed`() {
+      createAndSaveCredit(resolution = CreditResolution.FAILED)
+      createAndSaveCredit(resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?status=FAILED")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].status").isEqualTo("failed")
+    }
+
+    @Test
     @DisplayName("CRD-035 - Invalid status returns empty set")
     fun `should return empty for status with no matches`() {
       createAndSaveCredit(resolution = CreditResolution.CREDITED)
