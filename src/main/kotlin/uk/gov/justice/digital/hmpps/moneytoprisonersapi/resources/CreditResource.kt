@@ -38,6 +38,9 @@ class CreditResource(
       "amount (exact, range, endswith, regex, and exclusions), prisoner details, resolution, review state, received date range, owner, validity, " +
       "sender/payment details (name, sort code, account number, roll number, email, IP address, card details, postcode, payment reference), source type, " +
       "log creation date range, security check presence and actioned state, credit ID inclusion/exclusion, and monitored profile linkage. " +
+      "Full-text search across prisoner_name, prisoner_number, sender_name, amount (£nn.nn format), and payment UUID prefix. " +
+      "Simple search across transaction sender_name, payment cardholder_name, payment email, and prisoner_number. " +
+      "Ordering by created, received_at, amount, prisoner_number, prisoner_name (prefix with - for descending). " +
       "Each credit includes a computed `status` field derived from the resolution, prison assignment, " +
       "blocked state, and sender information completeness. " +
       "Possible status values: credit_pending, credited, refund_pending, refunded, failed.",
@@ -64,6 +67,27 @@ class CreditResource(
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/")
   fun listCredits(
+    @Parameter(
+      description = "Full-text search across prisoner_name, prisoner_number, sender_name, " +
+        "amount (£nn.nn format), and payment UUID prefix (8 chars). All words must match (AND logic).",
+      example = "john smith",
+    )
+    @RequestParam("search")
+    search: String? = null,
+    @Parameter(
+      description = "Simple search across transaction sender_name, payment cardholder_name, " +
+        "payment email, and prisoner_number (case-insensitive substring match)",
+      example = "alice",
+    )
+    @RequestParam("simple_search")
+    simpleSearch: String? = null,
+    @Parameter(
+      description = "Order results by field. Allowed fields: created, received_at, amount, " +
+        "prisoner_number, prisoner_name. Prefix with - for descending order.",
+      example = "-created",
+    )
+    @RequestParam("ordering")
+    ordering: String? = null,
     @Parameter(description = "Filter by computed status (credit_pending, credited, refund_pending, refunded, failed)")
     @RequestParam("status")
     status: CreditStatus? = null,
@@ -196,6 +220,9 @@ class CreditResource(
     pk: List<Long>? = null,
   ): PaginatedResponse<CreditDto> {
     val credits = creditService.listCredits(
+      search = search,
+      simpleSearch = simpleSearch,
+      ordering = ordering,
       status = status,
       prisons = prison,
       prisonIsNull = prisonIsNull,

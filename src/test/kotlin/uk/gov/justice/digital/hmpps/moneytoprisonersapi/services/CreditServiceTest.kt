@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Prisone
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
 class CreditServiceTest {
@@ -1331,6 +1332,383 @@ class CreditServiceTest {
         creditService.transitionResolution(1L, CreditResolution.CREDITED)
       }.isInstanceOf(CreditNotFoundException::class.java)
         .hasMessage("Credit not found with id: 1")
+    }
+  }
+
+  @Nested
+  @DisplayName("CRD-095: search full text search")
+  inner class SearchFullText {
+
+    @Test
+    fun `search matches prisoner_name (case insensitive)`() {
+      val credit1 = createCredit(id = 1, prisonerName = "John Smith", resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, prisonerName = "Jane Doe", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(search = "john")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `search matches prisoner_number (case insensitive)`() {
+      val credit1 = createCredit(id = 1, prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, prisonerNumber = "B5678DE", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(search = "a1234")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `search matches transaction sender_name (case insensitive)`() {
+      val credit1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val txn1 = Transaction(senderName = "Alice Sender")
+      txn1.credit = credit1
+      credit1.transaction = txn1
+
+      val credit2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(search = "alice")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `search matches payment cardholder_name (case insensitive)`() {
+      val credit1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val payment1 = Payment(cardholderName = "Bob Cardholder")
+      payment1.credit = credit1
+      credit1.payment = payment1
+
+      val credit2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(search = "bob")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `search matches amount in pounds format (exact pence)`() {
+      val credit1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED) // £5.00
+      val credit2 = createCredit(id = 2, amount = 1050, resolution = CreditResolution.CREDITED) // £10.50
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(search = "5.00")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `search matches amount in pounds format with pound sign`() {
+      val credit1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED) // £5.00
+      val credit2 = createCredit(id = 2, amount = 1050, resolution = CreditResolution.CREDITED) // £10.50
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(search = "£5.00")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `search matches amount without pence using startswith`() {
+      val credit1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED) // £5.00
+      val credit2 = createCredit(id = 2, amount = 5050, resolution = CreditResolution.CREDITED) // £50.50
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(search = "5")
+
+      assertThat(result).containsExactly(credit1, credit2)
+    }
+
+    @Test
+    fun `search matches payment UUID prefix (8 chars)`() {
+      val uuid = UUID.fromString("abcdef12-3456-7890-abcd-ef1234567890")
+      val credit1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val payment1 = Payment(uuid = uuid, cardholderName = "Test")
+      payment1.credit = credit1
+      credit1.payment = payment1
+
+      val credit2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(search = "abcdef12")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `search does not match UUID prefix when word is not 8 chars`() {
+      val uuid = UUID.fromString("abcdef12-3456-7890-abcd-ef1234567890")
+      val credit1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val payment1 = Payment(uuid = uuid, cardholderName = "Test")
+      payment1.credit = credit1
+      credit1.payment = payment1
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1))
+
+      val result = creditService.listCredits(search = "abcdef")
+
+      assertThat(result).isEmpty()
+    }
+  }
+
+  @Nested
+  @DisplayName("CRD-096: search AND logic")
+  inner class SearchAndLogic {
+
+    @Test
+    fun `all search words must match somewhere (AND logic)`() {
+      val credit1 = createCredit(id = 1, prisonerName = "John Smith", prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, prisonerName = "John Doe", prisonerNumber = "B5678DE", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(search = "john smith")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `words can match across different fields`() {
+      val credit1 = createCredit(id = 1, prisonerName = "John Smith", prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1))
+
+      val result = creditService.listCredits(search = "john A1234")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `returns empty when one word does not match`() {
+      val credit1 = createCredit(id = 1, prisonerName = "John Smith", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1))
+
+      val result = creditService.listCredits(search = "john nonexistent")
+
+      assertThat(result).isEmpty()
+    }
+  }
+
+  @Nested
+  @DisplayName("CRD-097: simple_search")
+  inner class SimpleSearch {
+
+    @Test
+    fun `simple_search matches transaction sender_name (case insensitive)`() {
+      val credit1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val txn = Transaction(senderName = "Alice Sender")
+      txn.credit = credit1
+      credit1.transaction = txn
+
+      val credit2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(simpleSearch = "alice")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `simple_search matches payment cardholder_name (case insensitive)`() {
+      val credit1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val payment = Payment(cardholderName = "Bob Cardholder")
+      payment.credit = credit1
+      credit1.payment = payment
+
+      val credit2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(simpleSearch = "bob")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `simple_search matches payment email (case insensitive)`() {
+      val credit1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
+      val payment = Payment(email = "test@example.com")
+      payment.credit = credit1
+      credit1.payment = payment
+
+      val credit2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(simpleSearch = "test@example")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `simple_search matches prisoner_number (case insensitive)`() {
+      val credit1 = createCredit(id = 1, prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, prisonerNumber = "B5678DE", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(simpleSearch = "a1234")
+
+      assertThat(result).containsExactly(credit1)
+    }
+
+    @Test
+    fun `simple_search does not match prisoner_name`() {
+      val credit1 = createCredit(id = 1, prisonerName = "John Smith", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1))
+
+      val result = creditService.listCredits(simpleSearch = "john")
+
+      assertThat(result).isEmpty()
+    }
+  }
+
+  @Nested
+  @DisplayName("CRD-098: ordering by created, received_at, amount")
+  inner class OrderingByCreatedReceivedAmount {
+
+    @Test
+    fun `ordering by created ascending`() {
+      val credit1 = createCredit(id = 1, resolution = CreditResolution.CREDITED).apply {
+        created = LocalDateTime.of(2024, 1, 1, 10, 0)
+      }
+      val credit2 = createCredit(id = 2, resolution = CreditResolution.CREDITED).apply {
+        created = LocalDateTime.of(2024, 1, 2, 10, 0)
+      }
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit2, credit1))
+
+      val result = creditService.listCredits(ordering = "created")
+
+      assertThat(result).containsExactly(credit1, credit2)
+    }
+
+    @Test
+    fun `ordering by created descending`() {
+      val credit1 = createCredit(id = 1, resolution = CreditResolution.CREDITED).apply {
+        created = LocalDateTime.of(2024, 1, 1, 10, 0)
+      }
+      val credit2 = createCredit(id = 2, resolution = CreditResolution.CREDITED).apply {
+        created = LocalDateTime.of(2024, 1, 2, 10, 0)
+      }
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(ordering = "-created")
+
+      assertThat(result).containsExactly(credit2, credit1)
+    }
+
+    @Test
+    fun `ordering by received_at ascending`() {
+      val credit1 = createCredit(id = 1, resolution = CreditResolution.CREDITED, receivedAt = LocalDateTime.of(2024, 3, 1, 10, 0))
+      val credit2 = createCredit(id = 2, resolution = CreditResolution.CREDITED, receivedAt = LocalDateTime.of(2024, 3, 2, 10, 0))
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit2, credit1))
+
+      val result = creditService.listCredits(ordering = "received_at")
+
+      assertThat(result).containsExactly(credit1, credit2)
+    }
+
+    @Test
+    fun `ordering by received_at descending`() {
+      val credit1 = createCredit(id = 1, resolution = CreditResolution.CREDITED, receivedAt = LocalDateTime.of(2024, 3, 1, 10, 0))
+      val credit2 = createCredit(id = 2, resolution = CreditResolution.CREDITED, receivedAt = LocalDateTime.of(2024, 3, 2, 10, 0))
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(ordering = "-received_at")
+
+      assertThat(result).containsExactly(credit2, credit1)
+    }
+
+    @Test
+    fun `ordering by amount ascending`() {
+      val credit1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, amount = 1000, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit2, credit1))
+
+      val result = creditService.listCredits(ordering = "amount")
+
+      assertThat(result).containsExactly(credit1, credit2)
+    }
+
+    @Test
+    fun `ordering by amount descending`() {
+      val credit1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, amount = 1000, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(ordering = "-amount")
+
+      assertThat(result).containsExactly(credit2, credit1)
+    }
+  }
+
+  @Nested
+  @DisplayName("CRD-099: ordering by prisoner_number, prisoner_name")
+  inner class OrderingByPrisonerFields {
+
+    @Test
+    fun `ordering by prisoner_number ascending`() {
+      val credit1 = createCredit(id = 1, prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, prisonerNumber = "B5678DE", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit2, credit1))
+
+      val result = creditService.listCredits(ordering = "prisoner_number")
+
+      assertThat(result).containsExactly(credit1, credit2)
+    }
+
+    @Test
+    fun `ordering by prisoner_number descending`() {
+      val credit1 = createCredit(id = 1, prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, prisonerNumber = "B5678DE", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(ordering = "-prisoner_number")
+
+      assertThat(result).containsExactly(credit2, credit1)
+    }
+
+    @Test
+    fun `ordering by prisoner_name ascending`() {
+      val credit1 = createCredit(id = 1, prisonerName = "Alice Adams", resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, prisonerName = "Bob Brown", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit2, credit1))
+
+      val result = creditService.listCredits(ordering = "prisoner_name")
+
+      assertThat(result).containsExactly(credit1, credit2)
+    }
+
+    @Test
+    fun `ordering by prisoner_name descending`() {
+      val credit1 = createCredit(id = 1, prisonerName = "Alice Adams", resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, prisonerName = "Bob Brown", resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(ordering = "-prisoner_name")
+
+      assertThat(result).containsExactly(credit2, credit1)
+    }
+
+    @Test
+    fun `nulls sort last when ordering ascending`() {
+      val credit1 = createCredit(id = 1, prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, prisonerNumber = null, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit2, credit1))
+
+      val result = creditService.listCredits(ordering = "prisoner_number")
+
+      assertThat(result).containsExactly(credit1, credit2)
+    }
+
+    @Test
+    fun `nulls sort last when ordering descending`() {
+      val credit1 = createCredit(id = 1, prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      val credit2 = createCredit(id = 2, prisonerNumber = null, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByResolutionNotIn(any())).thenReturn(listOf(credit1, credit2))
+
+      val result = creditService.listCredits(ordering = "-prisoner_number")
+
+      assertThat(result).containsExactly(credit1, credit2)
     }
   }
 }

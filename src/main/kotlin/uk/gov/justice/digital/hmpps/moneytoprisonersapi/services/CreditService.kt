@@ -26,6 +26,9 @@ class CreditService(
   fun listAllCredits(): List<Credit> = creditRepository.findAll()
 
   fun listCredits(
+    search: String? = null,
+    simpleSearch: String? = null,
+    ordering: String? = null,
     status: CreditStatus? = null,
     prisons: List<String>? = null,
     prisonIsNull: Boolean? = null,
@@ -297,7 +300,98 @@ class CreditService(
       credits = credits.filter { it.id in pkSet }
     }
 
+    if (!search.isNullOrBlank()) {
+      credits = applySearch(credits, search)
+    }
+
+    if (!simpleSearch.isNullOrBlank()) {
+      credits = applySimpleSearch(credits, simpleSearch)
+    }
+
+    if (!ordering.isNullOrBlank()) {
+      credits = applyOrdering(credits, ordering)
+    }
+
     return credits
+  }
+
+  private val amountSearchRegex = Regex("^£?(\\d+(?:\\.\\d\\d)?)$")
+
+  private fun matchesSearchWord(credit: Credit, word: String): Boolean {
+    if (credit.prisonerName?.contains(word, ignoreCase = true) == true) return true
+    if (credit.prisonerNumber?.contains(word, ignoreCase = true) == true) return true
+    if (credit.transaction?.senderName?.contains(word, ignoreCase = true) == true) return true
+    if (credit.payment?.cardholderName?.contains(word, ignoreCase = true) == true) return true
+
+    val amountMatch = amountSearchRegex.find(word)
+    if (amountMatch != null) {
+      val amountStr = amountMatch.groupValues[1]
+      if (amountStr.contains(".")) {
+        val parts = amountStr.split(".")
+        val pence = parts[0].toLong() * 100 + parts[1].toLong()
+        if (credit.amount == pence) return true
+      } else {
+        if (credit.amount.toString().startsWith(amountStr)) return true
+      }
+    }
+
+    if (word.length == 8) {
+      val uuidStr = credit.payment?.uuid?.toString()?.replace("-", "") ?: ""
+      if (uuidStr.startsWith(word, ignoreCase = true)) return true
+    }
+
+    return false
+  }
+
+  private fun applySearch(credits: List<Credit>, search: String): List<Credit> {
+    val words = search.trim().split("\\s+".toRegex())
+    return credits.filter { credit ->
+      words.all { word -> matchesSearchWord(credit, word) }
+    }
+  }
+
+  private fun applySimpleSearch(credits: List<Credit>, simpleSearch: String): List<Credit> {
+    val term = simpleSearch.trim()
+    return credits.filter { credit ->
+      credit.transaction?.senderName?.contains(term, ignoreCase = true) == true ||
+        credit.payment?.cardholderName?.contains(term, ignoreCase = true) == true ||
+        credit.payment?.email?.contains(term, ignoreCase = true) == true ||
+        credit.prisonerNumber?.contains(term, ignoreCase = true) == true
+    }
+  }
+
+  private val allowedOrderingFields = setOf("created", "received_at", "amount", "prisoner_number", "prisoner_name")
+
+  private fun applyOrdering(credits: List<Credit>, ordering: String): List<Credit> {
+    val descending = ordering.startsWith("-")
+    val field = ordering.removePrefix("-")
+    if (field !in allowedOrderingFields) return credits
+
+    val comparator: Comparator<Credit> = when (field) {
+      "created" -> nullsLastComparator(descending) { it.created }
+      "received_at" -> nullsLastComparator(descending) { it.receivedAt }
+      "amount" -> if (descending) compareByDescending { it.amount } else compareBy { it.amount }
+      "prisoner_number" -> nullsLastComparator(descending) { it.prisonerNumber }
+      "prisoner_name" -> nullsLastComparator(descending) { it.prisonerName }
+      else -> return credits
+    }
+
+    return credits.sortedWith(comparator)
+  }
+
+  private fun <T : Comparable<T>> nullsLastComparator(
+    descending: Boolean,
+    selector: (Credit) -> T?,
+  ): Comparator<Credit> = Comparator { a, b ->
+    val va = selector(a)
+    val vb = selector(b)
+    when {
+      va == null && vb == null -> 0
+      va == null -> 1
+      vb == null -> -1
+      descending -> vb.compareTo(va)
+      else -> va.compareTo(vb)
+    }
   }
 
   fun createCredit(

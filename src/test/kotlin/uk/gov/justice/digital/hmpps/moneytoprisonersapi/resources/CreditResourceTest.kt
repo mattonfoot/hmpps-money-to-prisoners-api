@@ -496,5 +496,32 @@ class CreditResourceTest {
 
       verify(creditService).listCredits(pk = listOf(1L, 3L))
     }
+
+    @Test
+    fun `CRD-095 passes search parameter to service`() {
+      whenever(creditService.listCredits(search = "john smith")).thenReturn(emptyList())
+
+      creditResource.listCredits(search = "john smith")
+
+      verify(creditService).listCredits(search = "john smith")
+    }
+
+    @Test
+    fun `CRD-097 passes simple_search parameter to service`() {
+      whenever(creditService.listCredits(simpleSearch = "alice")).thenReturn(emptyList())
+
+      creditResource.listCredits(simpleSearch = "alice")
+
+      verify(creditService).listCredits(simpleSearch = "alice")
+    }
+
+    @Test
+    fun `CRD-098 passes ordering parameter to service`() {
+      whenever(creditService.listCredits(ordering = "-created")).thenReturn(emptyList())
+
+      creditResource.listCredits(ordering = "-created")
+
+      verify(creditService).listCredits(ordering = "-created")
+    }
   }
 }
