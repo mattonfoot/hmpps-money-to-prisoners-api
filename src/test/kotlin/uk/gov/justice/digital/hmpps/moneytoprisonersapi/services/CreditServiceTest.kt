@@ -43,6 +43,7 @@ class CreditServiceTest {
     reconciled: Boolean = false,
     receivedAt: LocalDateTime? = null,
     owner: String? = null,
+    incompleteSenderInfo: Boolean = false,
   ): Credit = Credit(
     id = id,
     amount = amount,
@@ -56,6 +57,7 @@ class CreditServiceTest {
     reconciled = reconciled,
     receivedAt = receivedAt,
     owner = owner,
+    incompleteSenderInfo = incompleteSenderInfo,
   )
 
   @Nested
@@ -153,6 +155,24 @@ class CreditServiceTest {
     fun `credit is refund_pending when blocked and pending`() {
       val credit = createCredit(prison = "LEI", resolution = CreditResolution.PENDING, blocked = true)
       assertThat(creditService.computeStatus(credit)).isEqualTo(CreditStatus.REFUND_PENDING)
+    }
+
+    @Test
+    fun `credit is refund_pending when no prison, pending, and no incomplete sender info`() {
+      val credit = createCredit(prison = null, resolution = CreditResolution.PENDING, incompleteSenderInfo = false)
+      assertThat(creditService.computeStatus(credit)).isEqualTo(CreditStatus.REFUND_PENDING)
+    }
+
+    @Test
+    fun `credit is NOT refund_pending when incomplete sender info is true`() {
+      val credit = createCredit(prison = null, resolution = CreditResolution.PENDING, incompleteSenderInfo = true)
+      assertThat(creditService.computeStatus(credit)).isNotEqualTo(CreditStatus.REFUND_PENDING)
+    }
+
+    @Test
+    fun `credit is NOT refund_pending when blocked and incomplete sender info`() {
+      val credit = createCredit(prison = "LEI", resolution = CreditResolution.PENDING, blocked = true, incompleteSenderInfo = true)
+      assertThat(creditService.computeStatus(credit)).isNotEqualTo(CreditStatus.REFUND_PENDING)
     }
   }
 

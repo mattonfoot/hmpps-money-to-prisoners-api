@@ -46,18 +46,5 @@ class CreditService(
     return creditRepository.save(credit)
   }
 
-  fun computeStatus(credit: Credit): CreditStatus = when {
-    credit.resolution == CreditResolution.CREDITED -> CreditStatus.CREDITED
-    credit.resolution == CreditResolution.REFUNDED -> CreditStatus.REFUNDED
-    credit.resolution == CreditResolution.FAILED -> CreditStatus.FAILED
-    credit.resolution == CreditResolution.INITIAL -> CreditStatus.INITIAL
-    credit.prison != null &&
-      !credit.blocked &&
-      credit.resolution in listOf(CreditResolution.PENDING, CreditResolution.MANUAL) ->
-      CreditStatus.CREDIT_PENDING
-    (credit.prison == null || credit.blocked) &&
-      credit.resolution == CreditResolution.PENDING ->
-      CreditStatus.REFUND_PENDING
-    else -> CreditStatus.INITIAL
-  }
+  fun computeStatus(credit: Credit): CreditStatus = CreditStatus.computeFrom(credit)
 }

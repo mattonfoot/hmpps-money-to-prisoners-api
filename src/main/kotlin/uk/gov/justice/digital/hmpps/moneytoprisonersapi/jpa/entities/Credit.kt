@@ -59,6 +59,9 @@ class Credit(
   @Column(nullable = false)
   var blocked: Boolean = false,
 
+  @Column(name = "incomplete_sender_info", nullable = false)
+  var incompleteSenderInfo: Boolean = false,
+
   @Column(name = "received_at")
   var receivedAt: LocalDateTime? = null,
 

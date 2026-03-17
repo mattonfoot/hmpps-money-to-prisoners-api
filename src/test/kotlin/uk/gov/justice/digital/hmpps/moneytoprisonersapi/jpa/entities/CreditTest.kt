@@ -28,6 +28,7 @@ class CreditTest {
     receivedAt: LocalDateTime? = null,
     owner: String? = null,
     nomisTransactionId: String? = null,
+    incompleteSenderInfo: Boolean = false,
   ): Credit = Credit(
     amount = amount,
     prisonerNumber = prisonerNumber,
@@ -41,6 +42,7 @@ class CreditTest {
     receivedAt = receivedAt,
     owner = owner,
     nomisTransactionId = nomisTransactionId,
+    incompleteSenderInfo = incompleteSenderInfo,
   )
 
   @Nested
