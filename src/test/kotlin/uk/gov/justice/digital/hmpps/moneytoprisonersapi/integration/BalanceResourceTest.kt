@@ -173,4 +173,168 @@ class BalanceResourceTest : IntegrationTestBase() {
         .jsonPath("$.results[0].date").isEqualTo("2024-01-15")
     }
   }
+
+  @Nested
+  @DisplayName("POST /balances/")
+  inner class CreateBalance {
+
+    @Test
+    @DisplayName("ACC-020 - POST /balances/ creates balance and returns 201")
+    fun `should create balance and return 201`() {
+      webTestClient.post()
+        .uri("/balances/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"closing_balance": 12345, "date": "2024-01-15"}""")
+        .exchange()
+        .expectStatus()
+        .isCreated
+        .expectBody()
+        .jsonPath("$.id").isNotEmpty
+        .jsonPath("$.closing_balance").isEqualTo(12345)
+        .jsonPath("$.date").isEqualTo("2024-01-15")
+        .jsonPath("$.created").isNotEmpty
+        .jsonPath("$.modified").isNotEmpty
+    }
+
+    @Test
+    @DisplayName("ACC-021 - Unauthenticated request returns 401")
+    fun `should return unauthorized if no token`() {
+      webTestClient.post()
+        .uri("/balances/")
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"closing_balance": 12345, "date": "2024-01-15"}""")
+        .exchange()
+        .expectStatus()
+        .isUnauthorized
+    }
+
+    @Test
+    @DisplayName("ACC-021 - Bank Admin can create balance")
+    fun `should allow bank admin to create balance`() {
+      webTestClient.post()
+        .uri("/balances/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"closing_balance": 100, "date": "2024-02-01"}""")
+        .exchange()
+        .expectStatus()
+        .isCreated
+    }
+
+    @Test
+    @DisplayName("ACC-021 - Prison Clerk gets 403")
+    fun `should return forbidden for prison clerk`() {
+      webTestClient.post()
+        .uri("/balances/")
+        .headers(setAuthorisation(roles = listOf("ROLE_PRISON_CLERK")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"closing_balance": 100, "date": "2024-02-01"}""")
+        .exchange()
+        .expectStatus()
+        .isForbidden
+    }
+
+    @Test
+    @DisplayName("ACC-021 - User with no roles gets 403")
+    fun `should return forbidden for user with no roles`() {
+      webTestClient.post()
+        .uri("/balances/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"closing_balance": 100, "date": "2024-02-01"}""")
+        .exchange()
+        .expectStatus()
+        .isForbidden
+    }
+
+    @Test
+    @DisplayName("ACC-022/ACC-023 - Duplicate date rejected with error message")
+    fun `should reject duplicate date with error message`() {
+      balanceRepository.save(Balance(closingBalance = BigInteger.valueOf(100), date = LocalDate.of(2024, 1, 15)))
+
+      webTestClient.post()
+        .uri("/balances/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"closing_balance": 200, "date": "2024-01-15"}""")
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+        .expectBody()
+        .jsonPath("$.detail").isEqualTo("Balance exists for date 2024-01-15")
+    }
+
+    @Test
+    @DisplayName("ACC-024 - Supports large values")
+    fun `should support large closing balance values`() {
+      webTestClient.post()
+        .uri("/balances/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"closing_balance": 9223372036854775807, "date": "2024-01-15"}""")
+        .exchange()
+        .expectStatus()
+        .isCreated
+        .expectBody()
+        .jsonPath("$.closing_balance").isEqualTo(9223372036854775807)
+    }
+
+    @Test
+    @DisplayName("ACC-025 - Zero balance allowed")
+    fun `should allow zero closing balance`() {
+      webTestClient.post()
+        .uri("/balances/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"closing_balance": 0, "date": "2024-01-15"}""")
+        .exchange()
+        .expectStatus()
+        .isCreated
+        .expectBody()
+        .jsonPath("$.closing_balance").isEqualTo(0)
+    }
+  }
+
+  @Nested
+  @DisplayName("ACC-026 - No update/delete endpoints")
+  inner class MethodNotAllowed {
+
+    @Test
+    @DisplayName("PUT /balances/ returns 405")
+    fun `should return method not allowed for PUT`() {
+      webTestClient.put()
+        .uri("/balances/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"closing_balance": 100, "date": "2024-01-15"}""")
+        .exchange()
+        .expectStatus()
+        .isEqualTo(405)
+    }
+
+    @Test
+    @DisplayName("PATCH /balances/ returns 405")
+    fun `should return method not allowed for PATCH`() {
+      webTestClient.patch()
+        .uri("/balances/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"closing_balance": 100}""")
+        .exchange()
+        .expectStatus()
+        .isEqualTo(405)
+    }
+
+    @Test
+    @DisplayName("DELETE /balances/ returns 405")
+    fun `should return method not allowed for DELETE`() {
+      webTestClient.delete()
+        .uri("/balances/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .exchange()
+        .expectStatus()
+        .isEqualTo(405)
+    }
+  }
 }

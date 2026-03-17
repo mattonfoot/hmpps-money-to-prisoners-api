@@ -11,4 +11,5 @@ interface BalanceRepository : JpaRepository<Balance, Long> {
   fun findByDateBeforeOrderByDateDesc(date: LocalDate): List<Balance>
   fun findByDateGreaterThanEqualOrderByDateDesc(date: LocalDate): List<Balance>
   fun findByDateGreaterThanEqualAndDateBeforeOrderByDateDesc(dateGte: LocalDate, dateLt: LocalDate): List<Balance>
+  fun existsByDate(date: LocalDate): Boolean
 }

@@ -3,7 +3,10 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Balance
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.BalanceRepository
+import java.math.BigInteger
 import java.time.LocalDate
+
+class DuplicateBalanceDateException(date: LocalDate) : RuntimeException("Balance exists for date $date")
 
 @Service
 class BalanceService(
@@ -18,5 +21,12 @@ class BalanceService(
       balanceRepository.findByDateBeforeOrderByDateDesc(dateLt)
     else ->
       balanceRepository.findAllByOrderByDateDesc()
+  }
+
+  fun createBalance(closingBalance: BigInteger, date: LocalDate): Balance {
+    if (balanceRepository.existsByDate(date)) {
+      throw DuplicateBalanceDateException(date)
+    }
+    return balanceRepository.save(Balance(closingBalance = closingBalance, date = date))
   }
 }
