@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.resources
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -8,14 +9,17 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.RefundRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import java.security.Principal
@@ -669,6 +673,56 @@ class CreditResourceTest {
       creditResource.review(request, mockPrincipal("security_staff"))
 
       verify(creditService).review(listOf(1L, 2L), "security_staff")
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /credits/actions/refund/")
+  inner class RefundCredits {
+
+    private fun mockPrincipal(username: String = "bank_admin"): Principal = Principal { username }
+
+    @Test
+    @DisplayName("CRD-140: returns 204 No Content on success")
+    fun `CRD-140 returns 204 when refund succeeds`() {
+      val request = RefundRequest(creditIds = listOf(1L))
+
+      val response = creditResource.refund(request, mockPrincipal("bank_admin"))
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+      assertThat(response.body).isNull()
+    }
+
+    @Test
+    @DisplayName("CRD-140: returns 400 for empty credit_ids")
+    fun `CRD-140 returns 400 for empty list`() {
+      val request = RefundRequest(creditIds = emptyList())
+
+      val response = creditResource.refund(request, mockPrincipal())
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+    }
+
+    @Test
+    @DisplayName("CRD-140: passes creditIds and userId to service")
+    fun `CRD-140 passes credit ids and user to service`() {
+      val request = RefundRequest(creditIds = listOf(1L, 2L))
+
+      creditResource.refund(request, mockPrincipal("bank_admin"))
+
+      verify(creditService).refund(listOf(1L, 2L), "bank_admin")
+    }
+
+    @Test
+    @DisplayName("CRD-144: propagates InvalidCreditStateException when service throws")
+    fun `CRD-144 propagates InvalidCreditStateException on conflict`() {
+      val request = RefundRequest(creditIds = listOf(1L))
+      doThrow(InvalidCreditStateException(CreditResolution.PENDING, CreditResolution.REFUNDED))
+        .whenever(creditService).refund(listOf(1L), "bank_admin")
+
+      assertThatThrownBy {
+        creditResource.refund(request, mockPrincipal("bank_admin"))
+      }.isInstanceOf(InvalidCreditStateException::class.java)
     }
   }
 }

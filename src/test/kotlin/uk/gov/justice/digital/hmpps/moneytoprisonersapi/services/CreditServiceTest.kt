@@ -2059,4 +2059,140 @@ class CreditServiceTest {
       verify(creditRepository, org.mockito.kotlin.never()).findByIdInWithLock(any())
     }
   }
+
+  @Nested
+  @DisplayName("CRD-140 to CRD-144: Refund action")
+  inner class Refund {
+
+    @Test
+    @DisplayName("CRD-142: sets resolution=refunded for refund_pending credit")
+    fun `CRD-142 sets resolution to REFUNDED for eligible credit`() {
+      val credit = createCredit(id = 1L, prison = null, resolution = CreditResolution.PENDING, incompleteSenderInfo = false)
+      val captor = argumentCaptor<Credit>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(captor.capture())).thenReturn(credit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.REFUNDED))
+
+      creditService.refund(listOf(1L), "bank_admin")
+
+      assertThat(captor.firstValue.resolution).isEqualTo(CreditResolution.REFUNDED)
+    }
+
+    @Test
+    @DisplayName("CRD-143: creates REFUNDED log entry for each credit")
+    fun `CRD-143 creates REFUNDED log entry with user`() {
+      val credit = createCredit(id = 1L, prison = null, resolution = CreditResolution.PENDING, incompleteSenderInfo = false)
+      val logCaptor = argumentCaptor<Log>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(any())).thenReturn(credit)
+      whenever(logRepository.save(logCaptor.capture())).thenReturn(Log(action = LogAction.REFUNDED))
+
+      creditService.refund(listOf(1L), "bank_admin")
+
+      assertThat(logCaptor.firstValue.action).isEqualTo(LogAction.REFUNDED)
+      assertThat(logCaptor.firstValue.userId).isEqualTo("bank_admin")
+      assertThat(logCaptor.firstValue.credit).isEqualTo(credit)
+    }
+
+    @Test
+    @DisplayName("CRD-143: creates REFUNDED log entries for multiple credits")
+    fun `CRD-143 creates REFUNDED log entry for each credit in batch`() {
+      val credit1 = createCredit(id = 1L, prison = null, resolution = CreditResolution.PENDING, incompleteSenderInfo = false)
+      val credit2 = createCredit(id = 2L, prison = null, resolution = CreditResolution.PENDING, blocked = true, incompleteSenderInfo = false)
+      val logCaptor = argumentCaptor<Log>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L, 2L))).thenReturn(listOf(credit1, credit2))
+      whenever(creditRepository.save(any())).thenAnswer { it.arguments[0] }
+      whenever(logRepository.save(logCaptor.capture())).thenAnswer { it.arguments[0] }
+
+      creditService.refund(listOf(1L, 2L), "bank_admin")
+
+      assertThat(logCaptor.allValues).hasSize(2)
+      logCaptor.allValues.forEach { log ->
+        assertThat(log.action).isEqualTo(LogAction.REFUNDED)
+        assertThat(log.userId).isEqualTo("bank_admin")
+      }
+    }
+
+    @Test
+    @DisplayName("CRD-144: throws InvalidCreditStateException when credit is not refund_pending")
+    fun `CRD-144 throws InvalidCreditStateException for non-refund-pending credit`() {
+      val credit = createCredit(id = 1L, prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+
+      assertThatThrownBy {
+        creditService.refund(listOf(1L), "bank_admin")
+      }.isInstanceOf(InvalidCreditStateException::class.java)
+    }
+
+    @Test
+    @DisplayName("CRD-144: throws InvalidCreditStateException when credit is already credited")
+    fun `CRD-144 throws InvalidCreditStateException for credited credit`() {
+      val credit = createCredit(id = 1L, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+
+      assertThatThrownBy {
+        creditService.refund(listOf(1L), "bank_admin")
+      }.isInstanceOf(InvalidCreditStateException::class.java)
+    }
+
+    @Test
+    @DisplayName("CRD-141: incomplete sender info disqualifies credit from refund")
+    fun `CRD-141 throws InvalidCreditStateException when sender info is incomplete`() {
+      val credit = createCredit(id = 1L, prison = null, resolution = CreditResolution.PENDING, incompleteSenderInfo = true)
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+
+      assertThatThrownBy {
+        creditService.refund(listOf(1L), "bank_admin")
+      }.isInstanceOf(InvalidCreditStateException::class.java)
+    }
+
+    @Test
+    @DisplayName("CRD-141: blocked credit with no prison is eligible (refund_pending)")
+    fun `CRD-141 blocked credit is eligible when no prison`() {
+      val credit = createCredit(id = 1L, prison = null, resolution = CreditResolution.PENDING, blocked = true, incompleteSenderInfo = false)
+      val captor = argumentCaptor<Credit>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(captor.capture())).thenReturn(credit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.REFUNDED))
+
+      creditService.refund(listOf(1L), "bank_admin")
+
+      assertThat(captor.firstValue.resolution).isEqualTo(CreditResolution.REFUNDED)
+    }
+
+    @Test
+    @DisplayName("CRD-141: blocked credit with prison is eligible (refund_pending)")
+    fun `CRD-141 blocked credit with prison is eligible`() {
+      val credit = createCredit(id = 1L, prison = "LEI", resolution = CreditResolution.PENDING, blocked = true, incompleteSenderInfo = false)
+      val captor = argumentCaptor<Credit>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(captor.capture())).thenReturn(credit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.REFUNDED))
+
+      creditService.refund(listOf(1L), "bank_admin")
+
+      assertThat(captor.firstValue.resolution).isEqualTo(CreditResolution.REFUNDED)
+    }
+
+    @Test
+    @DisplayName("CRD-144: uses findByIdInWithLock for pessimistic locking")
+    fun `CRD-144 uses select_for_update via findByIdInWithLock`() {
+      val credit = createCredit(id = 1L, prison = null, resolution = CreditResolution.PENDING, incompleteSenderInfo = false)
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(any())).thenReturn(credit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.REFUNDED))
+
+      creditService.refund(listOf(1L), "bank_admin")
+
+      verify(creditRepository).findByIdInWithLock(listOf(1L))
+    }
+
+    @Test
+    @DisplayName("CRD-140: empty list does not interact with repository")
+    fun `CRD-140 empty list returns without hitting repository`() {
+      creditService.refund(emptyList(), "bank_admin")
+
+      verify(creditRepository, org.mockito.kotlin.never()).findByIdInWithLock(any())
+    }
+  }
 }

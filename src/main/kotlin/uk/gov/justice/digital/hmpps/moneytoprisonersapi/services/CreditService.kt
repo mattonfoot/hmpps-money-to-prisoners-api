@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
@@ -528,5 +529,41 @@ class CreditService(
     }
 
     return conflictIds
+  }
+
+  /**
+   * CRD-140 to CRD-144: Refund action.
+   *
+   * For each credit ID, checks if the credit is in refund_pending status
+   * ((no prison OR blocked) AND pending resolution AND sender info complete).
+   * If eligible, transitions it to REFUNDED and creates a REFUNDED log entry.
+   * If any credit is not in refund_pending status, throws InvalidCreditStateException
+   * (strict validation — no partial processing). Uses pessimistic locking
+   * (select_for_update) for transaction safety.
+   *
+   * @param creditIds list of credit IDs to refund
+   * @param userId the username of the user performing the action
+   * @throws InvalidCreditStateException if any credit is not in refund_pending state
+   */
+  @Transactional
+  fun refund(creditIds: List<Long>, userId: String) {
+    if (creditIds.isEmpty()) return
+
+    val creditMap = creditRepository.findByIdInWithLock(creditIds).associateBy { it.id!! }
+
+    for (id in creditIds) {
+      val credit = creditMap[id]
+      if (credit == null || CreditStatus.computeFrom(credit) != CreditStatus.REFUND_PENDING) {
+        throw InvalidCreditStateException(
+          credit?.resolution ?: CreditResolution.INITIAL,
+          CreditResolution.REFUNDED,
+        )
+      }
+
+      credit.resolution = CreditResolution.REFUNDED
+      creditRepository.save(credit)
+
+      logRepository.save(Log(action = LogAction.REFUNDED, credit = credit, userId = userId))
+    }
   }
 }

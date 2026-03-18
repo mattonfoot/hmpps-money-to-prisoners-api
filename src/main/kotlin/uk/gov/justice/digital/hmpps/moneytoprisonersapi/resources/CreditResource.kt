@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.RefundRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReviewRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
@@ -434,6 +435,58 @@ class CreditResource(
     } else {
       ResponseEntity.ok(CreditActionResponse(conflictIds))
     }
+  }
+
+  @Operation(
+    summary = "Refund credits",
+    description = "Marks a list of credits as refunded. " +
+      "Only credits in refund_pending status are eligible: " +
+      "(no prison assigned OR blocked) AND pending resolution AND sender info complete. " +
+      "Sets resolution=refunded (terminal state) on each eligible credit. " +
+      "Creates a log entry with LogAction.REFUNDED for each credit. " +
+      "Returns 204 No Content on success. " +
+      "Returns 409 Conflict if any credit is not in refund_pending state (strict validation). " +
+      "Requires authentication (CRD-140).",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "All specified credits successfully refunded",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request — empty credit_ids list",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized — requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden — requires authenticated access",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Conflict — one or more credits are not in refund_pending state",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("isAuthenticated()")
+  @PostMapping("/actions/refund/")
+  fun refund(
+    @RequestBody request: RefundRequest,
+    principal: Principal,
+  ): ResponseEntity<Any> {
+    if (request.creditIds.isEmpty()) {
+      return ResponseEntity.badRequest().build()
+    }
+    creditService.refund(request.creditIds, principal.name)
+    return ResponseEntity.noContent().build()
   }
 }
 

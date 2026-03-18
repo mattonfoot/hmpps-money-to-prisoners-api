@@ -15,6 +15,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.CustomException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestControllerAdvice
@@ -32,6 +33,17 @@ class HmppsMoneyToPrisonersAPIExceptionHandler {
         developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("CustomExceptionThrown: {}", e.message) }
+
+  @ExceptionHandler(InvalidCreditStateException::class)
+  fun handleInvalidCreditStateException(e: InvalidCreditStateException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.CONFLICT)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.CONFLICT,
+        userMessage = "Invalid credit state",
+        developerMessage = if (envIsProd) null else e.message,
+      ),
+    ).also { log.info("InvalidCreditStateException: {}", e.message) }
 
   @ExceptionHandler(value = [MethodArgumentTypeMismatchException::class, MethodArgumentNotValidException::class])
   fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> = ResponseEntity
