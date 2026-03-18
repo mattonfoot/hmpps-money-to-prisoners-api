@@ -470,4 +470,41 @@ class CreditService(
 
     return conflictIds
   }
+
+  /**
+   * CRD-120 to CRD-125: Set manual action.
+   *
+   * For each credit ID, checks if the credit has resolution=pending.
+   * If so, transitions it to MANUAL, sets owner to the requesting user,
+   * and creates a MANUAL log entry. Credits not in pending state are returned
+   * as conflict IDs. Uses pessimistic locking (select_for_update) for transaction safety.
+   *
+   * @param creditIds list of credit IDs to set to manual
+   * @param userId the username of the user performing the action
+   * @return list of credit IDs that could not be processed due to invalid state
+   */
+  @Transactional
+  fun setManual(creditIds: List<Long>, userId: String): List<Long> {
+    if (creditIds.isEmpty()) return emptyList()
+
+    val creditMap = creditRepository.findByIdInWithLock(creditIds).associateBy { it.id!! }
+
+    val conflictIds = mutableListOf<Long>()
+
+    for (id in creditIds) {
+      val credit = creditMap[id]
+      if (credit == null || credit.resolution != CreditResolution.PENDING) {
+        conflictIds.add(id)
+        continue
+      }
+
+      credit.resolution = CreditResolution.MANUAL
+      credit.owner = userId
+      creditRepository.save(credit)
+
+      logRepository.save(Log(action = LogAction.MANUAL, credit = credit, userId = userId))
+    }
+
+    return conflictIds
+  }
 }

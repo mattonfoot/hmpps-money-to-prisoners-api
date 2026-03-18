@@ -1873,4 +1873,115 @@ class CreditServiceTest {
       assertThat(conflictIds).containsExactly(4L)
     }
   }
+
+  @Nested
+  @DisplayName("CRD-120 to CRD-125: setManual action")
+  inner class SetManual {
+
+    private fun pendingCredit(id: Long = 1L): Credit = createCredit(
+      id = id,
+      resolution = CreditResolution.PENDING,
+    )
+
+    @Test
+    @DisplayName("CRD-121: pending credits are set to manual successfully")
+    fun `CRD-121 processes pending credits`() {
+      val credit = pendingCredit(id = 1L)
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(any())).thenReturn(credit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.MANUAL))
+
+      val conflictIds = creditService.setManual(listOf(1L), "clerk1")
+
+      assertThat(conflictIds).isEmpty()
+    }
+
+    @Test
+    @DisplayName("CRD-121: non-pending credits go to conflict_ids")
+    fun `CRD-121 non-pending credits are added to conflict_ids`() {
+      val credit = createCredit(id = 2L, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByIdInWithLock(listOf(2L))).thenReturn(listOf(credit))
+
+      val conflictIds = creditService.setManual(listOf(2L), "clerk1")
+
+      assertThat(conflictIds).containsExactly(2L)
+    }
+
+    @Test
+    @DisplayName("CRD-122: sets resolution=MANUAL and owner=user")
+    fun `CRD-122 sets resolution to MANUAL and owner to requesting user`() {
+      val credit = pendingCredit(id = 1L)
+      val captor = argumentCaptor<Credit>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(captor.capture())).thenReturn(credit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.MANUAL))
+
+      creditService.setManual(listOf(1L), "clerk1")
+
+      val saved = captor.firstValue
+      assertThat(saved.resolution).isEqualTo(CreditResolution.MANUAL)
+      assertThat(saved.owner).isEqualTo("clerk1")
+    }
+
+    @Test
+    @DisplayName("CRD-123: creates a MANUAL log entry with the user reference")
+    fun `CRD-123 creates log entry with LogAction MANUAL and userId`() {
+      val credit = pendingCredit(id = 1L)
+      val logCaptor = argumentCaptor<Log>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(any())).thenReturn(credit)
+      whenever(logRepository.save(logCaptor.capture())).thenReturn(Log(action = LogAction.MANUAL))
+
+      creditService.setManual(listOf(1L), "clerk1")
+
+      val log = logCaptor.firstValue
+      assertThat(log.action).isEqualTo(LogAction.MANUAL)
+      assertThat(log.userId).isEqualTo("clerk1")
+      assertThat(log.credit).isEqualTo(credit)
+    }
+
+    @Test
+    @DisplayName("CRD-121: mix of pending and non-pending — non-pending go to conflict_ids")
+    fun `CRD-121 mix of pending and non-pending returns conflict_ids for non-pending`() {
+      val validCredit = pendingCredit(id = 1L)
+      val invalidCredit = createCredit(id = 2L, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByIdInWithLock(listOf(1L, 2L))).thenReturn(listOf(validCredit, invalidCredit))
+      whenever(creditRepository.save(any())).thenReturn(validCredit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.MANUAL))
+
+      val conflictIds = creditService.setManual(listOf(1L, 2L), "clerk1")
+
+      assertThat(conflictIds).containsExactly(2L)
+    }
+
+    @Test
+    @DisplayName("CRD-121: initial resolution is not eligible and goes to conflict_ids")
+    fun `CRD-121 initial credit is not eligible and goes to conflict_ids`() {
+      val credit = createCredit(id = 5L, resolution = CreditResolution.INITIAL)
+      whenever(creditRepository.findByIdInWithLock(listOf(5L))).thenReturn(listOf(credit))
+
+      val conflictIds = creditService.setManual(listOf(5L), "clerk1")
+
+      assertThat(conflictIds).containsExactly(5L)
+    }
+
+    @Test
+    @DisplayName("CRD-121: manual resolution is not eligible and goes to conflict_ids")
+    fun `CRD-121 already-manual credit is not eligible and goes to conflict_ids`() {
+      val credit = createCredit(id = 6L, resolution = CreditResolution.MANUAL)
+      whenever(creditRepository.findByIdInWithLock(listOf(6L))).thenReturn(listOf(credit))
+
+      val conflictIds = creditService.setManual(listOf(6L), "clerk1")
+
+      assertThat(conflictIds).containsExactly(6L)
+    }
+
+    @Test
+    @DisplayName("CRD-121: empty list returns empty conflict_ids without hitting repository")
+    fun `CRD-121 empty list returns empty conflict_ids`() {
+      val conflictIds = creditService.setManual(emptyList(), "clerk1")
+
+      assertThat(conflictIds).isEmpty()
+    }
+  }
 }

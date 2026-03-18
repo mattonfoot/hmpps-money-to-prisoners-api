@@ -12,6 +12,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
@@ -578,6 +579,58 @@ class CreditResourceTest {
       creditResource.creditPrisoners(items, mockPrincipal("clerk1"))
 
       verify(creditService).creditPrisoners(items, "clerk1")
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /credits/actions/setmanual/")
+  inner class SetManual {
+
+    private fun mockPrincipal(username: String = "clerk1"): Principal = Principal { username }
+
+    @Test
+    @DisplayName("CRD-125: returns 204 No Content when all credits are processed with no conflicts")
+    fun `CRD-125 returns 204 when no conflict ids`() {
+      val request = SetManualRequest(creditIds = listOf(1L))
+      whenever(creditService.setManual(listOf(1L), "clerk1")).thenReturn(emptyList())
+
+      val response = creditResource.setManual(request, mockPrincipal("clerk1"))
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+      assertThat(response.body).isNull()
+    }
+
+    @Test
+    @DisplayName("CRD-121: returns 200 with conflict_ids when some credits are not in pending state")
+    fun `CRD-121 returns 200 with conflict_ids when there are conflicts`() {
+      val request = SetManualRequest(creditIds = listOf(1L, 2L))
+      whenever(creditService.setManual(listOf(1L, 2L), "clerk1")).thenReturn(listOf(2L))
+
+      val response = creditResource.setManual(request, mockPrincipal("clerk1"))
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+      assertThat(response.body).isNotNull
+    }
+
+    @Test
+    @DisplayName("CRD-120: returns 400 for empty credit_ids")
+    fun `CRD-120 returns 400 for empty list`() {
+      val request = SetManualRequest(creditIds = emptyList())
+
+      val response = creditResource.setManual(request, mockPrincipal())
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+    }
+
+    @Test
+    @DisplayName("CRD-120: passes creditIds and userId to service")
+    fun `CRD-120 passes credit ids and user to service`() {
+      val request = SetManualRequest(creditIds = listOf(1L))
+      whenever(creditService.setManual(listOf(1L), "clerk1")).thenReturn(emptyList())
+
+      creditResource.setManual(request, mockPrincipal("clerk1"))
+
+      verify(creditService).setManual(listOf(1L), "clerk1")
     }
   }
 }

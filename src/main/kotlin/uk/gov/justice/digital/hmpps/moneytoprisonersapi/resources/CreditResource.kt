@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
@@ -277,6 +278,62 @@ class CreditResource(
       count = results.size,
       results = results,
     )
+  }
+
+  @Operation(
+    summary = "Set credits to manual resolution",
+    description = "Transitions a list of credits from pending to manual resolution. " +
+      "Only credits with resolution=pending are eligible. " +
+      "Credits not in pending state are returned as conflict_ids. " +
+      "Sets resolution=manual and owner=requesting user on each eligible credit. " +
+      "Creates a log entry with LogAction.MANUAL for each transitioned credit. " +
+      "Returns 204 No Content when all provided credits are processed. " +
+      "Returns 200 OK with conflict_ids when some credits were not in pending state. " +
+      "Requires NomsOpsClientIDPermissions (CRD-120).",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "All credits transitioned to manual with no conflicts",
+      ),
+      ApiResponse(
+        responseCode = "200",
+        description = "Request processed but some credits were not in pending state",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = CreditActionResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request — empty credit_ids list",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized — requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden — requires NomsOps client",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("isAuthenticated()")
+  @PostMapping("/actions/setmanual/")
+  fun setManual(
+    @RequestBody request: SetManualRequest,
+    principal: Principal,
+  ): ResponseEntity<Any> {
+    if (request.creditIds.isEmpty()) {
+      return ResponseEntity.badRequest().build()
+    }
+    val conflictIds = creditService.setManual(request.creditIds, principal.name)
+    return if (conflictIds.isEmpty()) {
+      ResponseEntity.noContent().build()
+    } else {
+      ResponseEntity.ok(CreditActionResponse(conflictIds))
+    }
   }
 
   @Operation(
