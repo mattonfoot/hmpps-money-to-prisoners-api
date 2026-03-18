@@ -1984,4 +1984,79 @@ class CreditServiceTest {
       assertThat(conflictIds).isEmpty()
     }
   }
+
+  @Nested
+  @DisplayName("CRD-130 to CRD-136: review action")
+  inner class Review {
+
+    @Test
+    @DisplayName("CRD-131: sets reviewed=true on all specified credits regardless of state")
+    fun `CRD-131 sets reviewed=true on all credits regardless of resolution`() {
+      val credit1 = createCredit(id = 1L, resolution = CreditResolution.PENDING)
+      val credit2 = createCredit(id = 2L, resolution = CreditResolution.CREDITED)
+      val captor = argumentCaptor<Credit>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L, 2L))).thenReturn(listOf(credit1, credit2))
+      whenever(creditRepository.save(captor.capture())).thenReturn(credit1)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.REVIEWED))
+
+      creditService.review(listOf(1L, 2L), "security_staff")
+
+      assertThat(captor.allValues).allSatisfy { assertThat(it.reviewed).isTrue() }
+    }
+
+    @Test
+    @DisplayName("CRD-131: no state validation — all credits are reviewed even if already reviewed")
+    fun `CRD-131 reviews credits even if already reviewed`() {
+      val credit = createCredit(id = 1L, reviewed = true, resolution = CreditResolution.PENDING)
+      val captor = argumentCaptor<Credit>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(captor.capture())).thenReturn(credit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.REVIEWED))
+
+      creditService.review(listOf(1L), "security_staff")
+
+      assertThat(captor.firstValue.reviewed).isTrue()
+    }
+
+    @Test
+    @DisplayName("CRD-132: creates a REVIEWED log entry for each credit with the user reference")
+    fun `CRD-132 creates REVIEWED log entry for each credit`() {
+      val credit1 = createCredit(id = 1L, resolution = CreditResolution.PENDING)
+      val credit2 = createCredit(id = 2L, resolution = CreditResolution.CREDITED)
+      val logCaptor = argumentCaptor<Log>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L, 2L))).thenReturn(listOf(credit1, credit2))
+      whenever(creditRepository.save(any())).thenReturn(credit1)
+      whenever(logRepository.save(logCaptor.capture())).thenReturn(Log(action = LogAction.REVIEWED))
+
+      creditService.review(listOf(1L, 2L), "security_staff")
+
+      assertThat(logCaptor.allValues).hasSize(2)
+      logCaptor.allValues.forEach { log ->
+        assertThat(log.action).isEqualTo(LogAction.REVIEWED)
+        assertThat(log.userId).isEqualTo("security_staff")
+      }
+      assertThat(logCaptor.allValues.map { it.credit }).containsExactlyInAnyOrder(credit1, credit2)
+    }
+
+    @Test
+    @DisplayName("CRD-133: uses findByIdInWithLock for pessimistic locking")
+    fun `CRD-133 uses select_for_update via findByIdInWithLock`() {
+      val credit = createCredit(id = 1L, resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(any())).thenReturn(credit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.REVIEWED))
+
+      creditService.review(listOf(1L), "security_staff")
+
+      verify(creditRepository).findByIdInWithLock(listOf(1L))
+    }
+
+    @Test
+    @DisplayName("CRD-136: empty list does not interact with repository")
+    fun `CRD-136 empty list returns without hitting repository`() {
+      creditService.review(emptyList(), "security_staff")
+
+      verify(creditRepository, org.mockito.kotlin.never()).findByIdInWithLock(any())
+    }
+  }
 }

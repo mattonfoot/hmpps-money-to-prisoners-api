@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReviewRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
@@ -334,6 +335,50 @@ class CreditResource(
     } else {
       ResponseEntity.ok(CreditActionResponse(conflictIds))
     }
+  }
+
+  @Operation(
+    summary = "Review credits",
+    description = "Marks a list of credits as reviewed by security staff. " +
+      "Sets reviewed=true on all specified credits regardless of their current state. " +
+      "Creates a log entry with LogAction.REVIEWED for each credit. " +
+      "Returns 204 No Content on success. " +
+      "Requires NomsOpsClientIDPermissions (CRD-134) and review_credit permission (CRD-135).",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "All specified credits marked as reviewed",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request — empty credit_ids list",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized — requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden — requires NomsOps client and review_credit permission",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("isAuthenticated()")
+  @PostMapping("/actions/review/")
+  fun review(
+    @RequestBody request: ReviewRequest,
+    principal: Principal,
+  ): ResponseEntity<Any> {
+    if (request.creditIds.isEmpty()) {
+      return ResponseEntity.badRequest().build()
+    }
+    creditService.review(request.creditIds, principal.name)
+    return ResponseEntity.noContent().build()
   }
 
   @Operation(

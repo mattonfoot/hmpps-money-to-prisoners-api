@@ -633,4 +633,42 @@ class CreditResourceTest {
       verify(creditService).setManual(listOf(1L), "clerk1")
     }
   }
+
+  @Nested
+  @DisplayName("POST /credits/actions/review/")
+  inner class ReviewCredits {
+
+    private fun mockPrincipal(username: String = "security_staff"): Principal = Principal { username }
+
+    @Test
+    @DisplayName("CRD-136: returns 204 No Content on success")
+    fun `CRD-136 returns 204 when review succeeds`() {
+      val request = uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReviewRequest(creditIds = listOf(1L))
+
+      val response = creditResource.review(request, mockPrincipal("security_staff"))
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+      assertThat(response.body).isNull()
+    }
+
+    @Test
+    @DisplayName("CRD-130: returns 400 for empty credit_ids")
+    fun `CRD-130 returns 400 for empty list`() {
+      val request = uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReviewRequest(creditIds = emptyList())
+
+      val response = creditResource.review(request, mockPrincipal())
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+    }
+
+    @Test
+    @DisplayName("CRD-130: passes creditIds and userId to service")
+    fun `CRD-130 passes credit ids and user to service`() {
+      val request = uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReviewRequest(creditIds = listOf(1L, 2L))
+
+      creditResource.review(request, mockPrincipal("security_staff"))
+
+      verify(creditService).review(listOf(1L, 2L), "security_staff")
+    }
+  }
 }

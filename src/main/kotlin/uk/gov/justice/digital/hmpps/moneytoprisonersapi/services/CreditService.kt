@@ -430,6 +430,28 @@ class CreditService(
   fun computeStatus(credit: Credit): CreditStatus = CreditStatus.computeFrom(credit)
 
   /**
+   * CRD-130 to CRD-136: Review action.
+   *
+   * Sets reviewed=true on all specified credits regardless of their current state.
+   * Creates a REVIEWED log entry for each credit. Uses pessimistic locking
+   * (select_for_update) for transaction safety.
+   *
+   * @param creditIds list of credit IDs to mark as reviewed
+   * @param userId the username of the user performing the action
+   */
+  @Transactional
+  fun review(creditIds: List<Long>, userId: String) {
+    if (creditIds.isEmpty()) return
+
+    val credits = creditRepository.findByIdInWithLock(creditIds)
+    for (credit in credits) {
+      credit.reviewed = true
+      creditRepository.save(credit)
+      logRepository.save(Log(action = LogAction.REVIEWED, credit = credit, userId = userId))
+    }
+  }
+
+  /**
    * CRD-110 to CRD-115: Credit prisoners action.
    *
    * For each item with credited=true, checks if the credit is in credit_pending state.
