@@ -98,6 +98,9 @@ class Credit(
   @OneToOne(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   var securityCheck: SecurityCheck? = null
 
+  @OneToMany(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  var comments: MutableList<Comment> = mutableListOf()
+
   @PrePersist
   fun onCreate() {
     val now = LocalDateTime.now()
