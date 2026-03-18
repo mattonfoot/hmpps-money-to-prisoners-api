@@ -1,10 +1,15 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
@@ -19,6 +24,7 @@ class CreditService(
   private val prisonRepository: PrisonRepository,
   private val senderProfileRepository: SenderProfileRepository,
   private val prisonerProfileRepository: PrisonerProfileRepository,
+  private val logRepository: LogRepository,
 ) {
 
   fun listCompletedCredits(): List<Credit> = creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED))
@@ -422,4 +428,46 @@ class CreditService(
   }
 
   fun computeStatus(credit: Credit): CreditStatus = CreditStatus.computeFrom(credit)
+
+  /**
+   * CRD-110 to CRD-115: Credit prisoners action.
+   *
+   * For each item with credited=true, checks if the credit is in credit_pending state.
+   * If so, transitions it to CREDITED, sets owner and optional nomis_transaction_id,
+   * and creates a CREDITED log entry. Credits not in credit_pending state are returned
+   * as conflict IDs. Uses pessimistic locking (select_for_update) for transaction safety.
+   *
+   * @param items list of credit action items (id, credited flag, optional nomis_transaction_id)
+   * @param userId the username of the user performing the action
+   * @return list of credit IDs that could not be processed due to invalid state
+   */
+  @Transactional
+  fun creditPrisoners(items: List<CreditActionItem>, userId: String): List<Long> {
+    val creditedItems = items.filter { it.credited == true }
+    if (creditedItems.isEmpty()) return emptyList()
+
+    val ids = creditedItems.map { it.id!! }
+    val creditMap = creditRepository.findByIdInWithLock(ids).associateBy { it.id!! }
+
+    val conflictIds = mutableListOf<Long>()
+
+    for (item in creditedItems) {
+      val credit = creditMap[item.id!!]
+      if (credit == null || CreditStatus.computeFrom(credit) != CreditStatus.CREDIT_PENDING) {
+        conflictIds.add(item.id)
+        continue
+      }
+
+      credit.resolution = CreditResolution.CREDITED
+      credit.owner = userId
+      if (item.nomisTransactionId != null) {
+        credit.nomisTransactionId = item.nomisTransactionId
+      }
+      creditRepository.save(credit)
+
+      logRepository.save(Log(action = LogAction.CREDITED, credit = credit, userId = userId))
+    }
+
+    return conflictIds
+  }
 }

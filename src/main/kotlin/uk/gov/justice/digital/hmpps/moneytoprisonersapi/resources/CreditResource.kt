@@ -9,11 +9,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
@@ -21,6 +26,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSourc
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
+import java.security.Principal
 import java.time.LocalDateTime
 
 @RestController
@@ -271,6 +277,61 @@ class CreditResource(
       count = results.size,
       results = results,
     )
+  }
+
+  @Operation(
+    summary = "Credit prisoners",
+    description = "Credits a list of prisoners by transitioning eligible credits from credit_pending to credited state. " +
+      "Only credits in credit_pending state (prison assigned, pending or manual resolution, not blocked) are eligible. " +
+      "Credits not in credit_pending state are returned as conflict_ids. " +
+      "Returns 204 No Content when all provided credits are processed. " +
+      "Returns 200 OK with conflict_ids when some credits were not in credit_pending state. " +
+      "Items with credited=false are skipped without error. " +
+      "Requires CashbookClientIDPermissions (CRD-116) and credit_credit permission (CRD-117).",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "All credits processed successfully with no conflicts",
+      ),
+      ApiResponse(
+        responseCode = "200",
+        description = "Request processed but some credits were not in credit_pending state",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = CreditActionResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request — empty list or missing required fields",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized — requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden — requires Cashbook client and credit_credit permission",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("isAuthenticated()")
+  @PostMapping("/actions/credit/")
+  fun creditPrisoners(
+    @RequestBody items: List<CreditActionItem>,
+    principal: Principal,
+  ): ResponseEntity<Any> {
+    if (items.isEmpty()) {
+      return ResponseEntity.badRequest().build()
+    }
+    val conflictIds = creditService.creditPrisoners(items, principal.name)
+    return if (conflictIds.isEmpty()) {
+      ResponseEntity.noContent().build()
+    } else {
+      ResponseEntity.ok(CreditActionResponse(conflictIds))
+    }
   }
 }
 

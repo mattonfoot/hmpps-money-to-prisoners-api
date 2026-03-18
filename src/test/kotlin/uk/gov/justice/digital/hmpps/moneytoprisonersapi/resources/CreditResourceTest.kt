@@ -10,11 +10,14 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.http.HttpStatus
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
+import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -522,6 +525,59 @@ class CreditResourceTest {
       creditResource.listCredits(ordering = "-created")
 
       verify(creditService).listCredits(ordering = "-created")
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /credits/actions/credit/")
+  inner class CreditPrisoners {
+
+    private fun mockPrincipal(username: String = "clerk1"): Principal = Principal { username }
+
+    @Test
+    @DisplayName("CRD-118: returns 204 No Content when all credits are processed with no conflicts")
+    fun `CRD-118 returns 204 when no conflict ids`() {
+      val items = listOf(CreditActionItem(id = 1L, credited = true))
+      whenever(creditService.creditPrisoners(items, "clerk1")).thenReturn(emptyList())
+
+      val response = creditResource.creditPrisoners(items, mockPrincipal("clerk1"))
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+      assertThat(response.body).isNull()
+    }
+
+    @Test
+    @DisplayName("CRD-112: returns 200 with conflict_ids when some credits are in wrong state")
+    fun `CRD-112 returns 200 with conflict_ids when there are conflicts`() {
+      val items = listOf(
+        CreditActionItem(id = 1L, credited = true),
+        CreditActionItem(id = 2L, credited = true),
+      )
+      whenever(creditService.creditPrisoners(items, "clerk1")).thenReturn(listOf(2L))
+
+      val response = creditResource.creditPrisoners(items, mockPrincipal("clerk1"))
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+      assertThat(response.body).isNotNull
+    }
+
+    @Test
+    @DisplayName("CRD-119: returns 400 for empty list")
+    fun `CRD-119 returns 400 for empty list`() {
+      val response = creditResource.creditPrisoners(emptyList(), mockPrincipal())
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+    }
+
+    @Test
+    @DisplayName("CRD-113: passes items and userId to service")
+    fun `CRD-113 passes items and user to service`() {
+      val items = listOf(CreditActionItem(id = 1L, credited = true, nomisTransactionId = "TX-001"))
+      whenever(creditService.creditPrisoners(items, "clerk1")).thenReturn(emptyList())
+
+      creditResource.creditPrisoners(items, mockPrincipal("clerk1"))
+
+      verify(creditService).creditPrisoners(items, "clerk1")
     }
   }
 }

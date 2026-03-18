@@ -1,6 +1,9 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories
 
+import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
@@ -18,4 +21,8 @@ interface CreditRepository : JpaRepository<Credit, Long> {
   fun findByReceivedAtGreaterThanEqualAndReceivedAtBefore(from: LocalDateTime, to: LocalDateTime): List<Credit>
   fun findByPrisonerNumber(prisonerNumber: String): List<Credit>
   fun existsByPrisonerNumberAndResolution(prisonerNumber: String, resolution: CreditResolution): Boolean
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT c FROM Credit c WHERE c.id IN :ids")
+  fun findByIdInWithLock(ids: List<Long>): List<Credit>
 }

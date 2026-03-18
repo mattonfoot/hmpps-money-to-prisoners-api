@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.integration
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -1008,6 +1009,165 @@ class CreditResourceTest : IntegrationTestBase() {
         .isOk
         .expectBody()
         .jsonPath("$.count").isEqualTo(2)
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /credits/actions/credit/ (CRD-110 to CRD-119)")
+  inner class CreditPrisonersAction {
+
+    @Test
+    @DisplayName("CRD-118 - returns 204 when all credits are processed with no conflicts")
+    fun `CRD-118 should return 204 when all credits are processed successfully`() {
+      val credit = createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
+
+      webTestClient.post()
+        .uri("/credits/actions/credit/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""[{"id": ${credit.id}, "credited": true}]""")
+        .exchange()
+        .expectStatus()
+        .isNoContent
+    }
+
+    @Test
+    @DisplayName("CRD-113 - sets resolution=CREDITED, owner, and nomis_transaction_id on credit")
+    fun `CRD-113 should update credit to CREDITED state with owner and nomis_transaction_id`() {
+      val credit = createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
+
+      webTestClient.post()
+        .uri("/credits/actions/credit/")
+        .headers(setAuthorisation(username = "clerk1"))
+        .header("Content-Type", "application/json")
+        .bodyValue("""[{"id": ${credit.id}, "credited": true, "nomis_transaction_id": "TX-001"}]""")
+        .exchange()
+        .expectStatus()
+        .isNoContent
+
+      val updated = creditRepository.findById(credit.id!!).get()
+      assertThat(updated.resolution).isEqualTo(CreditResolution.CREDITED)
+      assertThat(updated.owner).isEqualTo("clerk1")
+      assertThat(updated.nomisTransactionId).isEqualTo("TX-001")
+    }
+
+    @Test
+    @DisplayName("CRD-114 - creates a CREDITED log entry with user reference")
+    fun `CRD-114 should create a log entry with LogAction CREDITED`() {
+      val credit = createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
+
+      webTestClient.post()
+        .uri("/credits/actions/credit/")
+        .headers(setAuthorisation(username = "clerk1"))
+        .header("Content-Type", "application/json")
+        .bodyValue("""[{"id": ${credit.id}, "credited": true}]""")
+        .exchange()
+        .expectStatus()
+        .isNoContent
+
+      val logs = logRepository.findAll().filter { it.credit?.id == credit.id && it.action == LogAction.CREDITED }
+      assertThat(logs).hasSize(1)
+      assertThat(logs[0].userId).isEqualTo("clerk1")
+    }
+
+    @Test
+    @DisplayName("CRD-112 - credits not in credit_pending state are returned as conflict_ids with HTTP 200")
+    fun `CRD-112 should return 200 with conflict_ids for non-credit_pending credits`() {
+      val alreadyCredited = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+
+      webTestClient.post()
+        .uri("/credits/actions/credit/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""[{"id": ${alreadyCredited.id}, "credited": true}]""")
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.conflict_ids").isArray
+        .jsonPath("$.conflict_ids[0]").isEqualTo(alreadyCredited.id!!.toInt())
+    }
+
+    @Test
+    @DisplayName("CRD-112 - blocked credits are returned as conflict_ids")
+    fun `CRD-112 blocked credits are returned as conflict_ids`() {
+      val blockedCredit = createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING, blocked = true)
+
+      webTestClient.post()
+        .uri("/credits/actions/credit/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""[{"id": ${blockedCredit.id}, "credited": true}]""")
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.conflict_ids[0]").isEqualTo(blockedCredit.id!!.toInt())
+    }
+
+    @Test
+    @DisplayName("CRD-112 - mix of valid and invalid: valid credited, invalid in conflict_ids")
+    fun `CRD-112 processes valid credits and returns invalid as conflict_ids`() {
+      val validCredit = createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
+      val invalidCredit = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+
+      webTestClient.post()
+        .uri("/credits/actions/credit/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""[{"id": ${validCredit.id}, "credited": true}, {"id": ${invalidCredit.id}, "credited": true}]""")
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$.conflict_ids.length()").isEqualTo(1)
+        .jsonPath("$.conflict_ids[0]").isEqualTo(invalidCredit.id!!.toInt())
+
+      val updatedValid = creditRepository.findById(validCredit.id!!).get()
+      assertThat(updatedValid.resolution).isEqualTo(CreditResolution.CREDITED)
+    }
+
+    @Test
+    @DisplayName("CRD-119 - empty list returns 400")
+    fun `CRD-119 should return 400 for empty list`() {
+      webTestClient.post()
+        .uri("/credits/actions/credit/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("[]")
+        .exchange()
+        .expectStatus()
+        .isBadRequest
+    }
+
+    @Test
+    @DisplayName("CRD-110 - unauthenticated request returns 401")
+    fun `should return 401 for unauthenticated request`() {
+      webTestClient.post()
+        .uri("/credits/actions/credit/")
+        .header("Content-Type", "application/json")
+        .bodyValue("""[{"id": 1, "credited": true}]""")
+        .exchange()
+        .expectStatus()
+        .isUnauthorized
+    }
+
+    @Test
+    @DisplayName("CRD-110 - items with credited=false are skipped and credit state unchanged")
+    fun `items with credited=false are not processed`() {
+      val credit = createAndSaveCredit(prison = "LEI", resolution = CreditResolution.PENDING, blocked = false)
+
+      webTestClient.post()
+        .uri("/credits/actions/credit/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""[{"id": ${credit.id}, "credited": false}]""")
+        .exchange()
+        .expectStatus()
+        .isNoContent
+
+      val unchanged = creditRepository.findById(credit.id!!).get()
+      assertThat(unchanged.resolution).isEqualTo(CreditResolution.PENDING)
     }
   }
 

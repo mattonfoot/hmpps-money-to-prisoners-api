@@ -13,6 +13,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.BillingAddress
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
@@ -27,6 +28,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPopul
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Transaction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
@@ -48,6 +50,9 @@ class CreditServiceTest {
 
   @Mock
   private lateinit var prisonerProfileRepository: PrisonerProfileRepository
+
+  @Mock
+  private lateinit var logRepository: LogRepository
 
   @InjectMocks
   private lateinit var creditService: CreditService
@@ -1709,6 +1714,163 @@ class CreditServiceTest {
       val result = creditService.listCredits(ordering = "-prisoner_number")
 
       assertThat(result).containsExactly(credit1, credit2)
+    }
+  }
+
+  @Nested
+  @DisplayName("CRD-110 to CRD-119: creditPrisoners action")
+  inner class CreditPrisoners {
+
+    private fun creditPendingCredit(id: Long = 1L): Credit = createCredit(
+      id = id,
+      prison = "LEI",
+      resolution = CreditResolution.PENDING,
+      blocked = false,
+    )
+
+    @Test
+    @DisplayName("CRD-111: credits in credit_pending state are processed successfully")
+    fun `CRD-111 processes credit_pending credits`() {
+      val credit = creditPendingCredit(id = 1L)
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(any())).thenReturn(credit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.CREDITED))
+
+      val conflictIds = creditService.creditPrisoners(
+        listOf(CreditActionItem(id = 1L, credited = true)),
+        "clerk1",
+      )
+
+      assertThat(conflictIds).isEmpty()
+    }
+
+    @Test
+    @DisplayName("CRD-111: non-credit_pending credits go to conflict_ids")
+    fun `CRD-111 non-credit_pending credits are added to conflict_ids`() {
+      val credit = createCredit(id = 2L, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByIdInWithLock(listOf(2L))).thenReturn(listOf(credit))
+
+      val conflictIds = creditService.creditPrisoners(
+        listOf(CreditActionItem(id = 2L, credited = true)),
+        "clerk1",
+      )
+
+      assertThat(conflictIds).containsExactly(2L)
+    }
+
+    @Test
+    @DisplayName("CRD-113: sets resolution=CREDITED and owner on the credit")
+    fun `CRD-113 sets resolution to CREDITED and owner to requesting user`() {
+      val credit = creditPendingCredit(id = 1L)
+      val captor = argumentCaptor<Credit>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(captor.capture())).thenReturn(credit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.CREDITED))
+
+      creditService.creditPrisoners(
+        listOf(CreditActionItem(id = 1L, credited = true)),
+        "clerk1",
+      )
+
+      val saved = captor.firstValue
+      assertThat(saved.resolution).isEqualTo(CreditResolution.CREDITED)
+      assertThat(saved.owner).isEqualTo("clerk1")
+    }
+
+    @Test
+    @DisplayName("CRD-113: sets nomis_transaction_id when provided")
+    fun `CRD-113 sets nomis_transaction_id when provided`() {
+      val credit = creditPendingCredit(id = 1L)
+      val captor = argumentCaptor<Credit>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(captor.capture())).thenReturn(credit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.CREDITED))
+
+      creditService.creditPrisoners(
+        listOf(CreditActionItem(id = 1L, credited = true, nomisTransactionId = "NOMIS-TX-001")),
+        "clerk1",
+      )
+
+      assertThat(captor.firstValue.nomisTransactionId).isEqualTo("NOMIS-TX-001")
+    }
+
+    @Test
+    @DisplayName("CRD-114: creates a CREDITED log entry with the user reference")
+    fun `CRD-114 creates log entry with LogAction CREDITED and userId`() {
+      val credit = creditPendingCredit(id = 1L)
+      val logCaptor = argumentCaptor<Log>()
+      whenever(creditRepository.findByIdInWithLock(listOf(1L))).thenReturn(listOf(credit))
+      whenever(creditRepository.save(any())).thenReturn(credit)
+      whenever(logRepository.save(logCaptor.capture())).thenReturn(Log(action = LogAction.CREDITED))
+
+      creditService.creditPrisoners(
+        listOf(CreditActionItem(id = 1L, credited = true)),
+        "clerk1",
+      )
+
+      val log = logCaptor.firstValue
+      assertThat(log.action).isEqualTo(LogAction.CREDITED)
+      assertThat(log.userId).isEqualTo("clerk1")
+      assertThat(log.credit).isEqualTo(credit)
+    }
+
+    @Test
+    @DisplayName("CRD-111: items with credited=false are skipped (not processed, not in conflict_ids)")
+    fun `CRD-111 items with credited=false are skipped`() {
+      val conflictIds = creditService.creditPrisoners(
+        listOf(CreditActionItem(id = 1L, credited = false)),
+        "clerk1",
+      )
+
+      assertThat(conflictIds).isEmpty()
+    }
+
+    @Test
+    @DisplayName("CRD-112: mix of valid and invalid credits — invalid go to conflict_ids")
+    fun `CRD-112 mix of valid and invalid credits returns conflict_ids for invalid`() {
+      val validCredit = creditPendingCredit(id = 1L)
+      val invalidCredit = createCredit(id = 2L, resolution = CreditResolution.CREDITED)
+      whenever(creditRepository.findByIdInWithLock(listOf(1L, 2L))).thenReturn(listOf(validCredit, invalidCredit))
+      whenever(creditRepository.save(any())).thenReturn(validCredit)
+      whenever(logRepository.save(any())).thenReturn(Log(action = LogAction.CREDITED))
+
+      val conflictIds = creditService.creditPrisoners(
+        listOf(
+          CreditActionItem(id = 1L, credited = true),
+          CreditActionItem(id = 2L, credited = true),
+        ),
+        "clerk1",
+      )
+
+      assertThat(conflictIds).containsExactly(2L)
+    }
+
+    @Test
+    @DisplayName("CRD-111: blocked credit is not credit_pending and goes to conflict_ids")
+    fun `CRD-111 blocked credit is not eligible and goes to conflict_ids`() {
+      val blockedCredit = createCredit(id = 3L, prison = "LEI", resolution = CreditResolution.PENDING, blocked = true)
+      whenever(creditRepository.findByIdInWithLock(listOf(3L))).thenReturn(listOf(blockedCredit))
+
+      val conflictIds = creditService.creditPrisoners(
+        listOf(CreditActionItem(id = 3L, credited = true)),
+        "clerk1",
+      )
+
+      assertThat(conflictIds).containsExactly(3L)
+    }
+
+    @Test
+    @DisplayName("CRD-111: credit with no prison is not credit_pending and goes to conflict_ids")
+    fun `CRD-111 credit without prison is not eligible and goes to conflict_ids`() {
+      val noPrisonCredit = createCredit(id = 4L, prison = null, resolution = CreditResolution.PENDING)
+      whenever(creditRepository.findByIdInWithLock(listOf(4L))).thenReturn(listOf(noPrisonCredit))
+
+      val conflictIds = creditService.creditPrisoners(
+        listOf(CreditActionItem(id = 4L, credited = true)),
+        "clerk1",
+      )
+
+      assertThat(conflictIds).containsExactly(4L)
     }
   }
 }
