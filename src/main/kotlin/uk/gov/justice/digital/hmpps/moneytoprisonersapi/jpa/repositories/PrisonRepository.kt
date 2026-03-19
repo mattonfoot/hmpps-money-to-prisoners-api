@@ -14,4 +14,7 @@ interface PrisonRepository : JpaRepository<Prison, String> {
 
   @Query("SELECT p FROM Prison p JOIN p.populations pop WHERE LOWER(pop.name) = LOWER(:populationName)")
   fun findByPopulationName(populationName: String): List<Prison>
+
+  @Query("SELECT DISTINCT p FROM Prison p JOIN PrisonerLocation pl ON pl.prison = p WHERE pl.active = true")
+  fun findAllWithActivePrisonerLocations(): List<Prison>
 }

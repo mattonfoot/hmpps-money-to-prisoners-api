@@ -9,10 +9,12 @@ import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingRequestHeaderException
+import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.HandlerMethodValidationException
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.CustomException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
@@ -110,6 +112,28 @@ class HmppsMoneyToPrisonersAPIExceptionHandler {
         developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("Invalid parameter type exception: {}", e.message) }
+
+  @ExceptionHandler(ResponseStatusException::class)
+  fun handleResponseStatusException(e: ResponseStatusException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(e.statusCode)
+    .body(
+      ErrorResponse(
+        status = e.statusCode.value(),
+        userMessage = e.reason ?: e.message,
+        developerMessage = if (envIsProd) null else e.message,
+      ),
+    ).also { log.info("ResponseStatusException: {}", e.message) }
+
+  @ExceptionHandler(MissingServletRequestParameterException::class)
+  fun handleMissingServletRequestParameterException(e: MissingServletRequestParameterException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Missing required parameter: ${e.parameterName}",
+        developerMessage = if (envIsProd) null else e.message,
+      ),
+    ).also { log.info("MissingServletRequestParameterException: {}", e.message) }
 
   @ExceptionHandler(value = [ValidationException::class, HttpMessageNotReadableException::class, MissingRequestHeaderException::class])
   fun handleValidationException(e: ValidationException): ResponseEntity<ErrorResponse> = ResponseEntity
