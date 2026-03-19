@@ -2103,4 +2103,90 @@ class CreditResourceTest : IntegrationTestBase() {
         .isEqualTo(405)
     }
   }
+
+  @Nested
+  @DisplayName("Credit Logging Timestamps (CRD-200 to CRD-204)")
+  inner class CreditLoggingTimestamps {
+
+    @Test
+    @DisplayName("CRD-200 - credited_at is populated from CREDITED log in API response")
+    fun `should include credited_at from CREDITED log in response`() {
+      val credit = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val creditedTime = LocalDateTime.of(2024, 3, 16, 14, 0)
+      logRepository.save(Log(action = LogAction.CREDITED, credit = credit, userId = "clerk1").also { it.created = creditedTime })
+
+      webTestClient.get()
+        .uri("/credits/")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.results[0].credited_at").isEqualTo("2024-03-16T14:00:00")
+    }
+
+    @Test
+    @DisplayName("CRD-201 - credited_at is null when no CREDITED log")
+    fun `should have null credited_at when no CREDITED log`() {
+      createAndSaveCredit(resolution = CreditResolution.PENDING)
+
+      webTestClient.get()
+        .uri("/credits/")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.results[0].credited_at").doesNotExist()
+    }
+
+    @Test
+    @DisplayName("CRD-202 - refunded_at is populated from REFUNDED log in API response")
+    fun `should include refunded_at from REFUNDED log in response`() {
+      val credit = createAndSaveCredit(resolution = CreditResolution.REFUNDED)
+      val refundedTime = LocalDateTime.of(2024, 3, 17, 9, 0)
+      logRepository.save(Log(action = LogAction.REFUNDED, credit = credit, userId = "clerk1").also { it.created = refundedTime })
+
+      webTestClient.get()
+        .uri("/credits/")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.results[0].refunded_at").isEqualTo("2024-03-17T09:00:00")
+    }
+
+    @Test
+    @DisplayName("CRD-203 - set_manual_at is populated from MANUAL log in API response")
+    fun `should include set_manual_at from MANUAL log in response`() {
+      val credit = createAndSaveCredit(resolution = CreditResolution.MANUAL)
+      val manualTime = LocalDateTime.of(2024, 3, 18, 11, 0)
+      logRepository.save(Log(action = LogAction.MANUAL, credit = credit, userId = "manager1").also { it.created = manualTime })
+
+      webTestClient.get()
+        .uri("/credits/")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.results[0].set_manual_at").isEqualTo("2024-03-18T11:00:00")
+    }
+
+    @Test
+    @DisplayName("CRD-204 - all three log timestamps can be present simultaneously")
+    fun `should include all three log timestamps when all logs present`() {
+      val credit = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val manualTime = LocalDateTime.of(2024, 3, 15, 9, 0)
+      val creditedTime = LocalDateTime.of(2024, 3, 16, 14, 0)
+      logRepository.save(Log(action = LogAction.MANUAL, credit = credit, userId = "manager1").also { it.created = manualTime })
+      logRepository.save(Log(action = LogAction.CREDITED, credit = credit, userId = "clerk1").also { it.created = creditedTime })
+
+      webTestClient.get()
+        .uri("/credits/")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.results[0].set_manual_at").isEqualTo("2024-03-15T09:00:00")
+        .jsonPath("$.results[0].credited_at").isEqualTo("2024-03-16T14:00:00")
+    }
+  }
 }
