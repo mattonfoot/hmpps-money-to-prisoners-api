@@ -292,4 +292,95 @@ class TransactionResourceTest : IntegrationTestBase() {
         .jsonPath("$.results.length()").isEqualTo(2)
     }
   }
+
+  // -------------------------------------------------------------------------
+  // TXN-023 to TXN-024: PATCH /transactions/ — bulk refund
+  // -------------------------------------------------------------------------
+
+  @Nested
+  @DisplayName("PATCH /transactions/ (TXN-023 to TXN-024)")
+  inner class RefundTransactions {
+
+    @Test
+    @DisplayName("TXN-022 - PATCH requires ROLE_BANK_ADMIN, returns 401 unauthenticated")
+    fun `should return 401 for unauthenticated PATCH`() {
+      webTestClient.patch()
+        .uri("/transactions/")
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"transaction_ids": [1]}""")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    @DisplayName("TXN-022 - PATCH requires ROLE_BANK_ADMIN, returns 403 for missing role")
+    fun `should return 403 without ROLE_BANK_ADMIN on PATCH`() {
+      webTestClient.patch()
+        .uri("/transactions/")
+        .headers(setAuthorisation(roles = listOf("ROLE_OTHER")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"transaction_ids": [1]}""")
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    @DisplayName("TXN-023 - PATCH /transactions/ bulk refunds eligible transactions and returns 204")
+    fun `should refund transactions in refundable state and return 204`() {
+      // Create refundable transaction: credit exists, sender info complete, no prison
+      val credit = Credit(amount = 1000L, prison = null, blocked = false, resolution = CreditResolution.PENDING)
+      credit.source = CreditSource.BANK_TRANSFER
+      val savedCredit = creditRepository.save(credit)
+
+      val txn = Transaction(
+        amount = 1000L, category = TransactionCategory.CREDIT, source = TransactionSource.BANK_TRANSFER,
+        incompleteSenderInfo = false, credit = savedCredit,
+      )
+      val savedTxn = transactionRepository.save(txn)
+
+      webTestClient.patch()
+        .uri("/transactions/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"transaction_ids": [${savedTxn.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+
+      val updatedCredit = creditRepository.findById(savedCredit.id!!).get()
+      assertThat(updatedCredit.resolution).isEqualTo(CreditResolution.REFUNDED)
+    }
+
+    @Test
+    @DisplayName("TXN-024 - Returns 409 when transaction credit is in invalid state for refund")
+    fun `should return 409 for non-refundable transactions`() {
+      // Create a transaction with no credit (anonymous) — not refundable
+      val txn = Transaction(
+        amount = 1000L, category = TransactionCategory.CREDIT, source = TransactionSource.BANK_TRANSFER,
+        incompleteSenderInfo = true, credit = null,
+      )
+      val savedTxn = transactionRepository.save(txn)
+
+      webTestClient.patch()
+        .uri("/transactions/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"transaction_ids": [${savedTxn.id}]}""")
+        .exchange()
+        .expectStatus().isEqualTo(409)
+        .expectBody()
+        .jsonPath("$.conflict_ids[0]").isEqualTo(savedTxn.id!!)
+    }
+
+    @Test
+    @DisplayName("TXN-023 - Returns 400 for empty transaction_ids list")
+    fun `should return 400 for empty transaction_ids`() {
+      webTestClient.patch()
+        .uri("/transactions/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"transaction_ids": []}""")
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+  }
 }
