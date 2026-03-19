@@ -6,27 +6,34 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.BillingAddress
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Payment
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonCategory
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPopulation
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerProfile
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SenderProfile
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Transaction
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.BillingAddressRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PaymentRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonCategoryRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonPopulationRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.TransactionRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 class CreditResourceTest : IntegrationTestBase() {
 
@@ -54,16 +61,81 @@ class CreditResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var prisonerProfileRepository: PrisonerProfileRepository
 
+  @Autowired
+  private lateinit var transactionRepository: TransactionRepository
+
+  @Autowired
+  private lateinit var paymentRepository: PaymentRepository
+
+  @Autowired
+  private lateinit var billingAddressRepository: BillingAddressRepository
+
   @BeforeEach
   fun setUp() {
     senderProfileRepository.deleteAll()
     prisonerProfileRepository.deleteAll()
     logRepository.deleteAll()
     securityCheckRepository.deleteAll()
+    paymentRepository.deleteAll()
+    transactionRepository.deleteAll()
     creditRepository.deleteAll()
+    billingAddressRepository.deleteAll()
     prisonRepository.deleteAll()
     prisonCategoryRepository.deleteAll()
     prisonPopulationRepository.deleteAll()
+  }
+
+  private fun createAndSaveTransaction(
+    credit: Credit,
+    senderName: String? = "Alice Johnson",
+    senderSortCode: String? = "112233",
+    senderAccountNumber: String? = "12345678",
+    senderRollNumber: String? = null,
+  ): Transaction {
+    val transaction = Transaction(
+      amount = credit.amount,
+      senderName = senderName,
+      senderSortCode = senderSortCode,
+      senderAccountNumber = senderAccountNumber,
+      senderRollNumber = senderRollNumber,
+    )
+    transaction.credit = credit
+    credit.source = CreditSource.BANK_TRANSFER
+    creditRepository.save(credit)
+    return transactionRepository.save(transaction)
+  }
+
+  private fun createAndSavePayment(
+    credit: Credit,
+    cardholderName: String? = "Bob Cardholder",
+    email: String? = "bob@example.com",
+    ipAddress: String? = "192.168.1.1",
+    cardNumberFirstDigits: String? = "411111",
+    cardNumberLastDigits: String? = "1234",
+    cardExpiryDate: String? = "12/25",
+    billingAddress: BillingAddress? = null,
+    uuid: UUID = UUID.randomUUID(),
+  ): Payment {
+    val payment = Payment(
+      uuid = uuid,
+      amount = credit.amount,
+      cardholderName = cardholderName,
+      email = email,
+      ipAddress = ipAddress,
+      cardNumberFirstDigits = cardNumberFirstDigits,
+      cardNumberLastDigits = cardNumberLastDigits,
+      cardExpiryDate = cardExpiryDate,
+    )
+    payment.credit = credit
+    payment.billingAddress = billingAddress
+    credit.source = CreditSource.ONLINE
+    creditRepository.save(credit)
+    return paymentRepository.save(payment)
+  }
+
+  private fun createAndSaveBillingAddress(postcode: String? = "SW1A 1AA"): BillingAddress {
+    val address = BillingAddress(postcode = postcode)
+    return billingAddressRepository.save(address)
   }
 
   private fun createAndSavePrison(
@@ -1168,6 +1240,820 @@ class CreditResourceTest : IntegrationTestBase() {
 
       val unchanged = creditRepository.findById(credit.id!!).get()
       assertThat(unchanged.resolution).isEqualTo(CreditResolution.PENDING)
+    }
+  }
+
+  @Nested
+  @DisplayName("Credit List Filters - Sender/Payment (CRD-060 to CRD-075)")
+  inner class SenderPaymentFilters {
+
+    @Test
+    @DisplayName("CRD-060 - Filter sender_name matches transaction.sender_name (case-insensitive substring)")
+    fun `should filter by sender_name on transaction`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      createAndSaveTransaction(credit1, senderName = "Alice Johnson")
+      createAndSaveTransaction(credit2, senderName = "Bob Smith")
+
+      webTestClient.get()
+        .uri("/credits/?sender_name=alice")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-060 - Filter sender_name matches payment.cardholder_name (case-insensitive substring)")
+    fun `should filter by sender_name on payment cardholder_name`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      createAndSavePayment(credit1, cardholderName = "Carol Williams")
+      createAndSavePayment(credit2, cardholderName = "Dave Brown")
+
+      webTestClient.get()
+        .uri("/credits/?sender_name=carol")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-061 - Filter sender_sort_code exact match on transaction")
+    fun `should filter by sender_sort_code`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      createAndSaveTransaction(credit1, senderSortCode = "112233")
+      createAndSaveTransaction(credit2, senderSortCode = "445566")
+
+      webTestClient.get()
+        .uri("/credits/?sender_sort_code=112233")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-062 - Filter sender_account_number exact match on transaction")
+    fun `should filter by sender_account_number`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      createAndSaveTransaction(credit1, senderAccountNumber = "12345678")
+      createAndSaveTransaction(credit2, senderAccountNumber = "87654321")
+
+      webTestClient.get()
+        .uri("/credits/?sender_account_number=12345678")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-063 - Filter sender_roll_number exact match on transaction")
+    fun `should filter by sender_roll_number`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      createAndSaveTransaction(credit1, senderRollNumber = "ROLL001")
+      createAndSaveTransaction(credit2, senderRollNumber = "ROLL002")
+
+      webTestClient.get()
+        .uri("/credits/?sender_roll_number=ROLL001")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-064 - Filter sender_name__isblank=True returns transactions with blank sender_name")
+    fun `should filter sender_name__isblank true`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      createAndSaveTransaction(credit1, senderName = null)
+      createAndSaveTransaction(credit2, senderName = "Alice Johnson")
+
+      webTestClient.get()
+        .uri("/credits/?sender_name__isblank=true")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-065 - Filter sender_sort_code__isblank=True returns transactions with blank sort code")
+    fun `should filter sender_sort_code__isblank true`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      createAndSaveTransaction(credit1, senderSortCode = null)
+      createAndSaveTransaction(credit2, senderSortCode = "112233")
+
+      webTestClient.get()
+        .uri("/credits/?sender_sort_code__isblank=true")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-066 - Filter sender_email case-insensitive substring on payment.email")
+    fun `should filter by sender_email`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      createAndSavePayment(credit1, email = "alice@example.com")
+      createAndSavePayment(credit2, email = "bob@other.com")
+
+      webTestClient.get()
+        .uri("/credits/?sender_email=EXAMPLE")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-067 - Filter sender_ip_address exact match on payment")
+    fun `should filter by sender_ip_address`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      createAndSavePayment(credit1, ipAddress = "10.0.0.1")
+      createAndSavePayment(credit2, ipAddress = "10.0.0.2")
+
+      webTestClient.get()
+        .uri("/credits/?sender_ip_address=10.0.0.1")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-068 - Filter card_number_first_digits exact match on payment")
+    fun `should filter by card_number_first_digits`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      createAndSavePayment(credit1, cardNumberFirstDigits = "411111")
+      createAndSavePayment(credit2, cardNumberFirstDigits = "520000")
+
+      webTestClient.get()
+        .uri("/credits/?card_number_first_digits=411111")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-069 - Filter card_number_last_digits exact match on payment")
+    fun `should filter by card_number_last_digits`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      createAndSavePayment(credit1, cardNumberLastDigits = "1234")
+      createAndSavePayment(credit2, cardNumberLastDigits = "5678")
+
+      webTestClient.get()
+        .uri("/credits/?card_number_last_digits=1234")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-070 - Filter card_expiry_date exact match on payment")
+    fun `should filter by card_expiry_date`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      createAndSavePayment(credit1, cardExpiryDate = "1225")
+      createAndSavePayment(credit2, cardExpiryDate = "0626")
+
+      webTestClient.get()
+        .uri("/credits/?card_expiry_date=1225")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-071 - Filter sender_postcode normalized matching (ignores spaces and case)")
+    fun `should filter by sender_postcode ignoring spaces and case`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val address1 = createAndSaveBillingAddress(postcode = "SW1A 1AA")
+      val address2 = createAndSaveBillingAddress(postcode = "EC1A 1BB")
+      createAndSavePayment(credit1, billingAddress = address1)
+      createAndSavePayment(credit2, billingAddress = address2)
+
+      webTestClient.get()
+        .uri("/credits/?sender_postcode=sw1a1aa")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-072 - Filter payment_reference prefix match on first 8 chars of payment UUID")
+    fun `should filter by payment_reference prefix`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val uuid1 = UUID.fromString("abcdef12-0000-0000-0000-000000000001")
+      val uuid2 = UUID.fromString("99999999-0000-0000-0000-000000000002")
+      createAndSavePayment(credit1, uuid = uuid1)
+      createAndSavePayment(credit2, uuid = uuid2)
+
+      webTestClient.get()
+        .uri("/credits/?payment_reference=abcdef12")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-073 - Filter source=bank_transfer returns credits with transactions")
+    fun `should filter by source bank_transfer`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      createAndSaveTransaction(credit1)
+      createAndSavePayment(credit2)
+
+      webTestClient.get()
+        .uri("/credits/?source=BANK_TRANSFER")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-074 - Filter source=online returns credits with payments")
+    fun `should filter by source online`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      createAndSaveTransaction(credit1)
+      createAndSavePayment(credit2)
+
+      webTestClient.get()
+        .uri("/credits/?source=ONLINE")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-075 - Filter source=unknown returns credits with neither transaction nor payment")
+    fun `should filter by source unknown`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.UNKNOWN)
+      createAndSaveTransaction(credit1)
+
+      webTestClient.get()
+        .uri("/credits/?source=UNKNOWN")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+  }
+
+  @Nested
+  @DisplayName("Credit List Filters - Search & Ordering (CRD-095 to CRD-099)")
+  inner class SearchAndOrderingFilters {
+
+    @Test
+    @DisplayName("CRD-095 - search={text} matches prisoner_name")
+    fun `should search by prisoner_name`() {
+      createAndSaveCredit(prisonerName = "John Smith", resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(prisonerName = "Jane Doe", resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?search=John")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].prisoner_name").isEqualTo("John Smith")
+    }
+
+    @Test
+    @DisplayName("CRD-095 - search={text} matches prisoner_number")
+    fun `should search by prisoner_number`() {
+      createAndSaveCredit(prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(prisonerNumber = "Z9999XY", resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?search=A1234BC")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-095 - search by amount in £nn.nn format")
+    fun `should search by amount in pounds format`() {
+      createAndSaveCredit(amount = 5000, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 2500, resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri { it.path("/credits/").queryParam("search", "£50.00").build() }
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-095 - search by 8-char payment UUID prefix")
+    fun `should search by payment UUID prefix`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.ONLINE)
+      val uuid1 = UUID.fromString("abcdef12-0000-0000-0000-000000000001")
+      val uuid2 = UUID.fromString("99999999-0000-0000-0000-000000000002")
+      createAndSavePayment(credit1, uuid = uuid1)
+      createAndSavePayment(credit2, uuid = uuid2)
+
+      webTestClient.get()
+        .uri("/credits/?search=abcdef12")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-096 - all search words must match (AND logic)")
+    fun `search uses AND logic for multiple words`() {
+      createAndSaveCredit(prisonerName = "John Smith", prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(prisonerName = "John Doe", prisonerNumber = "Z9999XY", resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?search=John+Smith")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].prisoner_name").isEqualTo("John Smith")
+    }
+
+    @Test
+    @DisplayName("CRD-097 - simple_search searches transaction.sender_name")
+    fun `simple_search matches transaction sender_name`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED, prison = "LEI", source = CreditSource.BANK_TRANSFER)
+      createAndSaveTransaction(credit1, senderName = "Alice Sender")
+      createAndSaveTransaction(credit2, senderName = "Bob Other")
+
+      webTestClient.get()
+        .uri("/credits/?simple_search=Alice")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-097 - simple_search searches prisoner_number")
+    fun `simple_search matches prisoner_number`() {
+      createAndSaveCredit(prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(prisonerNumber = "Z9999XY", resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?simple_search=A1234BC")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("CRD-098 - ordering by amount ascending")
+    fun `should order by amount ascending`() {
+      createAndSaveCredit(amount = 3000, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 1000, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 2000, resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?ordering=amount")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.results[0].amount").isEqualTo(1000)
+        .jsonPath("$.results[1].amount").isEqualTo(2000)
+        .jsonPath("$.results[2].amount").isEqualTo(3000)
+    }
+
+    @Test
+    @DisplayName("CRD-098 - ordering by amount descending")
+    fun `should order by amount descending`() {
+      createAndSaveCredit(amount = 3000, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 1000, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(amount = 2000, resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?ordering=-amount")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.results[0].amount").isEqualTo(3000)
+        .jsonPath("$.results[1].amount").isEqualTo(2000)
+        .jsonPath("$.results[2].amount").isEqualTo(1000)
+    }
+
+    @Test
+    @DisplayName("CRD-099 - ordering by prisoner_number ascending")
+    fun `should order by prisoner_number ascending`() {
+      createAndSaveCredit(prisonerNumber = "C1111CC", resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(prisonerNumber = "A1111AA", resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(prisonerNumber = "B1111BB", resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?ordering=prisoner_number")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.results[0].prisoner_number").isEqualTo("A1111AA")
+        .jsonPath("$.results[1].prisoner_number").isEqualTo("B1111BB")
+        .jsonPath("$.results[2].prisoner_number").isEqualTo("C1111CC")
+    }
+
+    @Test
+    @DisplayName("CRD-099 - ordering by prisoner_name descending")
+    fun `should order by prisoner_name descending`() {
+      createAndSaveCredit(prisonerName = "Charlie", resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(prisonerName = "Alice", resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(prisonerName = "Bob", resolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/credits/?ordering=-prisoner_name")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.results[0].prisoner_name").isEqualTo("Charlie")
+        .jsonPath("$.results[1].prisoner_name").isEqualTo("Bob")
+        .jsonPath("$.results[2].prisoner_name").isEqualTo("Alice")
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /credits/actions/setmanual/ (CRD-120 to CRD-125)")
+  inner class SetManualAction {
+
+    @Test
+    @DisplayName("CRD-120 - POST /credits/actions/setmanual/ accepts credit_ids list")
+    fun `should accept credit_ids list`() {
+      val credit = createAndSaveCredit(resolution = CreditResolution.PENDING, prison = "LEI")
+
+      webTestClient.post()
+        .uri("/credits/actions/setmanual/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${credit.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+    }
+
+    @Test
+    @DisplayName("CRD-121 - Non-pending credits returned as conflict_ids with 200")
+    fun `should return 200 with conflict_ids for non-pending credits`() {
+      val credited = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+
+      webTestClient.post()
+        .uri("/credits/actions/setmanual/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${credited.id}]}""")
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.conflict_ids").isArray
+        .jsonPath("$.conflict_ids[0]").isEqualTo(credited.id!!.toInt())
+    }
+
+    @Test
+    @DisplayName("CRD-122 - Sets resolution=MANUAL and owner=user on eligible credits")
+    fun `should set resolution to MANUAL and owner`() {
+      val credit = createAndSaveCredit(resolution = CreditResolution.PENDING, prison = "LEI")
+
+      webTestClient.post()
+        .uri("/credits/actions/setmanual/")
+        .headers(setAuthorisation(username = "manager1"))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${credit.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+
+      val updated = creditRepository.findById(credit.id!!).get()
+      assertThat(updated.resolution).isEqualTo(CreditResolution.MANUAL)
+      assertThat(updated.owner).isEqualTo("manager1")
+    }
+
+    @Test
+    @DisplayName("CRD-123 - Creates log entry with LogAction.MANUAL")
+    fun `should create MANUAL log entry`() {
+      val credit = createAndSaveCredit(resolution = CreditResolution.PENDING, prison = "LEI")
+
+      webTestClient.post()
+        .uri("/credits/actions/setmanual/")
+        .headers(setAuthorisation(username = "manager1"))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${credit.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+
+      val logs = logRepository.findAll().filter { it.credit?.id == credit.id && it.action == LogAction.MANUAL }
+      assertThat(logs).hasSize(1)
+      assertThat(logs[0].userId).isEqualTo("manager1")
+    }
+
+    @Test
+    @DisplayName("CRD-125 - Returns 204 on success")
+    fun `should return 204 on success`() {
+      val credit = createAndSaveCredit(resolution = CreditResolution.PENDING, prison = "LEI")
+
+      webTestClient.post()
+        .uri("/credits/actions/setmanual/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${credit.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+    }
+
+    @Test
+    @DisplayName("CRD-120 - Empty credit_ids list returns 400")
+    fun `should return 400 for empty credit_ids`() {
+      webTestClient.post()
+        .uri("/credits/actions/setmanual/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": []}""")
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    @DisplayName("CRD-120 - Unauthenticated request returns 401")
+    fun `should return 401 for unauthenticated setmanual request`() {
+      webTestClient.post()
+        .uri("/credits/actions/setmanual/")
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [1]}""")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /credits/actions/review/ (CRD-130 to CRD-136)")
+  inner class ReviewAction {
+
+    @Test
+    @DisplayName("CRD-130 - POST /credits/actions/review/ accepts credit_ids list")
+    fun `should accept credit_ids list for review`() {
+      val credit = createAndSaveCredit(resolution = CreditResolution.PENDING, prison = "LEI")
+
+      webTestClient.post()
+        .uri("/credits/actions/review/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${credit.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+    }
+
+    @Test
+    @DisplayName("CRD-131 - Sets reviewed=true on ALL specified credits regardless of state")
+    fun `should set reviewed=true on all credits regardless of state`() {
+      val pendingCredit = createAndSaveCredit(resolution = CreditResolution.PENDING, prison = "LEI")
+      val creditedCredit = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      val refundedCredit = createAndSaveCredit(resolution = CreditResolution.REFUNDED)
+
+      webTestClient.post()
+        .uri("/credits/actions/review/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${pendingCredit.id}, ${creditedCredit.id}, ${refundedCredit.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+
+      assertThat(creditRepository.findById(pendingCredit.id!!).get().reviewed).isTrue
+      assertThat(creditRepository.findById(creditedCredit.id!!).get().reviewed).isTrue
+      assertThat(creditRepository.findById(refundedCredit.id!!).get().reviewed).isTrue
+    }
+
+    @Test
+    @DisplayName("CRD-132 - Creates log entry with LogAction.REVIEWED for each credit")
+    fun `should create REVIEWED log entry for each credit`() {
+      val credit1 = createAndSaveCredit(resolution = CreditResolution.PENDING, prison = "LEI")
+      val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+
+      webTestClient.post()
+        .uri("/credits/actions/review/")
+        .headers(setAuthorisation(username = "security1"))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${credit1.id}, ${credit2.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+
+      val logs1 = logRepository.findAll().filter { it.credit?.id == credit1.id && it.action == LogAction.REVIEWED }
+      val logs2 = logRepository.findAll().filter { it.credit?.id == credit2.id && it.action == LogAction.REVIEWED }
+      assertThat(logs1).hasSize(1)
+      assertThat(logs2).hasSize(1)
+      assertThat(logs1[0].userId).isEqualTo("security1")
+    }
+
+    @Test
+    @DisplayName("CRD-136 - Returns 204 on success")
+    fun `should return 204 on review success`() {
+      val credit = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+
+      webTestClient.post()
+        .uri("/credits/actions/review/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${credit.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+    }
+
+    @Test
+    @DisplayName("CRD-130 - Empty credit_ids list returns 400")
+    fun `should return 400 for empty credit_ids in review`() {
+      webTestClient.post()
+        .uri("/credits/actions/review/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": []}""")
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    @DisplayName("CRD-130 - Unauthenticated request returns 401")
+    fun `should return 401 for unauthenticated review request`() {
+      webTestClient.post()
+        .uri("/credits/actions/review/")
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [1]}""")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /credits/actions/refund/ (CRD-140 to CRD-144)")
+  inner class RefundAction {
+
+    @Test
+    @DisplayName("CRD-140 - POST /credits/actions/refund/ marks refund_pending credits for refund")
+    fun `should refund refund_pending credits`() {
+      val credit = createAndSaveCredit(
+        prison = null,
+        resolution = CreditResolution.PENDING,
+        blocked = false,
+        incompleteSenderInfo = false,
+      )
+
+      webTestClient.post()
+        .uri("/credits/actions/refund/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${credit.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+
+      val updated = creditRepository.findById(credit.id!!).get()
+      assertThat(updated.resolution).isEqualTo(CreditResolution.REFUNDED)
+    }
+
+    @Test
+    @DisplayName("CRD-141 - Only refund_pending credits eligible (no prison OR blocked AND pending AND not incompleteSenderInfo)")
+    fun `should only refund credits that are refund_pending`() {
+      val eligibleCredit = createAndSaveCredit(
+        prison = null,
+        resolution = CreditResolution.PENDING,
+        blocked = false,
+        incompleteSenderInfo = false,
+      )
+      val ineligibleCredit = createAndSaveCredit(
+        prison = "LEI",
+        resolution = CreditResolution.PENDING,
+        blocked = false,
+      )
+
+      webTestClient.post()
+        .uri("/credits/actions/refund/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${eligibleCredit.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+
+      val updated = creditRepository.findById(eligibleCredit.id!!).get()
+      assertThat(updated.resolution).isEqualTo(CreditResolution.REFUNDED)
+
+      webTestClient.post()
+        .uri("/credits/actions/refund/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${ineligibleCredit.id}]}""")
+        .exchange()
+        .expectStatus().isEqualTo(409)
+    }
+
+    @Test
+    @DisplayName("CRD-142 - Sets resolution=REFUNDED on eligible credits")
+    fun `should set resolution to REFUNDED`() {
+      val credit = createAndSaveCredit(
+        prison = null,
+        resolution = CreditResolution.PENDING,
+        blocked = false,
+        incompleteSenderInfo = false,
+      )
+
+      webTestClient.post()
+        .uri("/credits/actions/refund/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${credit.id}]}""")
+        .exchange()
+        .expectStatus().isNoContent
+
+      val updated = creditRepository.findById(credit.id!!).get()
+      assertThat(updated.resolution).isEqualTo(CreditResolution.REFUNDED)
+    }
+
+    @Test
+    @DisplayName("CRD-144 - Returns 409 Conflict on invalid state")
+    fun `should return 409 for credits not in refund_pending state`() {
+      val credited = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+
+      webTestClient.post()
+        .uri("/credits/actions/refund/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [${credited.id}]}""")
+        .exchange()
+        .expectStatus().isEqualTo(409)
+    }
+
+    @Test
+    @DisplayName("CRD-140 - Empty credit_ids returns 400")
+    fun `should return 400 for empty credit_ids in refund`() {
+      webTestClient.post()
+        .uri("/credits/actions/refund/")
+        .headers(setAuthorisation())
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": []}""")
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    @DisplayName("CRD-140 - Unauthenticated request returns 401")
+    fun `should return 401 for unauthenticated refund request`() {
+      webTestClient.post()
+        .uri("/credits/actions/refund/")
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credit_ids": [1]}""")
+        .exchange()
+        .expectStatus().isUnauthorized
     }
   }
 
