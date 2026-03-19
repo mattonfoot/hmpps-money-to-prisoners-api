@@ -14,27 +14,12 @@ import jakarta.persistence.PrePersist
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 
-enum class LogAction {
-  CREATED,
-  CREDITED,
-  REFUNDED,
-  RECONCILED,
-  REVIEWED,
-  MANUAL,
-  FAILED,
-  EDITED,
-  REJECTED,
-  CONFIRMED,
-  SENT,
-  PRECONFIRMED,
-}
-
 @Entity
-@Table(name = "logs")
-class Log(
+@Table(name = "disbursement_logs")
+class DisbursementLog(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "log_id", columnDefinition = "serial")
+  @Column(name = "disbursement_log_id", columnDefinition = "serial")
   val id: Long? = null,
 
   @Enumerated(EnumType.STRING)
@@ -42,8 +27,8 @@ class Log(
   val action: LogAction,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "credit_id")
-  var credit: Credit? = null,
+  @JoinColumn(name = "disbursement_id")
+  var disbursement: Disbursement? = null,
 
   @Column(name = "user_id")
   var userId: String? = null,

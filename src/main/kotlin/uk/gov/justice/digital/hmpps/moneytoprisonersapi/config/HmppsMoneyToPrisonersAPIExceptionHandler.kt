@@ -16,6 +16,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.CustomException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidDisbursementStateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.DisbursementNotPendingException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestControllerAdvice
@@ -44,6 +46,28 @@ class HmppsMoneyToPrisonersAPIExceptionHandler {
         developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("InvalidCreditStateException: {}", e.message) }
+
+  @ExceptionHandler(InvalidDisbursementStateException::class)
+  fun handleInvalidDisbursementStateException(e: InvalidDisbursementStateException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.CONFLICT)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.CONFLICT,
+        userMessage = "Invalid disbursement state",
+        developerMessage = if (envIsProd) null else e.message,
+      ),
+    ).also { log.info("InvalidDisbursementStateException: {}", e.message) }
+
+  @ExceptionHandler(DisbursementNotPendingException::class)
+  fun handleDisbursementNotPendingException(e: DisbursementNotPendingException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Disbursement is not in PENDING state",
+        developerMessage = if (envIsProd) null else e.message,
+      ),
+    ).also { log.info("DisbursementNotPendingException: {}", e.message) }
 
   @ExceptionHandler(value = [MethodArgumentTypeMismatchException::class, MethodArgumentNotValidException::class])
   fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> = ResponseEntity
