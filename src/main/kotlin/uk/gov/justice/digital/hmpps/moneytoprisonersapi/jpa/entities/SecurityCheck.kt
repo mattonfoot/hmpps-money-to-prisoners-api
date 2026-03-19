@@ -45,6 +45,21 @@ class SecurityCheck(
   @Column(name = "actioned_at")
   var actionedAt: LocalDateTime? = null,
 
+  /** JSON array of rule codes that triggered this check, e.g. ["FIUMONP","CSFREQ"] */
+  @Column(name = "rule_codes", columnDefinition = "text")
+  var ruleCodes: String? = null,
+
+  /** JSON array of human-readable descriptions matching the rule codes */
+  @Column(columnDefinition = "text")
+  var descriptions: String? = null,
+
+  /** JSON array of rejection reason codes, populated on reject */
+  @Column(name = "rejection_reasons", columnDefinition = "text")
+  var rejectionReasons: String? = null,
+
+  @Column(name = "started_at")
+  var startedAt: LocalDateTime? = null,
+
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "credit_id", nullable = false, unique = true)
   var credit: Credit? = null,

@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.DisbursementNot
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentNotFoundException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentNotPendingException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentValidationException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.SecurityCheckConflictException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestControllerAdvice
@@ -90,6 +91,17 @@ class HmppsMoneyToPrisonersAPIExceptionHandler {
         developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("PaymentValidationException: {}", e.message) }
+
+  @ExceptionHandler(SecurityCheckConflictException::class)
+  fun handleSecurityCheckConflictException(e: SecurityCheckConflictException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = e.message ?: "Conflict",
+        developerMessage = if (envIsProd) null else e.message,
+      ),
+    ).also { log.info("SecurityCheckConflictException: {}", e.message) }
 
   @ExceptionHandler(DisbursementNotPendingException::class)
   fun handleDisbursementNotPendingException(e: DisbursementNotPendingException): ResponseEntity<ErrorResponse> = ResponseEntity
