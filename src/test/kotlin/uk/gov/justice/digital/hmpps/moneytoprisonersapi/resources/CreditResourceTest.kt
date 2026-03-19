@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSourc
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ReconcileService
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -32,6 +33,9 @@ class CreditResourceTest {
 
   @Mock
   private lateinit var creditService: CreditService
+
+  @Mock
+  private lateinit var reconcileService: ReconcileService
 
   @InjectMocks
   private lateinit var creditResource: CreditResource

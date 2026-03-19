@@ -5,4 +5,6 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
 
 @Repository
-interface LogRepository : JpaRepository<Log, Long>
+interface LogRepository : JpaRepository<Log, Long> {
+  fun findByCreditId(creditId: Long): List<Log>
+}

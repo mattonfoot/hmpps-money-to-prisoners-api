@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ProcessedCreditGroupDto
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReconcileRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.RefundRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReviewRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
@@ -29,6 +30,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResol
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ReconcileService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
 import java.time.LocalDateTime
@@ -39,6 +41,7 @@ import java.time.LocalDateTime
 @Tag(name = "Credits", description = "Endpoints for managing prisoner credits")
 class CreditResource(
   private val creditService: CreditService,
+  private val reconcileService: ReconcileService,
 ) {
 
   @Operation(
@@ -610,6 +613,31 @@ class CreditResource(
       return ResponseEntity.badRequest().build()
     }
     creditService.refund(request.creditIds, principal.name)
+    return ResponseEntity.noContent().build()
+  }
+
+  @Operation(
+    summary = "Reconcile credits",
+    description = "Sets reconciled=true on each credit, creates a RECONCILED log entry, " +
+      "and for credits in private prisons creates or updates a PrivateEstateBatch for today.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "204", description = "Credits reconciled successfully"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("isAuthenticated()")
+  @PostMapping("/actions/reconcile/")
+  fun reconcile(
+    @RequestBody request: ReconcileRequest,
+    principal: Principal,
+  ): ResponseEntity<Any> {
+    reconcileService.reconcile(request.creditIds, principal.name)
     return ResponseEntity.noContent().build()
   }
 }
