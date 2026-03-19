@@ -27,12 +27,14 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReconcileRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.RefundRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReviewRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdatePrisonRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.AttachProfilesService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ReconcileService
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.UpdatePrisonService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
 import java.time.LocalDateTime
@@ -45,6 +47,7 @@ class CreditResource(
   private val creditService: CreditService,
   private val reconcileService: ReconcileService,
   private val attachProfilesService: AttachProfilesService,
+  private val updatePrisonService: UpdatePrisonService,
 ) {
 
   @Operation(
@@ -665,6 +668,30 @@ class CreditResource(
     @RequestBody request: AttachProfilesRequest,
   ): ResponseEntity<Any> {
     attachProfilesService.attachProfiles(request.creditIds)
+    return ResponseEntity.noContent().build()
+  }
+
+  @Operation(
+    summary = "Update prison on credits from prisoner location data",
+    description = "For each prisoner_number/prison pair, sets the prison field on all credits " +
+      "matching that prisoner number that currently have no prison assigned (CRD-220 to CRD-223).",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "204", description = "Credits updated successfully"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("isAuthenticated()")
+  @PostMapping("/actions/update-prison/")
+  fun updatePrison(
+    @RequestBody requests: List<UpdatePrisonRequest>,
+  ): ResponseEntity<Any> {
+    updatePrisonService.updatePrisons(requests)
     return ResponseEntity.noContent().build()
   }
 }

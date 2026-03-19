@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.AttachProfilesS
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ReconcileService
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.UpdatePrisonService
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -40,6 +41,9 @@ class CreditResourceTest {
 
   @Mock
   private lateinit var attachProfilesService: AttachProfilesService
+
+  @Mock
+  private lateinit var updatePrisonService: UpdatePrisonService
 
   @InjectMocks
   private lateinit var creditResource: CreditResource
