@@ -18,6 +18,9 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.CustomException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidDisbursementStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.DisbursementNotPendingException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentNotFoundException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentNotPendingException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentValidationException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestControllerAdvice
@@ -57,6 +60,34 @@ class HmppsMoneyToPrisonersAPIExceptionHandler {
         developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("InvalidDisbursementStateException: {}", e.message) }
+
+  @ExceptionHandler(PaymentNotFoundException::class)
+  fun handlePaymentNotFoundException(e: PaymentNotFoundException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.NOT_FOUND)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = "Payment not found",
+        developerMessage = if (envIsProd) null else e.message,
+      ),
+    ).also { log.info("PaymentNotFoundException: {}", e.message) }
+
+  @ExceptionHandler(PaymentNotPendingException::class)
+  fun handlePaymentNotPendingException(e: PaymentNotPendingException): ResponseEntity<Map<String, List<String>>> = ResponseEntity
+    .status(HttpStatus.CONFLICT)
+    .body(mapOf("errors" to listOf(e.message ?: "Payment cannot be updated")))
+    .also { log.info("PaymentNotPendingException: {}", e.message) }
+
+  @ExceptionHandler(PaymentValidationException::class)
+  fun handlePaymentValidationException(e: PaymentValidationException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = e.message ?: "Validation failure",
+        developerMessage = if (envIsProd) null else e.message,
+      ),
+    ).also { log.info("PaymentValidationException: {}", e.message) }
 
   @ExceptionHandler(DisbursementNotPendingException::class)
   fun handleDisbursementNotPendingException(e: DisbursementNotPendingException): ResponseEntity<ErrorResponse> = ResponseEntity

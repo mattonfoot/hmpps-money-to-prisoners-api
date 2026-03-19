@@ -24,6 +24,12 @@ interface CreditRepository : JpaRepository<Credit, Long> {
 
   fun findByPrisonerNumberAndPrisonIsNull(prisonerNumber: String): List<Credit>
 
+  fun findByResolutionAndReconciledFalseAndReceivedAtGreaterThanEqualAndReceivedAtBefore(
+    resolution: CreditResolution,
+    from: LocalDateTime,
+    to: LocalDateTime,
+  ): List<Credit>
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT c FROM Credit c WHERE c.id IN :ids")
   fun findByIdInWithLock(ids: List<Long>): List<Credit>
