@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.AttachProfilesRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
@@ -28,6 +29,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReviewRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.AttachProfilesService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ReconcileService
@@ -42,6 +44,7 @@ import java.time.LocalDateTime
 class CreditResource(
   private val creditService: CreditService,
   private val reconcileService: ReconcileService,
+  private val attachProfilesService: AttachProfilesService,
 ) {
 
   @Operation(
@@ -638,6 +641,30 @@ class CreditResource(
     principal: Principal,
   ): ResponseEntity<Any> {
     reconcileService.reconcile(request.creditIds, principal.name)
+    return ResponseEntity.noContent().build()
+  }
+
+  @Operation(
+    summary = "Attach profiles to credits",
+    description = "Attaches credits to sender profiles (grouped by bank account or card details) " +
+      "and prisoner profiles (grouped by prisoner number). Creates profiles if they don't exist.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "204", description = "Profiles attached successfully"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("isAuthenticated()")
+  @PostMapping("/actions/attach-profiles/")
+  fun attachProfiles(
+    @RequestBody request: AttachProfilesRequest,
+  ): ResponseEntity<Any> {
+    attachProfilesService.attachProfiles(request.creditIds)
     return ResponseEntity.noContent().build()
   }
 }

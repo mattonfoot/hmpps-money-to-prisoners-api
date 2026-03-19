@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.AttachProfilesService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ReconcileService
@@ -36,6 +37,9 @@ class CreditResourceTest {
 
   @Mock
   private lateinit var reconcileService: ReconcileService
+
+  @Mock
+  private lateinit var attachProfilesService: AttachProfilesService
 
   @InjectMocks
   private lateinit var creditResource: CreditResource

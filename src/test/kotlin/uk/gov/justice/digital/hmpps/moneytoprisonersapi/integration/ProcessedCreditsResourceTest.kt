@@ -14,7 +14,9 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDateTime
 
 class ProcessedCreditsResourceTest : IntegrationTestBase() {
@@ -31,9 +33,17 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
 
+  @Autowired
+  private lateinit var senderProfileRepository: SenderProfileRepository
+
+  @Autowired
+  private lateinit var prisonerProfileRepository: PrisonerProfileRepository
+
   @BeforeEach
   fun setUp() {
     privateEstateBatchRepository.deleteAll()
+    senderProfileRepository.deleteAll()
+    prisonerProfileRepository.deleteAll()
     logRepository.deleteAll()
     creditRepository.deleteAll()
     prisonRepository.deleteAll()
