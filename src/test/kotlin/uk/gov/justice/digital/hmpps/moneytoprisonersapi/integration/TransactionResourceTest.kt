@@ -199,7 +199,9 @@ class TransactionResourceTest : IntegrationTestBase() {
       credit1.source = CreditSource.BANK_TRANSFER
       val savedCredit1 = creditRepository.save(credit1)
       val txn1 = Transaction(
-        amount = 1000L, category = TransactionCategory.CREDIT, source = TransactionSource.BANK_TRANSFER,
+        amount = 1000L,
+        category = TransactionCategory.CREDIT,
+        source = TransactionSource.BANK_TRANSFER,
         credit = savedCredit1,
       )
       transactionRepository.save(txn1)
@@ -209,7 +211,9 @@ class TransactionResourceTest : IntegrationTestBase() {
       credit2.source = CreditSource.BANK_TRANSFER
       val savedCredit2 = creditRepository.save(credit2)
       val txn2 = Transaction(
-        amount = 2000L, category = TransactionCategory.CREDIT, source = TransactionSource.BANK_TRANSFER,
+        amount = 2000L,
+        category = TransactionCategory.CREDIT,
+        source = TransactionSource.BANK_TRANSFER,
         credit = savedCredit2,
       )
       transactionRepository.save(txn2)
@@ -231,8 +235,11 @@ class TransactionResourceTest : IntegrationTestBase() {
       credit1.source = CreditSource.BANK_TRANSFER
       val savedCredit1 = creditRepository.save(credit1)
       val txn1 = Transaction(
-        amount = 1000L, category = TransactionCategory.CREDIT, source = TransactionSource.BANK_TRANSFER,
-        receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0), credit = savedCredit1,
+        amount = 1000L,
+        category = TransactionCategory.CREDIT,
+        source = TransactionSource.BANK_TRANSFER,
+        receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0),
+        credit = savedCredit1,
       )
       transactionRepository.save(txn1)
 
@@ -240,8 +247,11 @@ class TransactionResourceTest : IntegrationTestBase() {
       credit2.source = CreditSource.BANK_TRANSFER
       val savedCredit2 = creditRepository.save(credit2)
       val txn2 = Transaction(
-        amount = 2000L, category = TransactionCategory.CREDIT, source = TransactionSource.BANK_TRANSFER,
-        receivedAt = LocalDateTime.of(2024, 3, 10, 9, 0, 0), credit = savedCredit2,
+        amount = 2000L,
+        category = TransactionCategory.CREDIT,
+        source = TransactionSource.BANK_TRANSFER,
+        receivedAt = LocalDateTime.of(2024, 3, 10, 9, 0, 0),
+        credit = savedCredit2,
       )
       transactionRepository.save(txn2)
 
@@ -333,8 +343,11 @@ class TransactionResourceTest : IntegrationTestBase() {
       val savedCredit = creditRepository.save(credit)
 
       val txn = Transaction(
-        amount = 1000L, category = TransactionCategory.CREDIT, source = TransactionSource.BANK_TRANSFER,
-        incompleteSenderInfo = false, credit = savedCredit,
+        amount = 1000L,
+        category = TransactionCategory.CREDIT,
+        source = TransactionSource.BANK_TRANSFER,
+        incompleteSenderInfo = false,
+        credit = savedCredit,
       )
       val savedTxn = transactionRepository.save(txn)
 
@@ -355,8 +368,11 @@ class TransactionResourceTest : IntegrationTestBase() {
     fun `should return 409 for non-refundable transactions`() {
       // Create a transaction with no credit (anonymous) — not refundable
       val txn = Transaction(
-        amount = 1000L, category = TransactionCategory.CREDIT, source = TransactionSource.BANK_TRANSFER,
-        incompleteSenderInfo = true, credit = null,
+        amount = 1000L,
+        category = TransactionCategory.CREDIT,
+        source = TransactionSource.BANK_TRANSFER,
+        incompleteSenderInfo = true,
+        credit = null,
       )
       val savedTxn = transactionRepository.save(txn)
 
@@ -381,6 +397,137 @@ class TransactionResourceTest : IntegrationTestBase() {
         .bodyValue("""{"transaction_ids": []}""")
         .exchange()
         .expectStatus().isBadRequest
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // TXN-028 to TXN-030: POST /transactions/reconcile/
+  // -------------------------------------------------------------------------
+
+  @Nested
+  @DisplayName("POST /transactions/reconcile/ (TXN-028 to TXN-030)")
+  inner class ReconcileTransactions {
+
+    @Test
+    @DisplayName("TXN-028 - Unauthenticated request returns 401")
+    fun `should return 401 for unauthenticated reconcile`() {
+      webTestClient.post()
+        .uri("/transactions/reconcile/")
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00", "received_at__lt": "2024-02-01T00:00:00"}""")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    @DisplayName("TXN-028 - Requires ROLE_BANK_ADMIN, returns 403 for missing role")
+    fun `should return 403 without ROLE_BANK_ADMIN for reconcile`() {
+      webTestClient.post()
+        .uri("/transactions/reconcile/")
+        .headers(setAuthorisation(roles = listOf("ROLE_OTHER")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00", "received_at__lt": "2024-02-01T00:00:00"}""")
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    @DisplayName("TXN-029 - Returns 400 when received_at__gte is missing")
+    fun `should return 400 when received_at__gte is missing`() {
+      webTestClient.post()
+        .uri("/transactions/reconcile/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"received_at__lt": "2024-02-01T00:00:00"}""")
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    @DisplayName("TXN-029 - Returns 400 when received_at__lt is missing")
+    fun `should return 400 when received_at__lt is missing`() {
+      webTestClient.post()
+        .uri("/transactions/reconcile/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00"}""")
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    @DisplayName("TXN-028 - Returns 204 when no transactions found in date range")
+    fun `should return 204 when no transactions found in date range`() {
+      webTestClient.post()
+        .uri("/transactions/reconcile/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00", "received_at__lt": "2024-02-01T00:00:00"}""")
+        .exchange()
+        .expectStatus().isNoContent
+    }
+
+    @Test
+    @DisplayName("TXN-028 - Returns 201 when transactions are found in date range")
+    fun `should return 201 when transactions found in date range`() {
+      val credit = Credit(amount = 1000L, resolution = CreditResolution.PENDING)
+      credit.source = CreditSource.BANK_TRANSFER
+      val savedCredit = creditRepository.save(credit)
+
+      transactionRepository.save(
+        Transaction(
+          amount = 1000L,
+          category = TransactionCategory.CREDIT,
+          source = TransactionSource.BANK_TRANSFER,
+          receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0),
+          credit = savedCredit,
+        ),
+      )
+
+      webTestClient.post()
+        .uri("/transactions/reconcile/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00", "received_at__lt": "2024-02-01T00:00:00"}""")
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody()
+        .jsonPath("$.transaction_count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("TXN-030 - Creates PrivateEstateBatch for private prison credits in date range")
+    fun `should create PrivateEstateBatch for private prison transactions`() {
+      // Create a private prison
+      val prison = Prison(nomisId = "PRI", name = "Private Prison")
+      prison.privateEstate = true
+      prisonRepository.save(prison)
+
+      val credit = Credit(amount = 2000L, prison = "PRI", resolution = CreditResolution.PENDING)
+      credit.source = CreditSource.BANK_TRANSFER
+      val savedCredit = creditRepository.save(credit)
+
+      transactionRepository.save(
+        Transaction(
+          amount = 2000L,
+          category = TransactionCategory.CREDIT,
+          source = TransactionSource.BANK_TRANSFER,
+          receivedAt = LocalDateTime.of(2024, 1, 20, 9, 0, 0),
+          credit = savedCredit,
+        ),
+      )
+
+      webTestClient.post()
+        .uri("/transactions/reconcile/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00", "received_at__lt": "2024-02-01T00:00:00"}""")
+        .exchange()
+        .expectStatus().isCreated
+
+      val batches = privateEstateBatchRepository.findByPrison("PRI")
+      assertThat(batches).hasSize(1)
+      assertThat(batches[0].totalAmount).isEqualTo(2000L)
     }
   }
 }
