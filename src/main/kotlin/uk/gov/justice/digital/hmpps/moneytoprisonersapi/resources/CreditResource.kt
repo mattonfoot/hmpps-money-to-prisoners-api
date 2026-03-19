@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ProcessedCreditGroupDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.RefundRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReviewRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
@@ -436,6 +437,129 @@ class CreditResource(
       ResponseEntity.ok(CreditActionResponse(conflictIds))
     }
   }
+
+  @Operation(
+    summary = "List credits grouped by credited date and owner",
+    description = "Returns credits grouped by the date of their CREDITED log entry and owner. " +
+      "Only includes credits that have a LogAction.CREDITED log entry. " +
+      "Supports all the same filter parameters as GET /credits/. " +
+      "Ordered by logged_at date descending. " +
+      "Each group contains logged_at (date), owner (username), owner_name, count, total, comment_count.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "List of processed credit groups",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized — requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("isAuthenticated()")
+  @GetMapping("/processed/")
+  fun listProcessedCredits(
+    @RequestParam("search") search: String? = null,
+    @RequestParam("simple_search") simpleSearch: String? = null,
+    @RequestParam("status") status: CreditStatus? = null,
+    @RequestParam("prison") prison: List<String>? = null,
+    @RequestParam("prison__isnull") prisonIsNull: Boolean? = null,
+    @RequestParam("prison_region") prisonRegion: String? = null,
+    @RequestParam("prison_category") prisonCategory: String? = null,
+    @RequestParam("prison_population") prisonPopulation: String? = null,
+    @RequestParam("amount") amount: Long? = null,
+    @RequestParam("amount__gte") amountGte: Long? = null,
+    @RequestParam("amount__lte") amountLte: Long? = null,
+    @RequestParam("amount__endswith") amountEndswith: String? = null,
+    @RequestParam("amount__regex") amountRegex: String? = null,
+    @RequestParam("exclude_amount__endswith") excludeAmountEndswith: String? = null,
+    @RequestParam("exclude_amount__regex") excludeAmountRegex: String? = null,
+    @RequestParam("prisoner_name") prisonerName: String? = null,
+    @RequestParam("prisoner_number") prisonerNumber: String? = null,
+    @RequestParam("user") user: String? = null,
+    @RequestParam("resolution") resolution: CreditResolution? = null,
+    @RequestParam("reviewed") reviewed: Boolean? = null,
+    @RequestParam("received_at__gte")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    receivedAtGte: LocalDateTime? = null,
+    @RequestParam("received_at__lt")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    receivedAtLt: LocalDateTime? = null,
+    @RequestParam("valid") valid: Boolean? = null,
+    @RequestParam("sender_name") senderName: String? = null,
+    @RequestParam("sender_sort_code") senderSortCode: String? = null,
+    @RequestParam("sender_account_number") senderAccountNumber: String? = null,
+    @RequestParam("sender_roll_number") senderRollNumber: String? = null,
+    @RequestParam("sender_name__isblank") senderNameIsBlank: Boolean? = null,
+    @RequestParam("sender_sort_code__isblank") senderSortCodeIsBlank: Boolean? = null,
+    @RequestParam("sender_email") senderEmail: String? = null,
+    @RequestParam("sender_ip_address") senderIpAddress: String? = null,
+    @RequestParam("card_number_first_digits") cardNumberFirstDigits: String? = null,
+    @RequestParam("card_number_last_digits") cardNumberLastDigits: String? = null,
+    @RequestParam("card_expiry_date") cardExpiryDate: String? = null,
+    @RequestParam("sender_postcode") senderPostcode: String? = null,
+    @RequestParam("payment_reference") paymentReference: String? = null,
+    @RequestParam("source") source: CreditSource? = null,
+    @RequestParam("logged_at__gte")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    loggedAtGte: LocalDateTime? = null,
+    @RequestParam("logged_at__lt")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    loggedAtLt: LocalDateTime? = null,
+    @RequestParam("security_check__isnull") securityCheckIsnull: Boolean? = null,
+    @RequestParam("security_check__actioned_by__isnull") securityCheckActionedByIsnull: Boolean? = null,
+    @RequestParam("exclude_credit__in") excludeCreditIn: List<Long>? = null,
+    @RequestParam("monitored") monitored: Boolean? = null,
+    @RequestParam("pk") pk: List<Long>? = null,
+  ): List<ProcessedCreditGroupDto> = creditService.listProcessedCredits(
+    search = search,
+    simpleSearch = simpleSearch,
+    status = status,
+    prisons = prison,
+    prisonIsNull = prisonIsNull,
+    prisonRegion = prisonRegion,
+    prisonCategory = prisonCategory,
+    prisonPopulation = prisonPopulation,
+    amount = amount,
+    amountGte = amountGte,
+    amountLte = amountLte,
+    amountEndswith = amountEndswith,
+    amountRegex = amountRegex,
+    excludeAmountEndswith = excludeAmountEndswith,
+    excludeAmountRegex = excludeAmountRegex,
+    prisonerName = prisonerName,
+    prisonerNumber = prisonerNumber,
+    user = user,
+    resolution = resolution,
+    reviewed = reviewed,
+    receivedAtGte = receivedAtGte,
+    receivedAtLt = receivedAtLt,
+    valid = valid,
+    senderName = senderName,
+    senderSortCode = senderSortCode,
+    senderAccountNumber = senderAccountNumber,
+    senderRollNumber = senderRollNumber,
+    senderNameIsBlank = senderNameIsBlank,
+    senderSortCodeIsBlank = senderSortCodeIsBlank,
+    senderEmail = senderEmail,
+    senderIpAddress = senderIpAddress,
+    cardNumberFirstDigits = cardNumberFirstDigits,
+    cardNumberLastDigits = cardNumberLastDigits,
+    cardExpiryDate = cardExpiryDate,
+    senderPostcode = senderPostcode,
+    paymentReference = paymentReference,
+    source = source,
+    loggedAtGte = loggedAtGte,
+    loggedAtLt = loggedAtLt,
+    securityCheckIsnull = securityCheckIsnull,
+    securityCheckActionedByIsnull = securityCheckActionedByIsnull,
+    excludeCreditIn = excludeCreditIn,
+    monitored = monitored,
+    pk = pk,
+  )
 
   @Operation(
     summary = "Refund credits",

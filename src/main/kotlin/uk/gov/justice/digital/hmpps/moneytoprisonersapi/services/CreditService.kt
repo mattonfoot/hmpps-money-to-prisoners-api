@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ProcessedCreditGroupDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
@@ -565,5 +566,137 @@ class CreditService(
 
       logRepository.save(Log(action = LogAction.REFUNDED, credit = credit, userId = userId))
     }
+  }
+
+  /**
+   * CRD-150 to CRD-157: Credits Grouped by Credited (Processed View).
+   *
+   * Returns credits grouped by the date of their CREDITED log entry and owner.
+   * Only includes credits that have a LogAction.CREDITED log entry.
+   * Supports the same filter parameters as listCredits.
+   * Ordered by logged_at descending.
+   */
+  fun listProcessedCredits(
+    search: String? = null,
+    simpleSearch: String? = null,
+    status: CreditStatus? = null,
+    prisons: List<String>? = null,
+    prisonIsNull: Boolean? = null,
+    prisonRegion: String? = null,
+    prisonCategory: String? = null,
+    prisonPopulation: String? = null,
+    amount: Long? = null,
+    amountGte: Long? = null,
+    amountLte: Long? = null,
+    amountEndswith: String? = null,
+    amountRegex: String? = null,
+    excludeAmountEndswith: String? = null,
+    excludeAmountRegex: String? = null,
+    prisonerName: String? = null,
+    prisonerNumber: String? = null,
+    user: String? = null,
+    resolution: CreditResolution? = null,
+    reviewed: Boolean? = null,
+    receivedAtGte: LocalDateTime? = null,
+    receivedAtLt: LocalDateTime? = null,
+    valid: Boolean? = null,
+    senderName: String? = null,
+    senderSortCode: String? = null,
+    senderAccountNumber: String? = null,
+    senderRollNumber: String? = null,
+    senderNameIsBlank: Boolean? = null,
+    senderSortCodeIsBlank: Boolean? = null,
+    senderEmail: String? = null,
+    senderIpAddress: String? = null,
+    cardNumberFirstDigits: String? = null,
+    cardNumberLastDigits: String? = null,
+    cardExpiryDate: String? = null,
+    senderPostcode: String? = null,
+    paymentReference: String? = null,
+    source: CreditSource? = null,
+    loggedAtGte: LocalDateTime? = null,
+    loggedAtLt: LocalDateTime? = null,
+    securityCheckIsnull: Boolean? = null,
+    securityCheckActionedByIsnull: Boolean? = null,
+    excludeCreditIn: List<Long>? = null,
+    monitored: Boolean? = null,
+    pk: List<Long>? = null,
+  ): List<ProcessedCreditGroupDto> {
+    val credits = listCredits(
+      search = search,
+      simpleSearch = simpleSearch,
+      ordering = null,
+      status = status,
+      prisons = prisons,
+      prisonIsNull = prisonIsNull,
+      prisonRegion = prisonRegion,
+      prisonCategory = prisonCategory,
+      prisonPopulation = prisonPopulation,
+      amount = amount,
+      amountGte = amountGte,
+      amountLte = amountLte,
+      amountEndswith = amountEndswith,
+      amountRegex = amountRegex,
+      excludeAmountEndswith = excludeAmountEndswith,
+      excludeAmountRegex = excludeAmountRegex,
+      prisonerName = prisonerName,
+      prisonerNumber = prisonerNumber,
+      user = user,
+      resolution = resolution,
+      reviewed = reviewed,
+      receivedAtGte = receivedAtGte,
+      receivedAtLt = receivedAtLt,
+      valid = valid,
+      senderName = senderName,
+      senderSortCode = senderSortCode,
+      senderAccountNumber = senderAccountNumber,
+      senderRollNumber = senderRollNumber,
+      senderNameIsBlank = senderNameIsBlank,
+      senderSortCodeIsBlank = senderSortCodeIsBlank,
+      senderEmail = senderEmail,
+      senderIpAddress = senderIpAddress,
+      cardNumberFirstDigits = cardNumberFirstDigits,
+      cardNumberLastDigits = cardNumberLastDigits,
+      cardExpiryDate = cardExpiryDate,
+      senderPostcode = senderPostcode,
+      paymentReference = paymentReference,
+      source = source,
+      loggedAtGte = loggedAtGte,
+      loggedAtLt = loggedAtLt,
+      securityCheckIsnull = securityCheckIsnull,
+      securityCheckActionedByIsnull = securityCheckActionedByIsnull,
+      excludeCreditIn = excludeCreditIn,
+      monitored = monitored,
+      pk = pk,
+    )
+
+    // Only include credits that have a CREDITED log entry
+    val creditsWithCreditedLog = credits.filter { credit ->
+      credit.logs.any { it.action == LogAction.CREDITED && it.created != null }
+    }
+
+    // Group by (date of CREDITED log, owner of that log)
+    data class GroupKey(val date: LocalDate, val owner: String)
+
+    val groups = mutableMapOf<GroupKey, MutableList<Credit>>()
+    for (credit in creditsWithCreditedLog) {
+      val creditedLog = credit.logs.first { it.action == LogAction.CREDITED && it.created != null }
+      val date = creditedLog.created!!.toLocalDate()
+      val owner = creditedLog.userId ?: "unknown"
+      groups.getOrPut(GroupKey(date, owner)) { mutableListOf() }.add(credit)
+    }
+
+    return groups.entries
+      .map { (key, groupCredits) ->
+        ProcessedCreditGroupDto(
+          loggedAt = key.date,
+          owner = key.owner,
+          ownerName = "Unknown",
+          count = groupCredits.size,
+          total = groupCredits.sumOf { it.amount },
+          commentCount = groupCredits.sumOf { it.comments.size },
+        )
+      }
+      .sortedByDescending { it.loggedAt }
   }
 }
