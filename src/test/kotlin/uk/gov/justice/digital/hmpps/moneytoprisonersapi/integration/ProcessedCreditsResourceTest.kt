@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 import java.time.LocalDateTime
 
 class ProcessedCreditsResourceTest : IntegrationTestBase() {
@@ -27,8 +28,12 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var prisonRepository: PrisonRepository
 
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.deleteAll()
     logRepository.deleteAll()
     creditRepository.deleteAll()
     prisonRepository.deleteAll()

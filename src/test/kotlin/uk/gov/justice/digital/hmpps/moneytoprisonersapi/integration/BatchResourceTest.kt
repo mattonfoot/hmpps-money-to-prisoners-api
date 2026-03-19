@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResol
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.BatchRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 
 class BatchResourceTest : IntegrationTestBase() {
 
@@ -20,8 +21,12 @@ class BatchResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var batchRepository: BatchRepository
 
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.deleteAll()
     batchRepository.deleteAll()
     creditRepository.deleteAll()
   }

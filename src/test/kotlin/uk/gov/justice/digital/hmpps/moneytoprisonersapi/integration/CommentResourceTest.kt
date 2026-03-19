@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResol
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CommentRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 
 class CommentResourceTest : IntegrationTestBase() {
 
@@ -20,8 +21,12 @@ class CommentResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var commentRepository: CommentRepository
 
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.deleteAll()
     commentRepository.deleteAll()
     creditRepository.deleteAll()
   }
