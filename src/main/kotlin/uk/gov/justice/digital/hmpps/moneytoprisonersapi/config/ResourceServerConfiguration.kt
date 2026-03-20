@@ -8,13 +8,14 @@ import uk.gov.justice.hmpps.kotlin.auth.dsl.ResourceServerConfigurationCustomize
 class ResourceServerConfiguration {
 
   /**
-   * Allow public (unauthenticated) access to GET /prisons/ and GET /service-availability/.
+   * Allow public (unauthenticated) access to GET /prisons/, GET /service-availability/,
+   * and GET /notifications/.
    * All other security configuration is provided by the HMPPS Kotlin Spring Boot starter.
    */
   @Bean
   fun resourceServerConfigurationCustomizer(): ResourceServerConfigurationCustomizer = ResourceServerConfigurationCustomizer {
     unauthorizedRequestPaths {
-      addPaths = setOf("/prisons/", "/service-availability/")
+      addPaths = setOf("/prisons/", "/service-availability/", "/notifications/")
     }
   }
 }
