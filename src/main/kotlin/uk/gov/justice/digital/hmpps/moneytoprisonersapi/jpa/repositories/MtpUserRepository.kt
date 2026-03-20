@@ -10,4 +10,5 @@ interface MtpUserRepository :
   fun findByUsernameIgnoreCase(username: String): MtpUser?
   fun existsByUsernameIgnoreCase(username: String): Boolean
   fun existsByEmailIgnoreCase(email: String): Boolean
+  fun findByEmailIgnoreCase(email: String): List<MtpUser>
 }
