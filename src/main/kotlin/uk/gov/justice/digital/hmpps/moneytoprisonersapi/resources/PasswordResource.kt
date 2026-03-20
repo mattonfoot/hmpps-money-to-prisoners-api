@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -45,6 +46,8 @@ class PasswordResource(
       ApiResponse(responseCode = "404", description = "User not found", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
+  @SecurityRequirements
+  @PreAuthorize("permitAll()")
   @PostMapping("/reset_password/")
   fun resetPassword(
     @RequestBody request: ResetPasswordRequest,
@@ -77,6 +80,8 @@ class PasswordResource(
       ApiResponse(responseCode = "400", description = "Invalid, missing, or already-used token", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
+  @SecurityRequirements
+  @PreAuthorize("permitAll()")
   @PostMapping("/change_password/")
   fun changePasswordByToken(
     @RequestBody request: ChangePasswordByTokenRequest,

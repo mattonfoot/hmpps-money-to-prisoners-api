@@ -129,6 +129,8 @@ class UserService(
 
   fun findById(id: Long): MtpUser? = mtpUserRepository.findById(id).orElse(null)
 
+  fun findByUsername(username: String): MtpUser? = mtpUserRepository.findByUsernameIgnoreCase(username)
+
   fun findRoleByName(name: String?): MtpRole? = if (name == null) null else mtpRoleRepository.findByName(name)
 
   fun findPrisonsByIds(ids: List<String>): Set<Prison> = prisonRepository.findAllById(ids).toSet()

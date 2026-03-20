@@ -15,7 +15,7 @@ class ResourceServerConfiguration {
   @Bean
   fun resourceServerConfigurationCustomizer(): ResourceServerConfigurationCustomizer = ResourceServerConfigurationCustomizer {
     unauthorizedRequestPaths {
-      addPaths = setOf("/prisons/", "/service-availability/", "/notifications/")
+      addPaths = setOf("/prisons/", "/service-availability/", "/notifications/", "/reset_password/", "/change_password/", "/requests/")
     }
   }
 }

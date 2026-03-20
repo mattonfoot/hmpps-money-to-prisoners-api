@@ -6,7 +6,9 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.GetMapping
@@ -45,6 +47,8 @@ class ServiceNotificationResource(
       ),
     ],
   )
+  @SecurityRequirements
+  @PreAuthorize("permitAll()")
   @GetMapping("/notifications/")
   fun listNotifications(
     @Parameter(description = "Filter notifications whose target starts with this prefix (e.g. cashbook, noms_ops)")

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -85,6 +86,8 @@ class AccountRequestResource(
       ApiResponse(responseCode = "400", description = "Missing required field", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
+  @SecurityRequirements
+  @PreAuthorize("permitAll()")
   @PostMapping("/requests/")
   fun createRequest(
     @RequestBody request: CreateAccountRequestRequest,
