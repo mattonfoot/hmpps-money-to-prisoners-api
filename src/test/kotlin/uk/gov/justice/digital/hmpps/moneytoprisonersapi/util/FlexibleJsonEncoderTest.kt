@@ -10,6 +10,8 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
+private data class TestEntity(val id: Long = 99L, val name: String = "test")
+
 @DisplayName("FlexibleJsonEncoder")
 class FlexibleJsonEncoderTest {
 
@@ -55,8 +57,7 @@ class FlexibleJsonEncoderTest {
 
     @Test
     fun `encodes object with id property using its id (pk fallback)`() {
-      data class Entity(val id: Long = 99L, val name: String = "test")
-      val result = FlexibleJsonEncoder.encode(Entity())
+      val result = FlexibleJsonEncoder.encode(TestEntity())
       // Should encode to JSON (Jackson handles data classes natively)
       assertTrue(result.contains("99"))
     }
