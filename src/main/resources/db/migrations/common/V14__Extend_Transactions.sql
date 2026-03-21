@@ -1,7 +1,7 @@
-ALTER TABLE transactions
+ALTER TABLE transaction_transaction
     ADD COLUMN IF NOT EXISTS category VARCHAR(50) NOT NULL DEFAULT 'CREDIT',
     ADD COLUMN IF NOT EXISTS source VARCHAR(50) NOT NULL DEFAULT 'BANK_TRANSFER',
     ADD COLUMN IF NOT EXISTS processor_type_code VARCHAR(50);
 
-ALTER TABLE transactions
+ALTER TABLE transaction_transaction
     ALTER COLUMN credit_id DROP NOT NULL;

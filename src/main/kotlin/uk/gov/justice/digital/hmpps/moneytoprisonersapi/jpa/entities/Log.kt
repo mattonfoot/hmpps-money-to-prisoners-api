@@ -30,7 +30,7 @@ enum class LogAction {
 }
 
 @Entity
-@Table(name = "logs")
+@Table(name = "credit_log")
 class Log(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,4 +1,4 @@
-CREATE TABLE disbursements
+CREATE TABLE disbursement_disbursement
 (
     disbursement_id      SERIAL                      NOT NULL,
     amount               BIGINT                      NOT NULL,
@@ -27,11 +27,11 @@ CREATE TABLE disbursements
     CONSTRAINT pk_disbursements PRIMARY KEY (disbursement_id)
 );
 
-CREATE INDEX idx_disbursements_prisoner_number ON disbursements (prisoner_number);
-CREATE INDEX idx_disbursements_resolution ON disbursements (resolution);
-CREATE INDEX idx_disbursements_prison ON disbursements (prison);
+CREATE INDEX idx_disbursements_prisoner_number ON disbursement_disbursement (prisoner_number);
+CREATE INDEX idx_disbursements_resolution ON disbursement_disbursement (resolution);
+CREATE INDEX idx_disbursements_prison ON disbursement_disbursement (prison);
 
-CREATE TABLE disbursement_logs
+CREATE TABLE disbursement_log
 (
     disbursement_log_id SERIAL                      NOT NULL,
     action              VARCHAR(50)                 NOT NULL,
@@ -40,10 +40,10 @@ CREATE TABLE disbursement_logs
     created             TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 
     CONSTRAINT pk_disbursement_logs PRIMARY KEY (disbursement_log_id),
-    CONSTRAINT fk_disbursement_logs_disbursement FOREIGN KEY (disbursement_id) REFERENCES disbursements (disbursement_id)
+    CONSTRAINT fk_disbursement_logs_disbursement FOREIGN KEY (disbursement_id) REFERENCES disbursement_disbursement (disbursement_id)
 );
 
-CREATE TABLE disbursement_comments
+CREATE TABLE disbursement_comment
 (
     disbursement_comment_id SERIAL                      NOT NULL,
     comment                 TEXT                        NOT NULL,
@@ -54,5 +54,5 @@ CREATE TABLE disbursement_comments
     modified                TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 
     CONSTRAINT pk_disbursement_comments PRIMARY KEY (disbursement_comment_id),
-    CONSTRAINT fk_disbursement_comments_disbursement FOREIGN KEY (disbursement_id) REFERENCES disbursements (disbursement_id)
+    CONSTRAINT fk_disbursement_comments_disbursement FOREIGN KEY (disbursement_id) REFERENCES disbursement_disbursement (disbursement_id)
 );

@@ -12,7 +12,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "mtp_logins")
+@Table(name = "mtp_auth_login")
 class MtpUserLogin(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

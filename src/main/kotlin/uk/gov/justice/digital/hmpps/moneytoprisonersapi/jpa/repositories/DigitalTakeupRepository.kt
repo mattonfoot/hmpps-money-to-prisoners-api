@@ -19,7 +19,7 @@ interface DigitalTakeupRepository : JpaRepository<DigitalTakeup, Long> {
              SUM(d.credits_by_post)     AS totalCreditsByPost,
              SUM(d.credits_by_mtp)      AS totalCreditsByMtp
         FROM performance_digitaltakeup d
-        JOIN prisons p ON p.nomis_id = d.prison_id
+        JOIN prison_prison p ON p.nomis_id = d.prison_id
        WHERE (:excludePrivateEstate = FALSE OR p.private_estate = FALSE)
        GROUP BY TO_CHAR(d.date, 'YYYY-MM')
        ORDER BY TO_CHAR(d.date, 'YYYY-MM')
@@ -43,7 +43,7 @@ interface DigitalTakeupRepository : JpaRepository<DigitalTakeup, Long> {
         END
       )
         FROM performance_digitaltakeup d
-        JOIN prisons p ON p.nomis_id = d.prison_id
+        JOIN prison_prison p ON p.nomis_id = d.prison_id
        WHERE (:excludePrivateEstate = FALSE OR p.private_estate = FALSE)
     """,
   )

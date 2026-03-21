@@ -11,7 +11,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "saved_searches")
+@Table(name = "security_savedsearch")
 class SavedSearch(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

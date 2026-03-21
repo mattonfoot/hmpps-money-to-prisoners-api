@@ -14,7 +14,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "job_information")
+@Table(name = "mtp_auth_jobinformation")
 class JobInformation(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

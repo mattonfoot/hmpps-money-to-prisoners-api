@@ -17,7 +17,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(
-  name = "prisoner_locations",
+  name = "prison_prisonerlocation",
   indexes = [
     Index(name = "idx_prisoner_locations_prisoner_number", columnList = "prisoner_number"),
     Index(name = "idx_prisoner_locations_active", columnList = "active"),

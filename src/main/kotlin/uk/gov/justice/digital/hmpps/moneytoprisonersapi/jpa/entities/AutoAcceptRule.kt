@@ -17,7 +17,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "auto_accept_rules")
+@Table(name = "security_checkautoacceptrule")
 class AutoAcceptRule(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

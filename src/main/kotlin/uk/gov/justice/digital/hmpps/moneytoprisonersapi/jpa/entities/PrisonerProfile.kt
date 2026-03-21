@@ -17,7 +17,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "prisoner_profiles")
+@Table(name = "security_prisonerprofile")
 class PrisonerProfile(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

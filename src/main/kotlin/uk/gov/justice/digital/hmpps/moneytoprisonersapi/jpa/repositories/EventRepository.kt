@@ -23,7 +23,7 @@ interface EventRepository :
   @Query(
     value = """
     SELECT DISTINCT CAST(triggered_at AS DATE) AS triggered_at_date
-    FROM notification_events
+    FROM notification_event
     WHERE (username = :username OR username IS NULL)
       AND (:rules IS NULL OR rule = ANY(STRING_TO_ARRAY(:rules, ',')))
     ORDER BY triggered_at_date DESC

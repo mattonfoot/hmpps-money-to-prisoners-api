@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 @Entity
-@Table(name = "scheduled_commands")
+@Table(name = "core_scheduledcommand")
 class ScheduledCommand(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

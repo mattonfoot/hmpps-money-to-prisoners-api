@@ -17,7 +17,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "sender_profiles")
+@Table(name = "security_senderprofile")
 class SenderProfile(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

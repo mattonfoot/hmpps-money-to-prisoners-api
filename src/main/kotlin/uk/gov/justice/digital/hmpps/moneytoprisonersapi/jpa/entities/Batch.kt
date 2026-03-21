@@ -14,7 +14,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "batches")
+@Table(name = "credit_processingbatch")
 class Batch(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +26,7 @@ class Batch(
 
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
-    name = "batch_credits",
+    name = "credit_processingbatch_credits",
     joinColumns = [JoinColumn(name = "batch_id")],
     inverseJoinColumns = [JoinColumn(name = "credit_id")],
   )

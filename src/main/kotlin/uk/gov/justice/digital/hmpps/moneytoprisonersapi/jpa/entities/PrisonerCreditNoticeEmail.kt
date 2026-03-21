@@ -13,7 +13,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "prisoner_credit_notice_emails")
+@Table(name = "prison_prisonercreditnoticeemail")
 class PrisonerCreditNoticeEmail(
   @Id
   @Column(name = "prison_id", length = 10)

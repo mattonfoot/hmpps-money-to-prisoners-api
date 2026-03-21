@@ -18,7 +18,7 @@ import java.time.LocalDateTime
  */
 @Entity
 @Table(
-  name = "notification_events",
+  name = "notification_event",
   indexes = [
     Index(name = "idx_notification_events_triggered_at_id", columnList = "triggered_at DESC, id"),
     Index(name = "idx_notification_events_rule", columnList = "rule"),

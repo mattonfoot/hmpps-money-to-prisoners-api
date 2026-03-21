@@ -1,5 +1,5 @@
 -- Scheduled management commands with cron-based execution (COR-010 to COR-014)
-CREATE TABLE scheduled_commands
+CREATE TABLE core_scheduledcommand
 (
     id                SERIAL       NOT NULL,
     name              VARCHAR(255) NOT NULL,
@@ -11,4 +11,4 @@ CREATE TABLE scheduled_commands
     CONSTRAINT pk_scheduled_commands PRIMARY KEY (id)
 );
 
-CREATE INDEX idx_scheduled_commands_next_execution ON scheduled_commands (next_execution);
+CREATE INDEX idx_scheduled_commands_next_execution ON core_scheduledcommand (next_execution);

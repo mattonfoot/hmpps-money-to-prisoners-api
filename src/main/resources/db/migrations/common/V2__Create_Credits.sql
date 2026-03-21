@@ -1,4 +1,4 @@
-CREATE TABLE credits
+CREATE TABLE credit_credit
 (
     credit_id              SERIAL                      NOT NULL,
     amount                 BIGINT                      NOT NULL,
@@ -20,8 +20,8 @@ CREATE TABLE credits
     CONSTRAINT pk_credits PRIMARY KEY (credit_id)
 );
 
-CREATE INDEX idx_credits_prisoner_number ON credits (prisoner_number);
-CREATE INDEX idx_credits_amount ON credits (amount);
-CREATE INDEX idx_credits_received_at ON credits (received_at);
-CREATE INDEX idx_credits_resolution ON credits (resolution);
-CREATE INDEX idx_credits_owner ON credits (owner);
+CREATE INDEX idx_credits_prisoner_number ON credit_credit (prisoner_number);
+CREATE INDEX idx_credits_amount ON credit_credit (amount);
+CREATE INDEX idx_credits_received_at ON credit_credit (received_at);
+CREATE INDEX idx_credits_resolution ON credit_credit (resolution);
+CREATE INDEX idx_credits_owner ON credit_credit (owner);

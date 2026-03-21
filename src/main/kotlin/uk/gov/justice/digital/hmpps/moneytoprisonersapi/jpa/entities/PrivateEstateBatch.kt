@@ -13,7 +13,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "private_estate_batches")
+@Table(name = "credit_privateestatebatch")
 class PrivateEstateBatch(
   @Id
   @Column(name = "ref", length = 30)
@@ -30,7 +30,7 @@ class PrivateEstateBatch(
 
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
-    name = "private_estate_batch_credits",
+    name = "credit_privateestatebatch_credits",
     joinColumns = [JoinColumn(name = "ref")],
     inverseJoinColumns = [JoinColumn(name = "credit_id")],
   )

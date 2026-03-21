@@ -14,7 +14,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "auto_accept_rule_states")
+@Table(name = "security_checkautoacceptrulestate")
 class AutoAcceptRuleState(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

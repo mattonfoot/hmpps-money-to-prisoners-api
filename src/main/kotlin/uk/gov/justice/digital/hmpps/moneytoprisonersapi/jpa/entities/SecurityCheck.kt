@@ -22,7 +22,7 @@ enum class CheckStatus {
 }
 
 @Entity
-@Table(name = "security_checks")
+@Table(name = "security_check")
 class SecurityCheck(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

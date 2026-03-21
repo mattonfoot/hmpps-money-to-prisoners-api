@@ -1,5 +1,5 @@
 -- Notification events
-CREATE TABLE notification_events
+CREATE TABLE notification_event
 (
     id                  SERIAL       NOT NULL,
     rule                VARCHAR(8)   NOT NULL,
@@ -12,17 +12,17 @@ CREATE TABLE notification_events
     prisoner_profile_id BIGINT,
 
     CONSTRAINT pk_notification_events PRIMARY KEY (id),
-    CONSTRAINT fk_notification_events_credit FOREIGN KEY (credit_id) REFERENCES credits (credit_id) ON DELETE CASCADE,
-    CONSTRAINT fk_notification_events_disbursement FOREIGN KEY (disbursement_id) REFERENCES disbursements (disbursement_id) ON DELETE CASCADE,
-    CONSTRAINT fk_notification_events_sender_profile FOREIGN KEY (sender_profile_id) REFERENCES sender_profiles (sender_profile_id) ON DELETE CASCADE,
-    CONSTRAINT fk_notification_events_prisoner_profile FOREIGN KEY (prisoner_profile_id) REFERENCES prisoner_profiles (prisoner_profile_id) ON DELETE CASCADE
+    CONSTRAINT fk_notification_events_credit FOREIGN KEY (credit_id) REFERENCES credit_credit (credit_id) ON DELETE CASCADE,
+    CONSTRAINT fk_notification_events_disbursement FOREIGN KEY (disbursement_id) REFERENCES disbursement_disbursement (disbursement_id) ON DELETE CASCADE,
+    CONSTRAINT fk_notification_events_sender_profile FOREIGN KEY (sender_profile_id) REFERENCES security_senderprofile (sender_profile_id) ON DELETE CASCADE,
+    CONSTRAINT fk_notification_events_prisoner_profile FOREIGN KEY (prisoner_profile_id) REFERENCES security_prisonerprofile (prisoner_profile_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_notification_events_triggered_at_id ON notification_events (triggered_at DESC, id);
-CREATE INDEX idx_notification_events_rule ON notification_events (rule);
+CREATE INDEX idx_notification_events_triggered_at_id ON notification_event (triggered_at DESC, id);
+CREATE INDEX idx_notification_events_rule ON notification_event (rule);
 
 -- Email notification preferences
-CREATE TABLE email_notification_preferences
+CREATE TABLE notification_emailnotificationpreferences
 (
     id          SERIAL       NOT NULL,
     username    VARCHAR(250) NOT NULL,

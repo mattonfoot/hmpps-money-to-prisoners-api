@@ -1,4 +1,4 @@
-CREATE TABLE transactions
+CREATE TABLE transaction_transaction
 (
     transaction_id           SERIAL                      NOT NULL,
     amount                   BIGINT                      NOT NULL DEFAULT 0,
@@ -17,10 +17,10 @@ CREATE TABLE transactions
 
     CONSTRAINT pk_transactions PRIMARY KEY (transaction_id),
     CONSTRAINT uq_transactions_credit_id UNIQUE (credit_id),
-    CONSTRAINT fk_transactions_credit FOREIGN KEY (credit_id) REFERENCES credits (credit_id)
+    CONSTRAINT fk_transactions_credit FOREIGN KEY (credit_id) REFERENCES credit_credit (credit_id)
 );
 
-CREATE TABLE billing_addresses
+CREATE TABLE payment_billingaddress
 (
     billing_address_id       SERIAL                      NOT NULL,
     line1                    VARCHAR(250),
@@ -34,7 +34,7 @@ CREATE TABLE billing_addresses
     CONSTRAINT pk_billing_addresses PRIMARY KEY (billing_address_id)
 );
 
-CREATE TABLE payments
+CREATE TABLE payment_payment
 (
     uuid                     UUID                        NOT NULL,
     amount                   BIGINT                      NOT NULL DEFAULT 0,
@@ -56,6 +56,6 @@ CREATE TABLE payments
 
     CONSTRAINT pk_payments PRIMARY KEY (uuid),
     CONSTRAINT uq_payments_credit_id UNIQUE (credit_id),
-    CONSTRAINT fk_payments_credit FOREIGN KEY (credit_id) REFERENCES credits (credit_id),
-    CONSTRAINT fk_payments_billing_address FOREIGN KEY (billing_address_id) REFERENCES billing_addresses (billing_address_id)
+    CONSTRAINT fk_payments_credit FOREIGN KEY (credit_id) REFERENCES credit_credit (credit_id),
+    CONSTRAINT fk_payments_billing_address FOREIGN KEY (billing_address_id) REFERENCES payment_billingaddress (billing_address_id)
 );

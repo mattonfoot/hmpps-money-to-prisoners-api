@@ -14,7 +14,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "comments")
+@Table(name = "credit_comment")
 class Comment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

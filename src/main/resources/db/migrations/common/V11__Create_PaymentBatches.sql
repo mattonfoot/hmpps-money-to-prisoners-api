@@ -1,4 +1,4 @@
--- Payment reconciliation batches table for grouping online payment credits
+-- Payment reconciliation credit_processingbatch table for grouping online payment credit_credit
 CREATE TABLE payment_batches
 (
     payment_batch_id  SERIAL                      NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE payment_batch_credits
 
     CONSTRAINT pk_payment_batch_credits PRIMARY KEY (payment_batch_id, credit_id),
     CONSTRAINT fk_payment_batch_credits_batch FOREIGN KEY (payment_batch_id) REFERENCES payment_batches (payment_batch_id) ON DELETE CASCADE,
-    CONSTRAINT fk_payment_batch_credits_credit FOREIGN KEY (credit_id) REFERENCES credits (credit_id)
+    CONSTRAINT fk_payment_batch_credits_credit FOREIGN KEY (credit_id) REFERENCES credit_credit (credit_id)
 );
 
 CREATE INDEX idx_payment_batch_credits_batch_id ON payment_batch_credits (payment_batch_id);

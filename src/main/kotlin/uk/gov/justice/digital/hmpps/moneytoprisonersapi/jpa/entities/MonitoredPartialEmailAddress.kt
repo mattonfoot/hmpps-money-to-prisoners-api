@@ -11,7 +11,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "monitored_partial_email_addresses")
+@Table(name = "security_monitoredpartialemailaddress")
 class MonitoredPartialEmailAddress(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

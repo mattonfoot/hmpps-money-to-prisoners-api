@@ -20,7 +20,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(
-  name = "credits",
+  name = "credit_credit",
   indexes = [
     Index(name = "idx_credits_prisoner_number", columnList = "prisoner_number"),
     Index(name = "idx_credits_amount", columnList = "amount"),

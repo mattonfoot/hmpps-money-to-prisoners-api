@@ -8,7 +8,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 
 @Entity
-@Table(name = "mtp_roles")
+@Table(name = "mtp_auth_role")
 class MtpRole(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

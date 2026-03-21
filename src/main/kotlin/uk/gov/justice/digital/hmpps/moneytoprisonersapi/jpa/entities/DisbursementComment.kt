@@ -14,7 +14,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "disbursement_comments")
+@Table(name = "disbursement_comment")
 class DisbursementComment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

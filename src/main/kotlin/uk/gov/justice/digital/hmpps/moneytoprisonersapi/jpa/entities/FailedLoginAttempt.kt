@@ -12,7 +12,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "failed_login_attempts")
+@Table(name = "mtp_auth_failedloginattempt")
 class FailedLoginAttempt(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

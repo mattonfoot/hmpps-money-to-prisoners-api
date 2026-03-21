@@ -1,4 +1,4 @@
-CREATE TABLE prison_categories
+CREATE TABLE prison_category
 (
     category_id SERIAL      NOT NULL,
     name        VARCHAR(255) NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE prison_categories
     CONSTRAINT uq_prison_categories_name UNIQUE (name)
 );
 
-CREATE TABLE prison_populations
+CREATE TABLE prison_population
 (
     population_id SERIAL      NOT NULL,
     name          VARCHAR(255) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE prison_populations
     CONSTRAINT uq_prison_populations_name UNIQUE (name)
 );
 
-CREATE TABLE prisons
+CREATE TABLE prison_prison
 (
     nomis_id               VARCHAR(10)  NOT NULL,
     name                   VARCHAR(255) NOT NULL DEFAULT '',
@@ -36,8 +36,8 @@ CREATE TABLE prison_prison_categories
     category_id     INTEGER     NOT NULL,
 
     CONSTRAINT pk_prison_prison_categories PRIMARY KEY (prison_nomis_id, category_id),
-    CONSTRAINT fk_ppc_prison FOREIGN KEY (prison_nomis_id) REFERENCES prisons (nomis_id),
-    CONSTRAINT fk_ppc_category FOREIGN KEY (category_id) REFERENCES prison_categories (category_id)
+    CONSTRAINT fk_ppc_prison FOREIGN KEY (prison_nomis_id) REFERENCES prison_prison (nomis_id),
+    CONSTRAINT fk_ppc_category FOREIGN KEY (category_id) REFERENCES prison_category (category_id)
 );
 
 CREATE TABLE prison_prison_populations
@@ -46,9 +46,9 @@ CREATE TABLE prison_prison_populations
     population_id   INTEGER     NOT NULL,
 
     CONSTRAINT pk_prison_prison_populations PRIMARY KEY (prison_nomis_id, population_id),
-    CONSTRAINT fk_ppp_prison FOREIGN KEY (prison_nomis_id) REFERENCES prisons (nomis_id),
-    CONSTRAINT fk_ppp_population FOREIGN KEY (population_id) REFERENCES prison_populations (population_id)
+    CONSTRAINT fk_ppp_prison FOREIGN KEY (prison_nomis_id) REFERENCES prison_prison (nomis_id),
+    CONSTRAINT fk_ppp_population FOREIGN KEY (population_id) REFERENCES prison_population (population_id)
 );
 
-ALTER TABLE credits
-    ADD CONSTRAINT fk_credits_prison FOREIGN KEY (prison) REFERENCES prisons (nomis_id);
+ALTER TABLE credit_credit
+    ADD CONSTRAINT fk_credits_prison FOREIGN KEY (prison) REFERENCES prison_prison (nomis_id);

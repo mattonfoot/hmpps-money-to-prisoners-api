@@ -7,27 +7,27 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.JoinTable
-import jakarta.persistence.ManyToMany
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 
+enum class AccountRequestStatus(val value: String) {
+  PENDING("pending"),
+  ACCEPTED("accepted"),
+  REJECTED("rejected"),
+}
+
 @Entity
-@Table(name = "mtp_users")
-class MtpUser(
+@Table(name = "mtp_auth_accountrequest")
+class AccountRequest(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long? = null,
 
-  /** Case-insensitive unique username (stored lowercase) */
-  @Column(nullable = false, unique = true, length = 150)
-  var username: String,
-
-  @Column(nullable = false, length = 254)
-  var email: String = "",
+  @Column(nullable = false, length = 150)
+  val username: String,
 
   @Column(name = "first_name", nullable = false, length = 150)
   var firstName: String = "",
@@ -35,12 +35,19 @@ class MtpUser(
   @Column(name = "last_name", nullable = false, length = 150)
   var lastName: String = "",
 
-  @Column(name = "is_active", nullable = false)
-  var isActive: Boolean = true,
+  @Column(nullable = false, length = 254)
+  var email: String = "",
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "role_id")
   var role: MtpRole? = null,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "prison_nomis_id")
+  var prison: Prison? = null,
+
+  @Column(nullable = false, length = 20)
+  var status: String = AccountRequestStatus.PENDING.value,
 
   @Column(nullable = false, updatable = false)
   var created: LocalDateTime? = null,
@@ -48,15 +55,6 @@ class MtpUser(
   @Column(nullable = false)
   var modified: LocalDateTime? = null,
 ) {
-
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-    name = "mtp_auth_prisonusermapping_prisons",
-    joinColumns = [JoinColumn(name = "user_id")],
-    inverseJoinColumns = [JoinColumn(name = "prison_nomis_id")],
-  )
-  var prisons: MutableSet<Prison> = mutableSetOf()
-
   @PrePersist
   fun onCreate() {
     val now = LocalDateTime.now()

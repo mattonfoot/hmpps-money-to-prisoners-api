@@ -16,7 +16,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "transactions")
+@Table(name = "transaction_transaction")
 class Transaction(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

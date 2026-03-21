@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
-@Table(name = "payments")
+@Table(name = "payment_payment")
 class Payment(
   @Id
   @Column(name = "uuid", columnDefinition = "uuid")

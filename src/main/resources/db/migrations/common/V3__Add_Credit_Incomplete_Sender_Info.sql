@@ -1,1 +1,1 @@
-ALTER TABLE credits ADD COLUMN incomplete_sender_info BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE credit_credit ADD COLUMN incomplete_sender_info BOOLEAN NOT NULL DEFAULT FALSE;

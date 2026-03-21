@@ -1,5 +1,5 @@
 -- MTP Roles
-CREATE TABLE mtp_roles
+CREATE TABLE mtp_auth_role
 (
     id           SERIAL       NOT NULL,
     name         VARCHAR(150) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE mtp_users
     first_name VARCHAR(150) NOT NULL DEFAULT '',
     last_name  VARCHAR(150) NOT NULL DEFAULT '',
     is_active  BOOLEAN      NOT NULL DEFAULT TRUE,
-    role_id    INTEGER REFERENCES mtp_roles (id),
+    role_id    INTEGER REFERENCES mtp_auth_role (id),
     created    TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     modified   TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 
@@ -29,16 +29,16 @@ CREATE TABLE mtp_users
 );
 
 -- User-Prison mapping (many-to-many)
-CREATE TABLE mtp_user_prisons
+CREATE TABLE mtp_auth_prisonusermapping_prisons
 (
     user_id        INTEGER     NOT NULL REFERENCES mtp_users (id) ON DELETE CASCADE,
-    prison_nomis_id VARCHAR(10) NOT NULL REFERENCES prisons (nomis_id) ON DELETE CASCADE,
+    prison_nomis_id VARCHAR(10) NOT NULL REFERENCES prison_prison (nomis_id) ON DELETE CASCADE,
 
     CONSTRAINT pk_mtp_user_prisons PRIMARY KEY (user_id, prison_nomis_id)
 );
 
 -- Failed login attempts
-CREATE TABLE failed_login_attempts
+CREATE TABLE mtp_auth_failedloginattempt
 (
     id           SERIAL      NOT NULL,
     user_id      INTEGER     NOT NULL REFERENCES mtp_users (id) ON DELETE CASCADE,
@@ -48,10 +48,10 @@ CREATE TABLE failed_login_attempts
     CONSTRAINT pk_failed_login_attempts PRIMARY KEY (id)
 );
 
-CREATE INDEX idx_failed_login_attempts_user_app ON failed_login_attempts (user_id, application, attempted_at DESC);
+CREATE INDEX idx_failed_login_attempts_user_app ON mtp_auth_failedloginattempt (user_id, application, attempted_at DESC);
 
 -- Login records
-CREATE TABLE mtp_logins
+CREATE TABLE mtp_auth_login
 (
     id          SERIAL      NOT NULL,
     user_id     INTEGER     NOT NULL REFERENCES mtp_users (id) ON DELETE CASCADE,

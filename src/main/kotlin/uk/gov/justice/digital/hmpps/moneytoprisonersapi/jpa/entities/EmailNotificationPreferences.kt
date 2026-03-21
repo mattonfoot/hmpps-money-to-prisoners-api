@@ -15,7 +15,7 @@ import java.time.LocalDate
  * Supports update-or-create semantics via username unique constraint.
  */
 @Entity
-@Table(name = "email_notification_preferences")
+@Table(name = "notification_emailnotificationpreferences")
 class EmailNotificationPreferences(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
