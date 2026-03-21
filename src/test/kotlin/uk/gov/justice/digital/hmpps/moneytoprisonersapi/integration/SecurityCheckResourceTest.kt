@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResol
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
+import java.time.LocalDateTime
 
 class SecurityCheckResourceTest : IntegrationTestBase() {
 
@@ -27,11 +28,17 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
     creditRepository.deleteAll()
   }
 
-  private fun createCreditWithCheck(status: CheckStatus = CheckStatus.PENDING): SecurityCheck {
+  private fun createCreditWithCheck(
+    status: CheckStatus = CheckStatus.PENDING,
+    ruleCodes: String? = null,
+    startedAt: LocalDateTime? = null,
+    actionedBy: String? = null,
+    creditResolution: CreditResolution = CreditResolution.PENDING,
+  ): SecurityCheck {
     val credit = creditRepository.save(
-      Credit(amount = 1000, resolution = CreditResolution.PENDING),
+      Credit(amount = 1000, resolution = creditResolution),
     )
-    val check = SecurityCheck(credit = credit, status = status)
+    val check = SecurityCheck(credit = credit, status = status, ruleCodes = ruleCodes, startedAt = startedAt, actionedBy = actionedBy)
     return securityCheckRepository.save(check)
   }
 
@@ -88,6 +95,86 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.count").isEqualTo(1)
         .jsonPath("$.results[0].status").isEqualTo("PENDING")
+    }
+
+    @Test
+    @DisplayName("SEC-054 - Filters checks by rules code (substring match)")
+    fun `should filter checks by rules`() {
+      createCreditWithCheck(ruleCodes = "[\"FIUMONP\"]")
+      createCreditWithCheck(ruleCodes = "[\"CSFREQ\"]")
+      createCreditWithCheck(ruleCodes = null)
+
+      webTestClient.get()
+        .uri("/security/checks/?rules=FIUMONP")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("SEC-055 - Filters checks by started_at__gte (inclusive)")
+    fun `should filter checks by started_at__gte`() {
+      val threshold = LocalDateTime.of(2024, 6, 1, 12, 0, 0)
+      createCreditWithCheck(startedAt = threshold.minusHours(1))
+      createCreditWithCheck(startedAt = threshold)
+      createCreditWithCheck(startedAt = threshold.plusHours(1))
+
+      webTestClient.get()
+        .uri("/security/checks/?started_at__gte=2024-06-01T12:00:00")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(2)
+    }
+
+    @Test
+    @DisplayName("SEC-056 - Filters checks by started_at__lt (exclusive)")
+    fun `should filter checks by started_at__lt`() {
+      val threshold = LocalDateTime.of(2024, 6, 1, 12, 0, 0)
+      createCreditWithCheck(startedAt = threshold.minusHours(1))
+      createCreditWithCheck(startedAt = threshold)
+      createCreditWithCheck(startedAt = threshold.plusHours(1))
+
+      webTestClient.get()
+        .uri("/security/checks/?started_at__lt=2024-06-01T12:00:00")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("SEC-057 - Filters checks by actioned_by__isnull=false (only actioned checks)")
+    fun `should filter checks where actioned_by is not null`() {
+      createCreditWithCheck(actionedBy = "security_user")
+      createCreditWithCheck(actionedBy = null)
+
+      webTestClient.get()
+        .uri("/security/checks/?actioned_by__isnull=false")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+    }
+
+    @Test
+    @DisplayName("SEC-058 - Filters checks by credit_resolution")
+    fun `should filter checks by credit resolution`() {
+      createCreditWithCheck(creditResolution = CreditResolution.PENDING)
+      createCreditWithCheck(creditResolution = CreditResolution.CREDITED)
+
+      webTestClient.get()
+        .uri("/security/checks/?credit_resolution=CREDITED")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
     }
   }
 
@@ -262,6 +349,147 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
         .bodyValue("""{"decision_reason": "Suspicious", "rejection_reasons": []}""")
         .exchange()
         .expectStatus().isBadRequest
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /security/checks/{id}/ (GetCheckTestCase)")
+  inner class GetCheck {
+
+    @Test
+    @DisplayName("Returns 401 for unauthenticated request")
+    fun `should return 401 for unauthenticated get`() {
+      val check = createCreditWithCheck()
+      webTestClient.get()
+        .uri("/security/checks/${check.id}/")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    @DisplayName("Returns 403 for user without required role")
+    fun `should return 403 without security role`() {
+      val check = createCreditWithCheck()
+      webTestClient.get()
+        .uri("/security/checks/${check.id}/")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    @DisplayName("Returns 200 with check details")
+    fun `should return check details`() {
+      val check = createCreditWithCheck(CheckStatus.PENDING, ruleCodes = "[\"FIUMONP\"]")
+
+      webTestClient.get()
+        .uri("/security/checks/${check.id}/")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.id").isEqualTo(check.id!!.toInt())
+        .jsonPath("$.status").isEqualTo("PENDING")
+    }
+
+    @Test
+    @DisplayName("Returns 404 for non-existent check")
+    fun `should return 404 for non-existent check`() {
+      webTestClient.get()
+        .uri("/security/checks/99999/")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+  }
+
+  @Nested
+  @DisplayName("PATCH /security/checks/{id}/ (PatchCheckTestCase)")
+  inner class PatchCheck {
+
+    @Test
+    @DisplayName("Returns 401 for unauthenticated request")
+    fun `should return 401 for unauthenticated patch`() {
+      val check = createCreditWithCheck()
+      webTestClient.patch()
+        .uri("/security/checks/${check.id}/")
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"assigned_to": "security_user"}""")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    @DisplayName("Assigns check to a user")
+    fun `should assign check to user`() {
+      val check = createCreditWithCheck(CheckStatus.PENDING)
+
+      webTestClient.patch()
+        .uri("/security/checks/${check.id}/")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"assigned_to": "security_user"}""")
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.assigned_to").isEqualTo("security_user")
+
+      val updated = securityCheckRepository.findById(check.id!!).get()
+      assertThat(updated.assignedTo).isEqualTo("security_user")
+    }
+
+    @Test
+    @DisplayName("Returns 400 when reassigning an already-assigned check")
+    fun `should return 400 when check already assigned`() {
+      val check = createCreditWithCheck(CheckStatus.PENDING)
+      val savedCheck = securityCheckRepository.save(check.apply { assignedTo = "existing_user" })
+
+      webTestClient.patch()
+        .uri("/security/checks/${savedCheck.id}/")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"assigned_to": "other_user"}""")
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    @DisplayName("Allows reassignment after clearing assigned_to with null")
+    fun `should allow reassignment after clearing to null`() {
+      val check = createCreditWithCheck(CheckStatus.PENDING)
+      securityCheckRepository.save(check.apply { assignedTo = "existing_user" })
+
+      // Clear the assignment
+      webTestClient.patch()
+        .uri("/security/checks/${check.id}/")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"assigned_to": null}""")
+        .exchange()
+        .expectStatus().isOk
+
+      // Now reassign
+      webTestClient.patch()
+        .uri("/security/checks/${check.id}/")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"assigned_to": "new_user"}""")
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.assigned_to").isEqualTo("new_user")
+    }
+
+    @Test
+    @DisplayName("Returns 404 for non-existent check")
+    fun `should return 404 for non-existent check on patch`() {
+      webTestClient.patch()
+        .uri("/security/checks/99999/")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"assigned_to": "user"}""")
+        .exchange()
+        .expectStatus().isNotFound
     }
   }
 }

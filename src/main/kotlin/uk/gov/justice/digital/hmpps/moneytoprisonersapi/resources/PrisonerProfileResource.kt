@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PrisonerProfileDto
@@ -27,10 +28,31 @@ class PrisonerProfileResource(
   @Operation(summary = "List prisoner profiles (SEC-090 to SEC-098)")
   @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
   @GetMapping("/")
-  fun listProfiles(): PaginatedResponse<PrisonerProfileDto> {
-    val profiles = prisonerProfileService.listProfiles()
-    val results = profiles.map { PrisonerProfileDto.from(it) }
+  fun listProfiles(
+    @RequestParam("monitoring") monitoring: Boolean? = null,
+    @RequestParam("simple_search") simpleSearch: String? = null,
+    principal: Principal,
+  ): PaginatedResponse<PrisonerProfileDto> {
+    val (monitoredBy, notMonitoredBy) = when (monitoring) {
+      true -> principal.name to null
+      false -> null to principal.name
+      null -> null to null
+    }
+    val profiles = prisonerProfileService.listProfiles(
+      monitoredByUsername = monitoredBy,
+      notMonitoredByUsername = notMonitoredBy,
+      simpleSearch = simpleSearch,
+    )
+    val results = profiles.map { PrisonerProfileDto.from(it, currentUsername = principal.name) }
     return PaginatedResponse(count = results.size, results = results)
+  }
+
+  @Operation(summary = "Get a single prisoner profile by ID")
+  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @GetMapping("/{id}/")
+  fun getProfile(@PathVariable id: Long, principal: Principal): PrisonerProfileDto {
+    val profile = prisonerProfileService.getProfile(id)
+    return PrisonerProfileDto.from(profile, currentUsername = principal.name)
   }
 
   @Operation(summary = "Get credits for a prisoner profile (SEC-093)")

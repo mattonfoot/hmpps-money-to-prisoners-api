@@ -8,6 +8,7 @@ import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.AcceptCheckRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PatchCheckRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.RejectCheckRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SecurityCheckDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CheckStatus
@@ -43,16 +45,33 @@ class SecurityCheckResource(
     @RequestParam("started_at__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     startedAtLt: LocalDateTime? = null,
+    @RequestParam("actioned_by__isnull") actionedByIsNull: Boolean? = null,
+    @RequestParam("credit_resolution") creditResolution: String? = null,
   ): PaginatedResponse<SecurityCheckDto> {
     val checks = securityCheckService.listChecks(
       status = status,
       rules = rules,
       startedAtGte = startedAtGte,
       startedAtLt = startedAtLt,
+      actionedByIsNull = actionedByIsNull,
+      creditResolution = creditResolution,
     )
     val results = checks.map { SecurityCheckDto.from(it) }
     return PaginatedResponse(count = results.size, results = results)
   }
+
+  @Operation(summary = "Get a single security check by ID")
+  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @GetMapping("/{id}/")
+  fun getCheck(@PathVariable id: Long): SecurityCheckDto = SecurityCheckDto.from(securityCheckService.getCheck(id))
+
+  @Operation(summary = "Assign a security check to a user")
+  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PatchMapping("/{id}/")
+  fun patchCheck(
+    @PathVariable id: Long,
+    @RequestBody request: PatchCheckRequest,
+  ): SecurityCheckDto = SecurityCheckDto.from(securityCheckService.patchCheck(id, request.assignedTo))
 
   @Operation(summary = "Accept a security check (SEC-020 to SEC-025)")
   @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")

@@ -60,6 +60,9 @@ class SecurityCheck(
   @Column(name = "started_at")
   var startedAt: LocalDateTime? = null,
 
+  @Column(name = "assigned_to")
+  var assignedTo: String? = null,
+
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "credit_id", nullable = false, unique = true)
   var credit: Credit? = null,

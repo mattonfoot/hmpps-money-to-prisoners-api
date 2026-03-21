@@ -117,6 +117,101 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("GET /security/prisoners/ - filter tests (PrisonerProfileListTestCase)")
+  inner class FilterPrisonerProfiles {
+
+    @Test
+    @DisplayName("Filters by monitoring=true returns only prisoners monitored by current user")
+    fun `should filter by monitoring true`() {
+      val monitoredProfile = transactionTemplate.execute {
+        val p = PrisonerProfile(prisonerNumber = "MONITORED1", prisonerName = "Monitored Prisoner")
+        p.monitoringUsers.add("security_user")
+        prisonerProfileRepository.save(p)
+      }!!
+      createPrisonerProfile("A1111BC")
+      createPrisonerProfile("B2222DE")
+
+      webTestClient.get()
+        .uri("/security/prisoners/?monitoring=true")
+        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].id").isEqualTo(monitoredProfile.id!!.toInt())
+    }
+
+    @Test
+    @DisplayName("Filters by monitoring=false returns prisoners NOT monitored by current user")
+    fun `should filter by monitoring false`() {
+      transactionTemplate.execute {
+        val p = PrisonerProfile(prisonerNumber = "MONITORED1", prisonerName = "Monitored Prisoner")
+        p.monitoringUsers.add("security_user")
+        prisonerProfileRepository.save(p)
+      }
+      createPrisonerProfile("A1111BC")
+      createPrisonerProfile("B2222DE")
+
+      webTestClient.get()
+        .uri("/security/prisoners/?monitoring=false")
+        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(2)
+    }
+
+    @Test
+    @DisplayName("Returns monitoring field in detail view")
+    fun `should return monitoring field on detail endpoint`() {
+      val profile = transactionTemplate.execute {
+        val p = PrisonerProfile(prisonerNumber = "A1234BC", prisonerName = "John Smith")
+        p.monitoringUsers.add("security_user")
+        prisonerProfileRepository.save(p)
+      }!!
+
+      webTestClient.get()
+        .uri("/security/prisoners/${profile.id}/")
+        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.id").isEqualTo(profile.id!!.toInt())
+        .jsonPath("$.monitoring").isEqualTo(true)
+    }
+
+    @Test
+    @DisplayName("Returns 404 for non-existent prisoner profile detail")
+    fun `should return 404 for non-existent profile`() {
+      webTestClient.get()
+        .uri("/security/prisoners/99999/")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    @DisplayName("Filters by simple_search matches prisoner_name or prisoner_number")
+    fun `should filter by simple_search matching prisoner name`() {
+      createPrisonerProfile("A1234BC").also {
+        prisonerProfileRepository.save(it.apply { prisonerName = "JOHN SMITH" })
+      }
+      createPrisonerProfile("B5678DE").also {
+        prisonerProfileRepository.save(it.apply { prisonerName = "JANE DOE" })
+      }
+
+      webTestClient.get()
+        .uri("/security/prisoners/?simple_search=JOHN")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].prisoner_name").isEqualTo("JOHN SMITH")
+    }
+  }
+
+  @Nested
   @DisplayName("GET /security/prisoners/{id}/credits/ (SEC-093)")
   inner class ListPrisonerCredits {
 

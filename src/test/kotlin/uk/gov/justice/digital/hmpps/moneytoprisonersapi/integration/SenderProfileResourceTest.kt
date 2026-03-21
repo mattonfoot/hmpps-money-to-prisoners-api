@@ -122,6 +122,81 @@ class SenderProfileResourceTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("GET /security/senders/ - filter tests (SenderProfileListTestCase)")
+  inner class FilterSenderProfiles {
+
+    @Test
+    @DisplayName("Filters by monitoring=true returns only senders monitored by current user")
+    fun `should filter by monitoring true`() {
+      val monitoredProfile = transactionTemplate.execute {
+        val p = SenderProfile()
+        p.monitoringUsers.add("security_user")
+        senderProfileRepository.save(p)
+      }!!
+      createSenderProfile()
+      createSenderProfile()
+
+      webTestClient.get()
+        .uri("/security/senders/?monitoring=true")
+        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].id").isEqualTo(monitoredProfile.id!!.toInt())
+    }
+
+    @Test
+    @DisplayName("Filters by monitoring=false returns senders NOT monitored by current user")
+    fun `should filter by monitoring false`() {
+      transactionTemplate.execute {
+        val p = SenderProfile()
+        p.monitoringUsers.add("security_user")
+        senderProfileRepository.save(p)
+      }
+      createSenderProfile()
+      createSenderProfile()
+
+      webTestClient.get()
+        .uri("/security/senders/?monitoring=false")
+        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(2)
+    }
+
+    @Test
+    @DisplayName("Returns monitoring field as true when current user monitors the sender")
+    fun `should include monitoring field in detail view`() {
+      val profile = transactionTemplate.execute {
+        val p = SenderProfile()
+        p.monitoringUsers.add("security_user")
+        senderProfileRepository.save(p)
+      }!!
+
+      webTestClient.get()
+        .uri("/security/senders/${profile.id}/")
+        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.id").isEqualTo(profile.id!!.toInt())
+        .jsonPath("$.monitoring").isEqualTo(true)
+    }
+
+    @Test
+    @DisplayName("Returns 404 for non-existent sender profile detail")
+    fun `should return 404 for non-existent profile`() {
+      webTestClient.get()
+        .uri("/security/senders/99999/")
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+  }
+
+  @Nested
   @DisplayName("GET /security/senders/{id}/credits/ (SEC-075)")
   inner class ListSenderCredits {
 

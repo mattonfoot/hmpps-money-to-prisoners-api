@@ -32,6 +32,9 @@ data class SecurityCheckDto(
   @Schema(description = "Timestamp when the check was started", example = "2024-03-15T10:30:00")
   @JsonProperty("started_at")
   val startedAt: LocalDateTime?,
+  @Schema(description = "User the check is assigned to", example = "security_user")
+  @JsonProperty("assigned_to")
+  val assignedTo: String?,
   @Schema(description = "Timestamp when the check was created", example = "2024-03-15T10:30:00")
   val created: LocalDateTime?,
   @Schema(description = "Timestamp when the check was last modified", example = "2024-03-15T10:30:00")
@@ -48,6 +51,7 @@ data class SecurityCheckDto(
       ruleCodes = securityCheck.ruleCodes,
       rejectionReasons = securityCheck.rejectionReasons,
       startedAt = securityCheck.startedAt,
+      assignedTo = securityCheck.assignedTo,
       created = securityCheck.created,
       modified = securityCheck.modified,
     )

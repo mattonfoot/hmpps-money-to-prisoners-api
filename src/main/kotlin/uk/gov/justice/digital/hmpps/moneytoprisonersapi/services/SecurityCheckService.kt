@@ -62,13 +62,28 @@ class SecurityCheckService(
     }
   }
 
+  fun getCheck(id: Long): SecurityCheck = securityCheckRepository.findById(id)
+    .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "SecurityCheck $id not found") }
+
+  @Transactional
+  fun patchCheck(id: Long, assignedTo: String?): SecurityCheck {
+    val check = getCheck(id)
+    if (assignedTo != null && check.assignedTo != null) {
+      throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Check is already assigned to ${check.assignedTo}")
+    }
+    check.assignedTo = assignedTo
+    return securityCheckRepository.save(check)
+  }
+
   fun listChecks(
     status: CheckStatus? = null,
     rules: String? = null,
     startedAtGte: LocalDateTime? = null,
     startedAtLt: LocalDateTime? = null,
+    actionedByIsNull: Boolean? = null,
+    creditResolution: String? = null,
   ): List<SecurityCheck> {
-    val spec = buildSpecification(status, rules, startedAtGte, startedAtLt)
+    val spec = buildSpecification(status, rules, startedAtGte, startedAtLt, actionedByIsNull, creditResolution)
     return securityCheckRepository.findAll(spec)
   }
 
@@ -77,6 +92,8 @@ class SecurityCheckService(
     rules: String?,
     startedAtGte: LocalDateTime?,
     startedAtLt: LocalDateTime?,
+    actionedByIsNull: Boolean?,
+    creditResolution: String?,
   ): Specification<SecurityCheck> {
     val specs = mutableListOf<Specification<SecurityCheck>>()
 
@@ -104,6 +121,27 @@ class SecurityCheckService(
       specs.add(
         Specification { root, _, cb ->
           cb.lessThan(root.get("startedAt"), startedAtLt)
+        },
+      )
+    }
+
+    if (actionedByIsNull != null) {
+      specs.add(
+        Specification { root, _, cb ->
+          if (actionedByIsNull) {
+            cb.isNull(root.get<String>("actionedBy"))
+          } else {
+            cb.isNotNull(root.get<String>("actionedBy"))
+          }
+        },
+      )
+    }
+
+    if (creditResolution != null) {
+      specs.add(
+        Specification { root, query, cb ->
+          val creditJoin = root.join<SecurityCheck, Any>("credit", jakarta.persistence.criteria.JoinType.LEFT)
+          cb.equal(cb.upper(creditJoin.get("resolution")), creditResolution.uppercase())
         },
       )
     }

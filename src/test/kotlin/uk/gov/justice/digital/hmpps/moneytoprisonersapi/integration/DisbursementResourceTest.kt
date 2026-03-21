@@ -5,12 +5,15 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.transaction.support.TransactionTemplate
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursement
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementMethod
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerProfile
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementCommentRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementLogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 
 class DisbursementResourceTest : IntegrationTestBase() {
 
@@ -23,11 +26,18 @@ class DisbursementResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var disbursementCommentRepository: DisbursementCommentRepository
 
+  @Autowired
+  private lateinit var prisonerProfileRepository: PrisonerProfileRepository
+
+  @Autowired
+  private lateinit var transactionTemplate: TransactionTemplate
+
   @BeforeEach
   fun setUp() {
     disbursementCommentRepository.deleteAll()
     disbursementLogRepository.deleteAll()
     disbursementRepository.deleteAll()
+    prisonerProfileRepository.deleteAll()
   }
 
   @Nested
@@ -488,6 +498,59 @@ class DisbursementResourceTest : IntegrationTestBase() {
         .isCreated
         .expectBody()
         .jsonPath("$[0].category").isEqualTo("GENERAL")
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /disbursements/?monitored=True (MonitoredDisbursementListTestCase)")
+  inner class MonitoredDisbursements {
+
+    @Test
+    @DisplayName("DSB-090 - Returns 401 for unauthenticated monitored filter request")
+    fun `should return 401 for unauthenticated monitored request`() {
+      webTestClient.get()
+        .uri("/disbursements/?monitored=true")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    @DisplayName("DSB-091 - Returns only disbursements for monitored prisoners when monitored=true")
+    fun `should return disbursements for monitored prisoners`() {
+      // Create a prisoner profile monitored by security_user
+      transactionTemplate.execute {
+        val profile = PrisonerProfile(prisonerNumber = "A1234BC", prisonerName = "John Smith")
+        profile.monitoringUsers.add("security_user")
+        prisonerProfileRepository.save(profile)
+      }
+
+      // Disbursement for monitored prisoner
+      disbursementRepository.save(createDisbursement(prisonerNumber = "A1234BC", amount = 5000L))
+      // Disbursement for unmonitored prisoner
+      disbursementRepository.save(createDisbursement(prisonerNumber = "Z9999ZZ", amount = 2000L))
+
+      webTestClient.get()
+        .uri("/disbursements/?monitored=true")
+        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].amount").isEqualTo(5000)
+    }
+
+    @Test
+    @DisplayName("DSB-092 - Returns empty list when no prisoners monitored by user")
+    fun `should return empty list when no monitored prisoners`() {
+      disbursementRepository.save(createDisbursement(prisonerNumber = "A1234BC"))
+
+      webTestClient.get()
+        .uri("/disbursements/?monitored=true")
+        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.count").isEqualTo(0)
     }
   }
 

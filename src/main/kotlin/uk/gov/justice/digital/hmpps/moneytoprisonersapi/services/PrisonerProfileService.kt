@@ -12,7 +12,27 @@ class PrisonerProfileService(
   private val prisonerProfileRepository: PrisonerProfileRepository,
 ) {
 
-  fun listProfiles(): List<PrisonerProfile> = prisonerProfileRepository.findAll()
+  fun listProfiles(
+    monitoredByUsername: String? = null,
+    notMonitoredByUsername: String? = null,
+    simpleSearch: String? = null,
+  ): List<PrisonerProfile> {
+    var all = prisonerProfileRepository.findAll()
+    if (simpleSearch != null) {
+      val terms = simpleSearch.trim().split("\\s+".toRegex()).filter { it.isNotEmpty() }
+      all = all.filter { profile ->
+        val searchableText = listOfNotNull(profile.prisonerName, profile.prisonerNumber)
+          .joinToString(" ")
+          .uppercase()
+        terms.all { term -> searchableText.contains(term.uppercase()) }
+      }
+    }
+    return when {
+      monitoredByUsername != null -> all.filter { it.monitoringUsers.contains(monitoredByUsername) }
+      notMonitoredByUsername != null -> all.filter { !it.monitoringUsers.contains(notMonitoredByUsername) }
+      else -> all
+    }
+  }
 
   fun getProfile(id: Long): PrisonerProfile = prisonerProfileRepository.findById(id)
     .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "PrisonerProfile $id not found") }

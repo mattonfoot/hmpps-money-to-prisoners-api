@@ -18,17 +18,19 @@ data class PrisonerProfileDto(
   val senderCount: Int,
   @JsonProperty("monitoring_users")
   val monitoringUsers: List<String>,
+  val monitoring: Boolean?,
   val created: LocalDateTime?,
   val modified: LocalDateTime?,
 ) {
   companion object {
-    fun from(profile: PrisonerProfile): PrisonerProfileDto = PrisonerProfileDto(
+    fun from(profile: PrisonerProfile, currentUsername: String? = null): PrisonerProfileDto = PrisonerProfileDto(
       id = profile.id,
       prisonerNumber = profile.prisonerNumber,
       prisonerName = profile.prisonerName,
       creditCount = profile.credits.size,
       senderCount = 0,
       monitoringUsers = profile.monitoringUsers.toList(),
+      monitoring = if (currentUsername != null) profile.monitoringUsers.contains(currentUsername) else null,
       created = profile.created,
       modified = profile.modified,
     )

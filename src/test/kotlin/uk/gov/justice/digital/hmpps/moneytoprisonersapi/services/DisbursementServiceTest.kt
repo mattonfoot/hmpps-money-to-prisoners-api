@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidDisb
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementLogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
@@ -32,6 +33,7 @@ class DisbursementServiceTest {
 
   private val disbursementRepository: DisbursementRepository = mock()
   private val disbursementLogRepository: DisbursementLogRepository = mock()
+  private val prisonerProfileRepository: PrisonerProfileRepository = mock()
   private lateinit var disbursementService: DisbursementService
 
   @BeforeEach
@@ -39,6 +41,7 @@ class DisbursementServiceTest {
     disbursementService = DisbursementService(
       disbursementRepository = disbursementRepository,
       disbursementLogRepository = disbursementLogRepository,
+      prisonerProfileRepository = prisonerProfileRepository,
     )
   }
 

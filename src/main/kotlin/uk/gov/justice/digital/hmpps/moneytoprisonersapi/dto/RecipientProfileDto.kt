@@ -2,16 +2,16 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SenderProfile
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.RecipientProfile
 import java.time.LocalDateTime
 
-@Schema(description = "A sender profile aggregating credits from one sender")
-data class SenderProfileDto(
+@Schema(description = "A recipient profile aggregating disbursements to one bank account")
+data class RecipientProfileDto(
   val id: Long?,
-  @JsonProperty("credit_count")
-  val creditCount: Int,
-  @JsonProperty("prisoner_count")
-  val prisonerCount: Int,
+  @JsonProperty("sort_code")
+  val sortCode: String?,
+  @JsonProperty("account_number")
+  val accountNumber: String?,
   @JsonProperty("monitoring_users")
   val monitoringUsers: List<String>,
   val monitoring: Boolean?,
@@ -19,10 +19,10 @@ data class SenderProfileDto(
   val modified: LocalDateTime?,
 ) {
   companion object {
-    fun from(profile: SenderProfile, currentUsername: String? = null): SenderProfileDto = SenderProfileDto(
+    fun from(profile: RecipientProfile, currentUsername: String? = null): RecipientProfileDto = RecipientProfileDto(
       id = profile.id,
-      creditCount = profile.credits.size,
-      prisonerCount = profile.credits.mapNotNull { it.prisonerNumber }.distinct().size,
+      sortCode = profile.sortCode,
+      accountNumber = profile.accountNumber,
       monitoringUsers = profile.monitoringUsers.toList(),
       monitoring = if (currentUsername != null) profile.monitoringUsers.contains(currentUsername) else null,
       created = profile.created,

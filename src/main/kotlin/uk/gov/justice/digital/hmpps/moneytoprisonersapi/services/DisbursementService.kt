@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursemen
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementLogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 
 class DisbursementNotFoundException(id: Long) : RuntimeException("Disbursement not found with id: $id")
 
@@ -24,6 +25,7 @@ private const val INVOICE_NUMBER_BASE = 1000000L
 class DisbursementService(
   private val disbursementRepository: DisbursementRepository,
   private val disbursementLogRepository: DisbursementLogRepository,
+  private val prisonerProfileRepository: PrisonerProfileRepository,
 ) {
 
   fun listDisbursements(
@@ -41,6 +43,7 @@ class DisbursementService(
     rollNumber: String? = null,
     postcode: String? = null,
     ordering: String? = null,
+    monitoredByUsername: String? = null,
   ): List<Disbursement> {
     var disbursements = disbursementRepository.findAll()
 
@@ -99,6 +102,14 @@ class DisbursementService(
         val pc = it.postcode
         pc != null && pc.replace("\\s".toRegex(), "").lowercase() == normalizedFilter
       }
+    }
+
+    if (monitoredByUsername != null) {
+      val monitoredPrisonerNumbers = prisonerProfileRepository.findAll()
+        .filter { it.monitoringUsers.contains(monitoredByUsername) }
+        .mapNotNull { it.prisonerNumber }
+        .toSet()
+      disbursements = disbursements.filter { it.prisonerNumber in monitoredPrisonerNumbers }
     }
 
     if (!ordering.isNullOrBlank()) {

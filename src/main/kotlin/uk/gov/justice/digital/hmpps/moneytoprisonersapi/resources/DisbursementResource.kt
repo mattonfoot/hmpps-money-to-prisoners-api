@@ -100,6 +100,9 @@ class DisbursementResource(
     @RequestParam("postcode") postcode: String? = null,
     @Parameter(description = "Order results by field. Allowed: created, amount, resolution, method, prisoner_name, recipient_name. Prefix with - for descending.", example = "-created")
     @RequestParam("ordering") ordering: String? = null,
+    @Parameter(description = "Filter disbursements for prisoners monitored by the current user")
+    @RequestParam("monitored") monitored: Boolean? = null,
+    principal: Principal,
   ): PaginatedResponse<DisbursementDto> {
     val disbursements = disbursementService.listDisbursements(
       amount = amount,
@@ -116,6 +119,7 @@ class DisbursementResource(
       rollNumber = rollNumber,
       postcode = postcode,
       ordering = ordering,
+      monitoredByUsername = if (monitored == true) principal.name else null,
     )
     val results = disbursements.map { DisbursementDto.from(it) }
     return PaginatedResponse(
