@@ -60,10 +60,12 @@ class AccountRequestResource(
     @Parameter(description = "Ordering: omit for oldest-first, use -created for newest-first")
     @RequestParam(required = false)
     ordering: String?,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): ResponseEntity<PaginatedResponse<AccountRequestDto>> {
     val requests = accountRequestService.listPendingRequests(ordering)
       .map { AccountRequestDto.from(it) }
-    return ResponseEntity.ok(PaginatedResponse(count = requests.size, results = requests))
+    return ResponseEntity.ok(PaginatedResponse.fromList(requests, limit = limit, offset = offset))
   }
 
   // -------------------------------------------------------------------------

@@ -143,10 +143,12 @@ class PaymentResource(
     @RequestParam("modified__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     modifiedLt: LocalDateTime? = null,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<PaymentDto> {
     val payments = paymentService.listPendingPayments(modifiedLt = modifiedLt)
     val results = payments.map { PaymentDto.from(it) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(

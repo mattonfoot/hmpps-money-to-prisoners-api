@@ -47,6 +47,8 @@ class SecurityCheckResource(
     startedAtLt: LocalDateTime? = null,
     @RequestParam("actioned_by__isnull") actionedByIsNull: Boolean? = null,
     @RequestParam("credit_resolution") creditResolution: String? = null,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<SecurityCheckDto> {
     val checks = securityCheckService.listChecks(
       status = status,
@@ -57,7 +59,7 @@ class SecurityCheckResource(
       creditResolution = creditResolution,
     )
     val results = checks.map { SecurityCheckDto.from(it) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(summary = "Get a single security check by ID")

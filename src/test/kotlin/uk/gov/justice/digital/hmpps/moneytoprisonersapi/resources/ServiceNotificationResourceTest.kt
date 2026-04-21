@@ -69,7 +69,7 @@ class ServiceNotificationResourceTest {
       val notification = makeNotification(public = true)
       whenever(serviceNotificationService.listNotifications(true, null)).thenReturn(listOf(notification))
 
-      val result = resource.listNotifications(null, authenticatedToken())
+      val result = resource.listNotifications(null, authentication = authenticatedToken())
 
       assertThat(result.count).isEqualTo(1)
       assertThat(result.results).hasSize(1)
@@ -79,7 +79,7 @@ class ServiceNotificationResourceTest {
     fun `SVC-010 returns empty list when no active notifications`() {
       whenever(serviceNotificationService.listNotifications(true, null)).thenReturn(emptyList())
 
-      val result = resource.listNotifications(null, authenticatedToken())
+      val result = resource.listNotifications(null, authentication = authenticatedToken())
 
       assertThat(result.count).isEqualTo(0)
       assertThat(result.results).isEmpty()
@@ -98,7 +98,7 @@ class ServiceNotificationResourceTest {
     fun `SVC-011 unauthenticated request passes authenticated=false to service`() {
       whenever(serviceNotificationService.listNotifications(false, null)).thenReturn(emptyList())
 
-      resource.listNotifications(null, null)
+      resource.listNotifications(null, authentication = null)
 
       verify(serviceNotificationService).listNotifications(false, null)
     }
@@ -107,7 +107,7 @@ class ServiceNotificationResourceTest {
     fun `SVC-011 anonymous token passes authenticated=false to service`() {
       whenever(serviceNotificationService.listNotifications(false, null)).thenReturn(emptyList())
 
-      resource.listNotifications(null, anonymousToken())
+      resource.listNotifications(null, authentication = anonymousToken())
 
       verify(serviceNotificationService).listNotifications(false, null)
     }
@@ -116,7 +116,7 @@ class ServiceNotificationResourceTest {
     fun `SVC-011 authenticated request passes authenticated=true to service`() {
       whenever(serviceNotificationService.listNotifications(true, null)).thenReturn(emptyList())
 
-      resource.listNotifications(null, authenticatedToken())
+      resource.listNotifications(null, authentication = authenticatedToken())
 
       verify(serviceNotificationService).listNotifications(true, null)
     }
@@ -130,7 +130,7 @@ class ServiceNotificationResourceTest {
   fun `SVC-012 passes target prefix to service`() {
     whenever(serviceNotificationService.listNotifications(true, "cashbook")).thenReturn(emptyList())
 
-    resource.listNotifications("cashbook", authenticatedToken())
+    resource.listNotifications("cashbook", authentication = authenticatedToken())
 
     verify(serviceNotificationService).listNotifications(true, "cashbook")
   }
@@ -148,7 +148,7 @@ class ServiceNotificationResourceTest {
       val notification = makeNotification(level = "warning")
       whenever(serviceNotificationService.listNotifications(true, null)).thenReturn(listOf(notification))
 
-      val result = resource.listNotifications(null, authenticatedToken())
+      val result = resource.listNotifications(null, authentication = authenticatedToken())
 
       assertThat(result.results[0].level).isEqualTo("warning")
     }
@@ -158,7 +158,7 @@ class ServiceNotificationResourceTest {
       val notification = makeNotification(level = "info")
       whenever(serviceNotificationService.listNotifications(true, null)).thenReturn(listOf(notification))
 
-      val result = resource.listNotifications(null, authenticatedToken())
+      val result = resource.listNotifications(null, authentication = authenticatedToken())
 
       assertThat(result.results[0].level).isEqualTo("info")
     }
@@ -168,7 +168,7 @@ class ServiceNotificationResourceTest {
       val notification = makeNotification(level = "error")
       whenever(serviceNotificationService.listNotifications(true, null)).thenReturn(listOf(notification))
 
-      val result = resource.listNotifications(null, authenticatedToken())
+      val result = resource.listNotifications(null, authentication = authenticatedToken())
 
       assertThat(result.results[0].level).isEqualTo("error")
     }
@@ -178,7 +178,7 @@ class ServiceNotificationResourceTest {
       val notification = makeNotification(level = "success")
       whenever(serviceNotificationService.listNotifications(true, null)).thenReturn(listOf(notification))
 
-      val result = resource.listNotifications(null, authenticatedToken())
+      val result = resource.listNotifications(null, authentication = authenticatedToken())
 
       assertThat(result.results[0].level).isEqualTo("success")
     }
@@ -193,7 +193,7 @@ class ServiceNotificationResourceTest {
     val notification = makeNotification(target = "noms_ops_login", headline = "Planned maintenance")
     whenever(serviceNotificationService.listNotifications(true, null)).thenReturn(listOf(notification))
 
-    val result = resource.listNotifications(null, authenticatedToken())
+    val result = resource.listNotifications(null, authentication = authenticatedToken())
 
     assertThat(result.results[0].target).isEqualTo("noms_ops_login")
     assertThat(result.results[0].headline).isEqualTo("Planned maintenance")

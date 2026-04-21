@@ -237,6 +237,12 @@ class CreditResource(
     @Parameter(description = "Filter by specific credit IDs. Pass multiple values (e.g. pk=1&pk=3)")
     @RequestParam("pk")
     pk: List<Long>? = null,
+    @Parameter(description = "Number of results to return per page.", example = "20")
+    @RequestParam("limit", defaultValue = "20")
+    limit: Int = 20,
+    @Parameter(description = "The initial index from which to return the results.", example = "0")
+    @RequestParam("offset", defaultValue = "0")
+    offset: Int = 0,
   ): PaginatedResponse<CreditDto> {
     val credits = creditService.listCredits(
       search = search,
@@ -286,10 +292,7 @@ class CreditResource(
       pk = pk,
     )
     val results = credits.map { CreditDto.from(it) }
-    return PaginatedResponse(
-      count = results.size,
-      results = results,
-    )
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(

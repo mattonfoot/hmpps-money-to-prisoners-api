@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.MtpRoleDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
@@ -49,9 +50,12 @@ class RoleResource(
   )
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/roles/")
-  fun listRoles(): PaginatedResponse<MtpRoleDto> {
+  fun listRoles(
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<MtpRoleDto> {
     val roles = mtpRoleRepository.findAll().map { MtpRoleDto.from(it) }
-    return PaginatedResponse(count = roles.size, results = roles)
+    return PaginatedResponse.fromList(roles, limit = limit, offset = offset)
   }
 }
 

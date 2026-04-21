@@ -30,6 +30,8 @@ class RecipientProfileResource(
   @GetMapping("/")
   fun listProfiles(
     @RequestParam("monitoring") monitoring: Boolean? = null,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
     principal: Principal,
   ): PaginatedResponse<RecipientProfileDto> {
     val (monitoredBy, notMonitoredBy) = when (monitoring) {
@@ -42,7 +44,7 @@ class RecipientProfileResource(
       notMonitoredByUsername = notMonitoredBy,
     )
     val results = profiles.map { RecipientProfileDto.from(it, currentUsername = principal.name) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(summary = "Get a single recipient profile by ID")
@@ -56,10 +58,14 @@ class RecipientProfileResource(
   @Operation(summary = "Get disbursements for a recipient profile")
   @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
   @GetMapping("/{id}/disbursements/")
-  fun listDisbursements(@PathVariable id: Long): PaginatedResponse<DisbursementDto> {
+  fun listDisbursements(
+    @PathVariable id: Long,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<DisbursementDto> {
     val disbursements = recipientProfileService.getDisbursements(id)
     val results = disbursements.map { DisbursementDto.from(it) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(summary = "Monitor a recipient profile (SEC-105)")

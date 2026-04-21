@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager
 import org.springframework.context.annotation.Import
+import org.springframework.data.domain.PageRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Balance
 import java.math.BigInteger
@@ -22,6 +23,8 @@ class BalanceRepositoryTest @Autowired constructor(
   val balanceRepository: BalanceRepository,
   private val entityManager: TestEntityManager,
 ) {
+
+  private val defaultPageable = PageRequest.of(0, 20)
 
   @BeforeEach
   fun setup() {
@@ -71,12 +74,36 @@ class BalanceRepositoryTest @Autowired constructor(
       balanceRepository.save(older)
       balanceRepository.save(newest)
 
-      val results = balanceRepository.findAllByOrderByDateDesc()
+      val results = balanceRepository.findAllByOrderByDateDesc(defaultPageable)
 
-      assertEquals(3, results.size)
-      assertEquals(LocalDate.of(2024, 12, 31), results[0].date)
-      assertEquals(LocalDate.of(2024, 6, 15), results[1].date)
-      assertEquals(LocalDate.of(2024, 1, 1), results[2].date)
+      assertEquals(3, results.content.size)
+      assertEquals(LocalDate.of(2024, 12, 31), results.content[0].date)
+      assertEquals(LocalDate.of(2024, 6, 15), results.content[1].date)
+      assertEquals(LocalDate.of(2024, 1, 1), results.content[2].date)
+    }
+  }
+
+  @Nested
+  @DisplayName("Pagination")
+  inner class PaginationTests {
+
+    @Test
+    fun `returns correct page when limit and offset provided`() {
+      for (i in 1..5) {
+        balanceRepository.save(
+          Balance(closingBalance = BigInteger.valueOf(i * 100L), date = LocalDate.of(2024, 1, i)),
+        )
+      }
+
+      val firstPage = balanceRepository.findAllByOrderByDateDesc(PageRequest.of(0, 2))
+      val secondPage = balanceRepository.findAllByOrderByDateDesc(PageRequest.of(1, 2))
+
+      assertEquals(2, firstPage.content.size)
+      assertEquals(5, firstPage.totalElements)
+      assertEquals(LocalDate.of(2024, 1, 5), firstPage.content[0].date)
+
+      assertEquals(2, secondPage.content.size)
+      assertEquals(LocalDate.of(2024, 1, 3), secondPage.content[0].date)
     }
   }
 }

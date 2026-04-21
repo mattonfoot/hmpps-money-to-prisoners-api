@@ -37,6 +37,8 @@ class SecurityAutoAcceptResource(
     @RequestParam("is_active") isActive: Boolean? = null,
     @RequestParam("sender_profile") senderProfileId: Long? = null,
     @RequestParam("prisoner_profile") prisonerProfileId: Long? = null,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<AutoAcceptRuleDto> {
     val rules = securityCheckService.listAutoAcceptRules(
       isActive = isActive,
@@ -44,7 +46,7 @@ class SecurityAutoAcceptResource(
       prisonerProfileId = prisonerProfileId,
     )
     val results = rules.map { AutoAcceptRuleDto.from(it) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(summary = "Create an auto-accept rule (SEC-041)")

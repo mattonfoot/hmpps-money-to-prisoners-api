@@ -58,7 +58,7 @@ class NotificationResourceTest {
       whenever(notificationService.listEvents("testuser", null, null, null))
         .thenReturn(listOf(userEvent, globalEvent))
 
-      val response = notificationResource.listEvents(null, null, null, principal)
+      val response = notificationResource.listEvents(null, null, null, principal = principal)
 
       assertThat(response.count).isEqualTo(2)
       assertThat(response.results).hasSize(2)
@@ -70,7 +70,7 @@ class NotificationResourceTest {
       whenever(notificationService.listEvents("testuser", listOf("MONP"), null, null))
         .thenReturn(listOf(event))
 
-      val response = notificationResource.listEvents(listOf("MONP"), null, null, principal)
+      val response = notificationResource.listEvents(listOf("MONP"), null, null, principal = principal)
 
       assertThat(response.count).isEqualTo(1)
       assertThat(response.results[0].rule).isEqualTo("MONP")
@@ -83,7 +83,7 @@ class NotificationResourceTest {
       whenever(notificationService.listEvents("testuser", null, gte, lt))
         .thenReturn(emptyList())
 
-      val response = notificationResource.listEvents(null, gte, lt, principal)
+      val response = notificationResource.listEvents(null, gte, lt, principal = principal)
 
       assertThat(response.count).isEqualTo(0)
     }
@@ -96,7 +96,7 @@ class NotificationResourceTest {
       whenever(notificationService.listEvents("testuser", null, null, null))
         .thenReturn(listOf(event))
 
-      val response = notificationResource.listEvents(null, null, null, principal)
+      val response = notificationResource.listEvents(null, null, null, principal = principal)
 
       assertThat(response.results[0].creditId).isEqualTo(42L)
       assertThat(response.results[0].prisonerProfile).isEqualTo(7L)
@@ -108,7 +108,7 @@ class NotificationResourceTest {
       whenever(notificationService.listEvents("testuser", null, null, null))
         .thenReturn(listOf(event))
 
-      val response = notificationResource.listEvents(null, null, null, principal)
+      val response = notificationResource.listEvents(null, null, null, principal = principal)
 
       assertThat(response.results[0].creditId).isNull()
       assertThat(response.results[0].prisonerProfile).isNull()
@@ -119,7 +119,7 @@ class NotificationResourceTest {
       whenever(notificationService.listEvents("testuser", null, null, null))
         .thenReturn(emptyList())
 
-      val response = notificationResource.listEvents(null, null, null, principal)
+      val response = notificationResource.listEvents(null, null, null, principal = principal)
 
       assertThat(response.count).isEqualTo(0)
       assertThat(response.results).isEmpty()

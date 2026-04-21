@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateUserFlagRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
@@ -58,10 +59,12 @@ class UserFlagResource(
   @GetMapping("/users/{id}/flags/")
   fun listFlags(
     @Parameter(description = "User ID") @PathVariable id: Long,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): ResponseEntity<PaginatedResponse<UserFlagDto>> {
     val user = userService.findById(id) ?: return ResponseEntity.notFound().build()
     val flags = userFlagRepository.findByUser(user).map { UserFlagDto.from(it) }
-    return ResponseEntity.ok(PaginatedResponse(count = flags.size, results = flags))
+    return ResponseEntity.ok(PaginatedResponse.fromList(flags, limit = limit, offset = offset))
   }
 
   // -------------------------------------------------------------------------

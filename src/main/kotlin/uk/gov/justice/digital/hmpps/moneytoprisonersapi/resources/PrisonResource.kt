@@ -47,10 +47,12 @@ class PrisonResource(
     @Parameter(description = "Exclude prisons with no active prisoner locations", example = "false")
     @RequestParam("exclude_empty_prisons")
     excludeEmptyPrisons: Boolean = false,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<PrisonDto> {
     val prisons = prisonService.listPrisons(excludeEmptyPrisons)
     val results = prisons.map { PrisonDto.from(it) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(
@@ -73,10 +75,13 @@ class PrisonResource(
   )
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/prison_populations/", produces = ["application/json"])
-  fun listPrisonPopulations(): PaginatedResponse<PrisonPopulationDto> {
+  fun listPrisonPopulations(
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<PrisonPopulationDto> {
     val populations = prisonService.listPrisonPopulations()
     val results = populations.map { PrisonPopulationDto.from(it) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(
@@ -99,10 +104,13 @@ class PrisonResource(
   )
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/prison_categories/", produces = ["application/json"])
-  fun listPrisonCategories(): PaginatedResponse<PrisonCategoryDto> {
+  fun listPrisonCategories(
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<PrisonCategoryDto> {
     val categories = prisonService.listPrisonCategories()
     val results = categories.map { PrisonCategoryDto.from(it) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 }
 

@@ -54,9 +54,12 @@ class FileDownloadResource(
   @SecurityRequirement(name = "bearer-jwt")
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/file-downloads/")
-  fun listFileDownloads(): ResponseEntity<PaginatedResponse<FileDownloadDto>> {
+  fun listFileDownloads(
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): ResponseEntity<PaginatedResponse<FileDownloadDto>> {
     val downloads = fileDownloadService.listDownloads().map { FileDownloadDto.from(it) }
-    return ResponseEntity.ok(PaginatedResponse(count = downloads.size, results = downloads))
+    return ResponseEntity.ok(PaginatedResponse.fromList(downloads, limit = limit, offset = offset))
   }
 
   // -------------------------------------------------------------------------

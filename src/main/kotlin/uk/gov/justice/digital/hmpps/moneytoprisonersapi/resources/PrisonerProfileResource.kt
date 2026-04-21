@@ -31,6 +31,8 @@ class PrisonerProfileResource(
   fun listProfiles(
     @RequestParam("monitoring") monitoring: Boolean? = null,
     @RequestParam("simple_search") simpleSearch: String? = null,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
     principal: Principal,
   ): PaginatedResponse<PrisonerProfileDto> {
     val (monitoredBy, notMonitoredBy) = when (monitoring) {
@@ -44,7 +46,7 @@ class PrisonerProfileResource(
       simpleSearch = simpleSearch,
     )
     val results = profiles.map { PrisonerProfileDto.from(it, currentUsername = principal.name) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(summary = "Get a single prisoner profile by ID")
@@ -58,10 +60,14 @@ class PrisonerProfileResource(
   @Operation(summary = "Get credits for a prisoner profile (SEC-093)")
   @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
   @GetMapping("/{id}/credits/")
-  fun listCredits(@PathVariable id: Long): PaginatedResponse<SecurityCreditDto> {
+  fun listCredits(
+    @PathVariable id: Long,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<SecurityCreditDto> {
     val profile = prisonerProfileService.getProfile(id)
     val results = profile.credits.map { SecurityCreditDto.from(it, prisonerProfileId = profile.id) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(summary = "Monitor a prisoner profile (SEC-062)")

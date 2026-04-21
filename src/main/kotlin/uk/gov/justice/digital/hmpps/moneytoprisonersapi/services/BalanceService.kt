@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Balance
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.BalanceRepository
@@ -12,15 +14,20 @@ class DuplicateBalanceDateException(date: LocalDate) : RuntimeException("Balance
 class BalanceService(
   private val balanceRepository: BalanceRepository,
 ) {
-  fun listBalances(dateLt: LocalDate?, dateGte: LocalDate?): List<Balance> = when {
-    dateGte != null && dateLt != null ->
-      balanceRepository.findByDateGreaterThanEqualAndDateBeforeOrderByDateDesc(dateGte, dateLt)
-    dateGte != null ->
-      balanceRepository.findByDateGreaterThanEqualOrderByDateDesc(dateGte)
-    dateLt != null ->
-      balanceRepository.findByDateBeforeOrderByDateDesc(dateLt)
-    else ->
-      balanceRepository.findAllByOrderByDateDesc()
+  fun listBalances(dateLt: LocalDate?, dateGte: LocalDate?, limit: Int = 20, offset: Int = 0): Page<Balance> {
+    val pageNumber = if (limit > 0) offset / limit else 0
+    val pageable = PageRequest.of(pageNumber, limit)
+
+    return when {
+      dateGte != null && dateLt != null ->
+        balanceRepository.findByDateGreaterThanEqualAndDateBeforeOrderByDateDesc(dateGte, dateLt, pageable)
+      dateGte != null ->
+        balanceRepository.findByDateGreaterThanEqualOrderByDateDesc(dateGte, pageable)
+      dateLt != null ->
+        balanceRepository.findByDateBeforeOrderByDateDesc(dateLt, pageable)
+      else ->
+        balanceRepository.findAllByOrderByDateDesc(pageable)
+    }
   }
 
   fun createBalance(closingBalance: BigInteger, date: LocalDate): Balance {

@@ -113,6 +113,8 @@ class TransactionResource(
     @Parameter(description = "Filter by specific transaction IDs. Pass multiple values (e.g. pk=1&pk=3)")
     @RequestParam("pk")
     pk: List<Long>? = null,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<TransactionDto> {
     val status = statusParam?.let { s ->
       TransactionStatus.entries.firstOrNull { it.value == s }
@@ -124,7 +126,7 @@ class TransactionResource(
       ids = pk,
     )
     val results = transactions.map { TransactionDto.from(it) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(

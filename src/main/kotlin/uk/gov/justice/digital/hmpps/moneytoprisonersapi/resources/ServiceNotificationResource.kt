@@ -54,13 +54,15 @@ class ServiceNotificationResource(
     @Parameter(description = "Filter notifications whose target starts with this prefix (e.g. cashbook, noms_ops)")
     @RequestParam("target__startswith")
     targetPrefix: String?,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
     authentication: Authentication?,
   ): PaginatedResponse<ServiceNotificationDto> {
     val authenticated = authentication != null &&
       authentication.isAuthenticated &&
       authentication !is AnonymousAuthenticationToken
     val notifications = serviceNotificationService.listNotifications(authenticated, targetPrefix)
-    return PaginatedResponse(count = notifications.size, results = notifications)
+    return PaginatedResponse.fromList(notifications, limit = limit, offset = offset)
   }
 }
 

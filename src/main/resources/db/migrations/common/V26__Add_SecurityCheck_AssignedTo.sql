@@ -1,1 +1,0 @@
-ALTER TABLE security_check ADD COLUMN IF NOT EXISTS assigned_to VARCHAR(255);

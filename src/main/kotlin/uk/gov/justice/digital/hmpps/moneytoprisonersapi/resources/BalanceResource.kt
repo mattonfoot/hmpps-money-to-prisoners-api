@@ -64,11 +64,17 @@ class BalanceResource(
     @RequestParam("date__gte")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     dateGte: LocalDate? = null,
+    @Parameter(description = "Number of results to return per page.", example = "20")
+    @RequestParam("limit", defaultValue = "20")
+    limit: Int = 20,
+    @Parameter(description = "The initial index from which to return the results.", example = "0")
+    @RequestParam("offset", defaultValue = "0")
+    offset: Int = 0,
   ): PaginatedResponse<BalanceDto> {
-    val balances = balanceService.listBalances(dateLt = dateLt, dateGte = dateGte)
-    val results = balances.map { BalanceDto.from(it) }
+    val page = balanceService.listBalances(dateLt = dateLt, dateGte = dateGte, limit = limit, offset = offset)
+    val results = page.content.map { BalanceDto.from(it) }
     return PaginatedResponse(
-      count = results.size,
+      count = page.totalElements.toInt(),
       results = results,
     )
   }

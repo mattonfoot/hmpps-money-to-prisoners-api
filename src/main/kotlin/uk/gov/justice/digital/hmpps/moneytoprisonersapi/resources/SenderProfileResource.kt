@@ -30,6 +30,8 @@ class SenderProfileResource(
   @GetMapping("/")
   fun listProfiles(
     @RequestParam("monitoring") monitoring: Boolean? = null,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
     principal: java.security.Principal,
   ): PaginatedResponse<SenderProfileDto> {
     val (monitoredBy, notMonitoredBy) = when (monitoring) {
@@ -39,7 +41,7 @@ class SenderProfileResource(
     }
     val profiles = senderProfileService.listProfiles(monitoredByUsername = monitoredBy, notMonitoredByUsername = notMonitoredBy)
     val results = profiles.map { SenderProfileDto.from(it, currentUsername = principal.name) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(summary = "Get a single sender profile by ID")
@@ -53,10 +55,14 @@ class SenderProfileResource(
   @Operation(summary = "Get credits for a sender profile (SEC-075)")
   @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
   @GetMapping("/{id}/credits/")
-  fun listCredits(@PathVariable id: Long): PaginatedResponse<SecurityCreditDto> {
+  fun listCredits(
+    @PathVariable id: Long,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<SecurityCreditDto> {
     val profile = senderProfileService.getProfile(id)
     val results = profile.credits.map { SecurityCreditDto.from(it, senderProfileId = profile.id) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(summary = "Monitor a sender profile (SEC-060)")

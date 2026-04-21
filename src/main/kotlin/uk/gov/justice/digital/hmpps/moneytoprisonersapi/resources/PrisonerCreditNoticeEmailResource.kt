@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreatePrisonerCreditNoticeEmailRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
@@ -59,10 +60,13 @@ class PrisonerCreditNoticeEmailResource(
   )
   @PreAuthorize("hasRole('PRISON_CLERK') or hasRole('CASHBOOK')")
   @GetMapping("/")
-  fun listCreditNoticeEmails(): PaginatedResponse<PrisonerCreditNoticeEmailDto> {
+  fun listCreditNoticeEmails(
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<PrisonerCreditNoticeEmailDto> {
     val emails = prisonService.listCreditNoticeEmails()
     val results = emails.map { PrisonerCreditNoticeEmailDto.from(it) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(

@@ -59,10 +59,12 @@ class UserResource(
   fun listUsers(
     @Parameter(description = "Filter by role name") @RequestParam("role") roleName: String?,
     @Parameter(description = "Filter by prison NOMIS ID") @RequestParam("prison") prisonId: String?,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<UserDto> {
     val users = userService.listUsers(roleName, prisonId)
     val results = users.map { (user, locked) -> UserDto.from(user, locked) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   // -------------------------------------------------------------------------

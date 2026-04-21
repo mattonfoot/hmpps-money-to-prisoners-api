@@ -77,6 +77,8 @@ class NotificationResource(
     @RequestParam("triggered_at__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     triggeredAtLt: LocalDateTime? = null,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
     principal: Principal,
   ): PaginatedResponse<EventDto> {
     val events = notificationService.listEvents(
@@ -86,7 +88,7 @@ class NotificationResource(
       triggeredAtLt = triggeredAtLt,
     )
     val results = events.map { EventDto.from(it) }
-    return PaginatedResponse(count = results.size, results = results)
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   // -------------------------------------------------------------------------
@@ -163,11 +165,14 @@ class NotificationResource(
   )
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/rules/")
-  fun listRules(): PaginatedResponse<RuleDto> {
+  fun listRules(
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<RuleDto> {
     val rules = RULES.values
       .filter { it.code in ENABLED_RULE_CODES }
       .map { RuleDto(code = it.code, description = it.description) }
-    return PaginatedResponse(count = rules.size, results = rules)
+    return PaginatedResponse.fromList(rules, limit = limit, offset = offset)
   }
 
   // -------------------------------------------------------------------------

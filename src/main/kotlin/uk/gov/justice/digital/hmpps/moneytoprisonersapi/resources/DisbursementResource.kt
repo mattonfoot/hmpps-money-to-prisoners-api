@@ -102,6 +102,10 @@ class DisbursementResource(
     @RequestParam("ordering") ordering: String? = null,
     @Parameter(description = "Filter disbursements for prisoners monitored by the current user")
     @RequestParam("monitored") monitored: Boolean? = null,
+    @Parameter(description = "Number of results to return per page.", example = "20")
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @Parameter(description = "The initial index from which to return the results.", example = "0")
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
     principal: Principal,
   ): PaginatedResponse<DisbursementDto> {
     val disbursements = disbursementService.listDisbursements(
@@ -122,10 +126,7 @@ class DisbursementResource(
       monitoredByUsername = if (monitored == true) principal.name else null,
     )
     val results = disbursements.map { DisbursementDto.from(it) }
-    return PaginatedResponse(
-      count = results.size,
-      results = results,
-    )
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
   @Operation(
