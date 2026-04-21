@@ -95,7 +95,7 @@ class FileDownloadResource(
     }
     val parsedDate = try {
       LocalDate.parse(request.date)
-    } catch (e: DateTimeParseException) {
+    } catch (_: DateTimeParseException) {
       return ResponseEntity.badRequest().body(mapOf("date" to listOf("Date has wrong format. Use YYYY-MM-DD.")))
     }
     val saved = fileDownloadService.createDownload(request.label, parsedDate)

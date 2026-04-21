@@ -203,9 +203,9 @@ class DisbursementResource(
   ): ResponseEntity<Any> = try {
     val updated = disbursementService.updateDisbursement(id, request, principal.name)
     ResponseEntity.ok(DisbursementDto.from(updated))
-  } catch (e: DisbursementNotFoundException) {
+  } catch (_: DisbursementNotFoundException) {
     ResponseEntity.notFound().build()
-  } catch (e: DisbursementNotPendingException) {
+  } catch (_: DisbursementNotPendingException) {
     ResponseEntity.badRequest().build()
   }
 

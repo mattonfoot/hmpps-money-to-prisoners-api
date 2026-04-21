@@ -32,7 +32,7 @@ class SenderProfileResource(
     @RequestParam("monitoring") monitoring: Boolean? = null,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
-    principal: java.security.Principal,
+    principal: Principal,
   ): PaginatedResponse<SenderProfileDto> {
     val (monitoredBy, notMonitoredBy) = when (monitoring) {
       true -> principal.name to null
@@ -47,7 +47,7 @@ class SenderProfileResource(
   @Operation(summary = "Get a single sender profile by ID")
   @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
   @GetMapping("/{id}/")
-  fun getProfile(@PathVariable id: Long, principal: java.security.Principal): SenderProfileDto {
+  fun getProfile(@PathVariable id: Long, principal: Principal): SenderProfileDto {
     val profile = senderProfileService.getProfile(id)
     return SenderProfileDto.from(profile, currentUsername = principal.name)
   }
