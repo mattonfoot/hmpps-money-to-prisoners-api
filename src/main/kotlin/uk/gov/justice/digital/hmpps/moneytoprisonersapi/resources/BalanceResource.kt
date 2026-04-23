@@ -22,7 +22,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.BalanceDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateBalanceRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.BalanceService
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.DuplicateBalanceDateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DuplicateBalanceDateException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.LocalDate
 

@@ -60,7 +60,7 @@ class TransactionResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_BANK_ADMIN')")
+  @PreAuthorize("hasRole('BANK_ADMIN')")
   @PostMapping("/")
   @ResponseStatus(HttpStatus.CREATED)
   fun createTransactions(
@@ -96,7 +96,7 @@ class TransactionResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_BANK_ADMIN')")
+  @PreAuthorize("hasRole('BANK_ADMIN')")
   @GetMapping("/")
   fun listTransactions(
     @Parameter(description = "Filter by computed status (creditable, refundable, unidentified, anonymous, anomalous)")
@@ -160,7 +160,7 @@ class TransactionResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_BANK_ADMIN')")
+  @PreAuthorize("hasRole('BANK_ADMIN')")
   @PatchMapping("/")
   fun refundTransactions(
     @RequestBody request: RefundTransactionRequest,
@@ -205,7 +205,7 @@ class TransactionResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_BANK_ADMIN')")
+  @PreAuthorize("hasRole('BANK_ADMIN')")
   @PostMapping("/reconcile/")
   fun reconcileTransactions(
     @RequestBody request: ReconcileTransactionRequest,

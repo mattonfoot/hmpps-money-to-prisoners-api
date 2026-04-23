@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidDisbursementStateException
+
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -34,7 +34,6 @@ class Disbursement(
   @Column(nullable = false)
   var amount: Long,
 
-  @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 50)
   var method: DisbursementMethod,
 
@@ -83,7 +82,6 @@ class Disbursement(
   @Column(name = "recipient_is_company", nullable = false)
   var recipientIsCompany: Boolean = false,
 
-  @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 50)
   var resolution: DisbursementResolution = DisbursementResolution.PENDING,
 

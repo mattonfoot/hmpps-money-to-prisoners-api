@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidDisbursementStateException
+
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName

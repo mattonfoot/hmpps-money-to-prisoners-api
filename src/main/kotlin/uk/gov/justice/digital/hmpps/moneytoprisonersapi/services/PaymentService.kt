@@ -2,6 +2,9 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.PaymentNotFoundException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.PaymentNotPendingException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.PaymentValidationException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreatePaymentRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReconcilePaymentsRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdatePaymentRequest
@@ -17,12 +20,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Payment
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PaymentRepository
 import java.time.LocalDateTime
 import java.util.UUID
-
-class PaymentNotFoundException(uuid: UUID) : RuntimeException("Payment not found with uuid: $uuid")
-
-class PaymentNotPendingException(currentStatus: String) : RuntimeException("Payment cannot be updated in status \"$currentStatus\"")
-
-class PaymentValidationException(message: String) : RuntimeException(message)
 
 private val VALID_PAYMENT_STATUSES = setOf("pending", "taken", "failed", "rejected", "expired")
 
@@ -85,11 +82,13 @@ class PaymentService(
           credit.receivedAt = request.receivedAt ?: LocalDateTime.now()
           creditRepository.save(credit)
         }
+
         "rejected", "expired" -> {
           val credit = payment.credit!!
           credit.resolution = CreditResolution.FAILED
           creditRepository.save(credit)
         }
+
         "failed" -> {
           // Credit stays as INITIAL (no change)
         }

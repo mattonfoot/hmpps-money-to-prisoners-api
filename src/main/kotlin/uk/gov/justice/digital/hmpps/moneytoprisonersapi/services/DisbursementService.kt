@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotFoundException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotPendingException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateDisbursementRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementActionRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementConfirmRequest
@@ -14,10 +16,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementLogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
-
-class DisbursementNotFoundException(id: Long) : RuntimeException("Disbursement not found with id: $id")
-
-class DisbursementNotPendingException(id: Long, resolution: DisbursementResolution) : RuntimeException("Disbursement $id is not PENDING (current resolution: $resolution)")
 
 private const val INVOICE_NUMBER_BASE = 1000000L
 

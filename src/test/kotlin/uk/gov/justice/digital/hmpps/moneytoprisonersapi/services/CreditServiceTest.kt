@@ -18,7 +18,8 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.BillingAddr
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.CreditNotFoundException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Payment

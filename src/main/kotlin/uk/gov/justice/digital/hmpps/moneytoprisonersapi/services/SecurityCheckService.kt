@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.SecurityCheckConflictException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AutoAcceptRule
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AutoAcceptRuleState
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CheckStatus
@@ -14,8 +15,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Prisone
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDateTime
-
-class SecurityCheckConflictException(message: String) : RuntimeException(message)
 
 @Service
 class SecurityCheckService(
@@ -31,8 +30,11 @@ class SecurityCheckService(
       .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "SecurityCheck $id not found") }
 
     when (check.status) {
-      CheckStatus.ACCEPTED -> return // idempotent
+      CheckStatus.ACCEPTED -> return
+
+      // idempotent
       CheckStatus.REJECTED -> throw SecurityCheckConflictException("Cannot accept a check that is already rejected")
+
       CheckStatus.PENDING -> {
         check.status = CheckStatus.ACCEPTED
         check.decisionReason = decisionReason
@@ -49,8 +51,11 @@ class SecurityCheckService(
       .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "SecurityCheck $id not found") }
 
     when (check.status) {
-      CheckStatus.REJECTED -> return // idempotent
+      CheckStatus.REJECTED -> return
+
+      // idempotent
       CheckStatus.ACCEPTED -> throw SecurityCheckConflictException("Cannot reject a check that is already accepted")
+
       CheckStatus.PENDING -> {
         check.status = CheckStatus.REJECTED
         check.decisionReason = decisionReason

@@ -17,13 +17,13 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.CustomException
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidDisbursementStateException
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.DisbursementNotPendingException
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentNotFoundException
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentNotPendingException
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentValidationException
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.SecurityCheckConflictException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotPendingException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidDisbursementStateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.PaymentNotFoundException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.PaymentNotPendingException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.PaymentValidationException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.SecurityCheckConflictException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestControllerAdvice

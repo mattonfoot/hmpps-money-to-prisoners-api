@@ -22,6 +22,9 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.BillingAddr
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.PaymentNotFoundException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.PaymentNotPendingException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.PaymentValidationException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Payment
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.BillingAddressRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository

@@ -26,7 +26,7 @@ class PrisonerProfileResource(
 ) {
 
   @Operation(summary = "List prisoner profiles (SEC-090 to SEC-098)")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/")
   fun listProfiles(
     @RequestParam("monitoring") monitoring: Boolean? = null,
@@ -50,7 +50,7 @@ class PrisonerProfileResource(
   }
 
   @Operation(summary = "Get a single prisoner profile by ID")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/{id}/")
   fun getProfile(@PathVariable id: Long, principal: Principal): PrisonerProfileDto {
     val profile = prisonerProfileService.getProfile(id)
@@ -58,7 +58,7 @@ class PrisonerProfileResource(
   }
 
   @Operation(summary = "Get credits for a prisoner profile (SEC-093)")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/{id}/credits/")
   fun listCredits(
     @PathVariable id: Long,

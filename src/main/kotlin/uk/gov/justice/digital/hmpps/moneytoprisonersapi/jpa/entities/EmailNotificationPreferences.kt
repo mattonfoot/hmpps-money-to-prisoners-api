@@ -2,8 +2,6 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -25,7 +23,6 @@ class EmailNotificationPreferences(
   @Column(nullable = false, unique = true, length = 250)
   val username: String,
 
-  @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 50)
   var frequency: EmailFrequency,
 

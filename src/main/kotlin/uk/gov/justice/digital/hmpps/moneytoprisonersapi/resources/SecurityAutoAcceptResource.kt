@@ -31,7 +31,7 @@ class SecurityAutoAcceptResource(
 ) {
 
   @Operation(summary = "List auto-accept rules (SEC-040 to SEC-047)")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/")
   fun listRules(
     @RequestParam("is_active") isActive: Boolean? = null,
@@ -50,7 +50,7 @@ class SecurityAutoAcceptResource(
   }
 
   @Operation(summary = "Create an auto-accept rule (SEC-041)")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @PostMapping("/")
   fun createRule(
     @RequestBody request: CreateAutoAcceptRuleRequest,
@@ -72,7 +72,7 @@ class SecurityAutoAcceptResource(
   }
 
   @Operation(summary = "Patch an auto-accept rule – append a new state (SEC-044)")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @PatchMapping("/{id}/")
   fun patchRule(
     @PathVariable id: Long,

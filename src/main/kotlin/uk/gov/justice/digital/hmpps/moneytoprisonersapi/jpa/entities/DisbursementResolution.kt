@@ -1,14 +1,22 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
-enum class DisbursementResolution {
-  PENDING,
-  PRECONFIRMED,
-  CONFIRMED,
-  SENT,
-  REJECTED,
+import jakarta.persistence.AttributeConverter
+import jakarta.persistence.Converter
+
+enum class DisbursementResolution(val value: String) {
+  PENDING("pending"),
+  PRECONFIRMED("preconfirmed"),
+  CONFIRMED("confirmed"),
+  SENT("sent"),
+  REJECTED("rejected"),
   ;
 
   companion object {
+    private val BY_VALUE = entries.associateBy { it.value }
+
+    fun fromValue(value: String): DisbursementResolution =
+      BY_VALUE[value] ?: throw IllegalArgumentException("Unknown DisbursementResolution: $value")
+
     private val VALID_TRANSITIONS: Map<DisbursementResolution, Set<DisbursementResolution>> = mapOf(
       PENDING to setOf(PRECONFIRMED, REJECTED),
       PRECONFIRMED to setOf(CONFIRMED, PENDING, REJECTED),
@@ -24,4 +32,10 @@ enum class DisbursementResolution {
 
     val TERMINAL_STATES: Set<DisbursementResolution> = setOf(SENT)
   }
+}
+
+@Converter(autoApply = true)
+class DisbursementResolutionConverter : AttributeConverter<DisbursementResolution, String> {
+  override fun convertToDatabaseColumn(attribute: DisbursementResolution?): String? = attribute?.value
+  override fun convertToEntityAttribute(dbData: String?): DisbursementResolution? = dbData?.let { DisbursementResolution.fromValue(it) }
 }

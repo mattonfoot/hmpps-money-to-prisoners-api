@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.integration
 
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
@@ -12,11 +11,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.integration.helpers.IntegrationTestHelpers
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.integration.wiremock.HmppsAuthApiExtension
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
-import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
 
-@ExtendWith(HmppsAuthApiExtension::class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("test")
 @Import(IntegrationTestHelpers::class, ContainersConfig::class)
@@ -26,9 +21,6 @@ abstract class IntegrationTestBase {
   private var port: Int = 0
 
   protected lateinit var webTestClient: WebTestClient
-
-  @Autowired
-  protected lateinit var jwtAuthHelper: JwtAuthorisationHelper
 
   @Autowired
   protected lateinit var integrationTestHelpers: IntegrationTestHelpers
@@ -41,13 +33,41 @@ abstract class IntegrationTestBase {
     integrationTestHelpers.setWebClient(webTestClient)
   }
 
+  /**
+   * Returns a header-mutating function that sets the Authorization header
+   * with a pre-seeded OAuth2 access token from the database.
+   *
+   * Token selection is based on the requested roles:
+   * - ROLE_BANK_ADMIN → test-token-bank-admin
+   * - ROLE_PRISON_CLERK → test-token-prison-clerk
+   * - ROLE_SECURITY_STAFF → test-token-security
+   * - ROLE_SEND_MONEY → test-token-send-money
+   * - ROLE_FIU → test-token-fiu
+   * - ROLE_NOMS_OPS → test-token-prisoner-location-admin
+   * - No specific roles → test-token-admin (superuser with all groups)
+   */
   fun setAuthorisation(
-    username: String? = "AUTH_ADM",
+    username: String? = null,
     roles: List<String> = listOf(),
     scopes: List<String> = listOf("read"),
-  ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisationHeader(username = username, scope = scopes, roles = roles)
+  ): (HttpHeaders) -> Unit {
+    val token = resolveToken(roles)
+    return { headers -> headers.setBearerAuth(token) }
+  }
 
-  protected fun stubPingWithResponse(status: Int) {
-    hmppsAuth.stubHealthPing(status)
+  private fun resolveToken(roles: List<String>): String {
+    if (roles.isEmpty()) return "test-token-no-roles"
+
+    return when {
+      roles.any { it.contains("BANK_ADMIN", ignoreCase = true) } -> "test-token-bank-admin"
+      roles.any { it.contains("PRISON_CLERK", ignoreCase = true) } -> "test-token-prison-clerk"
+      roles.any { it.contains("SECURITY_STAFF", ignoreCase = true) || it.contains("SECURITY", ignoreCase = true) } -> "test-token-security"
+      roles.any { it.contains("SEND_MONEY", ignoreCase = true) } -> "test-token-send-money"
+      roles.any { it.contains("FIU", ignoreCase = true) } -> "test-token-fiu"
+      roles.any { it.contains("NOMS_OPS", ignoreCase = true) } -> "test-token-prisoner-location-admin"
+      roles.any { it.contains("DISBURSEMENT", ignoreCase = true) } -> "test-token-disbursement-admin"
+      roles.any { it.contains("USER_ADMIN", ignoreCase = true) } -> "test-token-fiu"
+      else -> "test-token-admin"
+    }
   }
 }

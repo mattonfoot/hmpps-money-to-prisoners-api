@@ -1,5 +1,8 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
+import jakarta.persistence.AttributeConverter
+import jakarta.persistence.Converter
+
 enum class CreditResolution(val value: String) {
   INITIAL("initial"),
   PENDING("pending"),
@@ -10,6 +13,11 @@ enum class CreditResolution(val value: String) {
   ;
 
   companion object {
+    private val BY_VALUE = entries.associateBy { it.value }
+
+    fun fromValue(value: String): CreditResolution =
+      BY_VALUE[value] ?: throw IllegalArgumentException("Unknown CreditResolution: $value")
+
     private val VALID_TRANSITIONS: Map<CreditResolution, Set<CreditResolution>> = mapOf(
       INITIAL to setOf(PENDING, FAILED),
       PENDING to setOf(MANUAL, CREDITED, REFUNDED, FAILED),
@@ -23,4 +31,10 @@ enum class CreditResolution(val value: String) {
 
     val TERMINAL_STATES: Set<CreditResolution> = setOf(CREDITED, REFUNDED, FAILED)
   }
+}
+
+@Converter(autoApply = true)
+class CreditResolutionConverter : AttributeConverter<CreditResolution, String> {
+  override fun convertToDatabaseColumn(attribute: CreditResolution?): String? = attribute?.value
+  override fun convertToEntityAttribute(dbData: String?): CreditResolution? = dbData?.let { CreditResolution.fromValue(it) }
 }

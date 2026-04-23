@@ -33,8 +33,8 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursemen
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementCommentRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.DisbursementNotFoundException
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.DisbursementNotPendingException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotFoundException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotPendingException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.DisbursementService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
@@ -151,7 +151,7 @@ class DisbursementResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_PRISON_CLERK')")
+  @PreAuthorize("hasRole('PRISON_CLERK')")
   @PostMapping("/")
   @ResponseStatus(HttpStatus.CREATED)
   fun createDisbursement(
@@ -194,7 +194,7 @@ class DisbursementResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_PRISON_CLERK')")
+  @PreAuthorize("hasRole('PRISON_CLERK')")
   @PatchMapping("/{id}/")
   fun updateDisbursement(
     @PathVariable id: Long,
@@ -220,7 +220,7 @@ class DisbursementResource(
       ApiResponse(responseCode = "409", description = "Conflict - one or more disbursements cannot be transitioned", content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_PRISON_CLERK')")
+  @PreAuthorize("hasRole('PRISON_CLERK')")
   @PostMapping("/actions/reject/")
   fun reject(
     @RequestBody request: DisbursementActionRequest,
@@ -241,7 +241,7 @@ class DisbursementResource(
       ApiResponse(responseCode = "409", description = "Conflict - one or more disbursements cannot be transitioned", content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_PRISON_CLERK')")
+  @PreAuthorize("hasRole('PRISON_CLERK')")
   @PostMapping("/actions/preconfirm/")
   fun preconfirm(
     @RequestBody request: DisbursementActionRequest,
@@ -262,7 +262,7 @@ class DisbursementResource(
       ApiResponse(responseCode = "409", description = "Conflict - one or more disbursements cannot be transitioned", content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_PRISON_CLERK')")
+  @PreAuthorize("hasRole('PRISON_CLERK')")
   @PostMapping("/actions/reset/")
   fun reset(
     @RequestBody request: DisbursementActionRequest,
@@ -283,7 +283,7 @@ class DisbursementResource(
       ApiResponse(responseCode = "409", description = "Conflict - one or more disbursements cannot be transitioned", content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_PRISON_CLERK')")
+  @PreAuthorize("hasRole('PRISON_CLERK')")
   @PostMapping("/actions/confirm/")
   fun confirm(
     @RequestBody request: DisbursementConfirmRequest,
@@ -305,7 +305,7 @@ class DisbursementResource(
       ApiResponse(responseCode = "409", description = "Conflict - one or more disbursements cannot be transitioned", content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_BANK_ADMIN')")
+  @PreAuthorize("hasRole('BANK_ADMIN')")
   @PostMapping("/actions/send/")
   fun send(
     @RequestBody request: DisbursementActionRequest,
@@ -331,7 +331,7 @@ class DisbursementResource(
       ApiResponse(responseCode = "403", description = "Forbidden - requires ROLE_PRISON_CLERK", content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_PRISON_CLERK')")
+  @PreAuthorize("hasRole('PRISON_CLERK')")
   @PostMapping("/comments/")
   @ResponseStatus(HttpStatus.CREATED)
   fun createComments(

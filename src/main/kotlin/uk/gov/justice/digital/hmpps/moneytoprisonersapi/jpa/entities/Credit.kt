@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
+
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -47,10 +47,9 @@ class Credit(
   @Column(name = "prisoner_dob")
   var prisonerDob: LocalDate? = null,
 
-  @Column(length = 10)
+  @Column(name = "prison_id", length = 10)
   var prison: String? = null,
 
-  @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 50)
   var resolution: CreditResolution = CreditResolution.PENDING,
 
@@ -83,7 +82,6 @@ class Credit(
 ) {
 
   @Column(nullable = false)
-  @Enumerated(EnumType.STRING)
   var source: CreditSource = CreditSource.UNKNOWN
 
   @OneToOne(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)

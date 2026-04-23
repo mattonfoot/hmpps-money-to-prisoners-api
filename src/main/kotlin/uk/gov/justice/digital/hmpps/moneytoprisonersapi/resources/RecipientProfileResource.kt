@@ -26,7 +26,7 @@ class RecipientProfileResource(
 ) {
 
   @Operation(summary = "List recipient profiles (SEC-100 to SEC-108)")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/")
   fun listProfiles(
     @RequestParam("monitoring") monitoring: Boolean? = null,
@@ -48,7 +48,7 @@ class RecipientProfileResource(
   }
 
   @Operation(summary = "Get a single recipient profile by ID")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/{id}/")
   fun getProfile(@PathVariable id: Long, principal: Principal): RecipientProfileDto {
     val profile = recipientProfileService.getProfile(id)
@@ -56,7 +56,7 @@ class RecipientProfileResource(
   }
 
   @Operation(summary = "Get disbursements for a recipient profile")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/{id}/disbursements/")
   fun listDisbursements(
     @PathVariable id: Long,

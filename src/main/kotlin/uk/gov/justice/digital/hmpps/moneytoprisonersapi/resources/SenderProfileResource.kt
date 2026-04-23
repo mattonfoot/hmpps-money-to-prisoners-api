@@ -26,7 +26,7 @@ class SenderProfileResource(
 ) {
 
   @Operation(summary = "List sender profiles (SEC-070 to SEC-080)")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/")
   fun listProfiles(
     @RequestParam("monitoring") monitoring: Boolean? = null,
@@ -45,7 +45,7 @@ class SenderProfileResource(
   }
 
   @Operation(summary = "Get a single sender profile by ID")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/{id}/")
   fun getProfile(@PathVariable id: Long, principal: Principal): SenderProfileDto {
     val profile = senderProfileService.getProfile(id)
@@ -53,7 +53,7 @@ class SenderProfileResource(
   }
 
   @Operation(summary = "Get credits for a sender profile (SEC-075)")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/{id}/credits/")
   fun listCredits(
     @PathVariable id: Long,

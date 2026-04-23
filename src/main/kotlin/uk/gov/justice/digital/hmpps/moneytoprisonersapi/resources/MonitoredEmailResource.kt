@@ -27,12 +27,12 @@ class MonitoredEmailResource(
 ) {
 
   @Operation(summary = "List all monitored email keywords (SEC-113)")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS', 'ROLE_FIU')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS', 'FIU')")
   @GetMapping("/")
   fun listKeywords(): List<String> = repository.findAllByOrderByKeywordAsc().map { it.keyword }
 
   @Operation(summary = "Create a monitored email keyword (SEC-110 to SEC-112)")
-  @PreAuthorize("hasRole('ROLE_FIU')")
+  @PreAuthorize("hasRole('FIU')")
   @PostMapping("/")
   fun createKeyword(@RequestBody request: MonitoredEmailDto): ResponseEntity<MonitoredEmailDto> {
     val keyword = request.keyword.lowercase().trim()
@@ -47,7 +47,7 @@ class MonitoredEmailResource(
   }
 
   @Operation(summary = "Delete a monitored email keyword (SEC-117)")
-  @PreAuthorize("hasRole('ROLE_FIU')")
+  @PreAuthorize("hasRole('FIU')")
   @DeleteMapping("/{keyword}/")
   fun deleteKeyword(@PathVariable keyword: String): ResponseEntity<Void> {
     val entity = repository.findByKeywordIgnoreCase(keyword.lowercase())

@@ -2,12 +2,13 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.CreditNotFoundException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ProcessedCreditGroupDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
@@ -17,8 +18,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Prisone
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
-
-class CreditNotFoundException(id: Long) : RuntimeException("Credit not found with id: $id")
 
 @Service
 class CreditService(
@@ -571,8 +570,8 @@ class CreditService(
   /**
    * CRD-150 to CRD-157: Credits Grouped by Credited (Processed View).
    *
-   * Returns credits grouped by the date of their CREDITED log entry and owner.
-   * Only includes credits that have a LogAction.CREDITED log entry.
+   * Returns credits grouped by the date of their `CREDITED` log entry and owner.
+   * Only includes credits that have a `LogAction.CREDITED` log entry.
    * Supports the same filter parameters as listCredits.
    * Ordered by logged_at descending.
    */

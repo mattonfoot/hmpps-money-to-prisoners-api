@@ -56,7 +56,7 @@ class PerformanceDataResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_SEND_MONEY')")
+  @PreAuthorize("hasRole('SEND_MONEY')")
   @GetMapping("/performance/data/")
   fun getPerformanceData(
     @Parameter(description = "Include weeks on or after this date (inclusive)", example = "2023-01-02")

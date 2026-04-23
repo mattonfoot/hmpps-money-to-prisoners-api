@@ -3,12 +3,11 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DuplicateBalanceDateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Balance
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.BalanceRepository
 import java.math.BigInteger
 import java.time.LocalDate
-
-class DuplicateBalanceDateException(date: LocalDate) : RuntimeException("Balance exists for date $date")
 
 @Service
 class BalanceService(
@@ -21,10 +20,13 @@ class BalanceService(
     return when {
       dateGte != null && dateLt != null ->
         balanceRepository.findByDateGreaterThanEqualAndDateBeforeOrderByDateDesc(dateGte, dateLt, pageable)
+
       dateGte != null ->
         balanceRepository.findByDateGreaterThanEqualOrderByDateDesc(dateGte, pageable)
+
       dateLt != null ->
         balanceRepository.findByDateBeforeOrderByDateDesc(dateLt, pageable)
+
       else ->
         balanceRepository.findAllByOrderByDateDesc(pageable)
     }

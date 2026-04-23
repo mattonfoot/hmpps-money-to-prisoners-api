@@ -1,2 +1,1 @@
-hmpps-auth:
-  url: "http://localhost:8090/auth"
+# Dev profile — no external auth dependency, tokens validated from database

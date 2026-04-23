@@ -2,20 +2,53 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import uk.gov.justice.hmpps.kotlin.auth.dsl.ResourceServerConfigurationCustomizer
+import org.springframework.context.annotation.Primary
+import org.springframework.core.annotation.Order
+import org.springframework.http.HttpStatus
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
+import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.access.AccessDeniedHandlerImpl
+import org.springframework.security.web.authentication.HttpStatusEntryPoint
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 @Configuration
-class ResourceServerConfiguration {
+@EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
+class ResourceServerConfiguration(
+  private val djangoAuthFilter: DjangoOAuth2AuthenticationFilter,
+) {
 
-  /**
-   * Allow public (unauthenticated) access to GET /prisons/, GET /service-availability/,
-   * and GET /notifications/.
-   * All other security configuration is provided by the HMPPS Kotlin Spring Boot starter.
-   */
-  @Bean
-  fun resourceServerConfigurationCustomizer(): ResourceServerConfigurationCustomizer = ResourceServerConfigurationCustomizer {
-    unauthorizedRequestPaths {
-      addPaths = setOf("/prisons/", "/service-availability/", "/notifications/", "/reset_password/", "/change_password/", "/requests/")
+  private val publicPaths = arrayOf(
+    "/health/**",
+    "/info",
+    "/ping",
+    "/swagger-ui/**",
+    "/v3/api-docs/**",
+    "/swagger-ui.html",
+    "/prisons/**",
+    "/prison_categories/**",
+    "/prison_populations/**",
+  )
+
+  @Bean("hmppsSecurityFilterChain")
+  @Primary
+  @Order(1)
+  fun securityFilterChain(http: HttpSecurity): SecurityFilterChain = http
+    .csrf { it.disable() }
+    .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+    .authorizeHttpRequests { auth ->
+      auth
+        .requestMatchers(*publicPaths).permitAll()
+        .anyRequest().authenticated()
     }
-  }
+    .exceptionHandling {
+      it.authenticationEntryPoint(HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+      it.accessDeniedHandler(AccessDeniedHandlerImpl())
+    }
+    .oauth2ResourceServer { it.disable() }
+    .addFilterBefore(djangoAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
+    .build()
 }

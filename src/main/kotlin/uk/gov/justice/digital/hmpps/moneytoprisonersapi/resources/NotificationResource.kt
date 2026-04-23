@@ -229,9 +229,12 @@ class NotificationResource(
     @RequestBody request: SetEmailPreferencesRequest,
     principal: Principal,
   ): ResponseEntity<Any> {
-    val frequency = request.frequency?.let { EmailFrequency.fromValue(it) }
-      ?: return ResponseEntity.badRequest()
-        .body(mapOf("frequency" to listOf("Must provide a recognized \"frequency\" value")))
+    val frequency = try {
+      request.frequency?.let { EmailFrequency.fromValue(it) }
+    } catch (_: IllegalArgumentException) {
+      null
+    } ?: return ResponseEntity.badRequest()
+      .body(mapOf("frequency" to listOf("Must provide a recognized \"frequency\" value")))
     notificationService.setEmailFrequency(principal.name, frequency)
     return ResponseEntity.noContent().build()
   }

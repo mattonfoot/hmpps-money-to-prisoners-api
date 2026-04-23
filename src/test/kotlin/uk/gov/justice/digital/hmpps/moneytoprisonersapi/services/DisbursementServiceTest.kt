@@ -21,7 +21,8 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursemen
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementLog
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementMethod
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidDisbursementStateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotPendingException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidDisbursementStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementLogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository

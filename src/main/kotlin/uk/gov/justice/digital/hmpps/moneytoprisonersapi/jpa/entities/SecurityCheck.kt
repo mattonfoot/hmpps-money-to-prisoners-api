@@ -1,9 +1,9 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
+import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Column
+import jakarta.persistence.Converter
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -15,10 +15,24 @@ import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 
-enum class CheckStatus {
-  PENDING,
-  ACCEPTED,
-  REJECTED,
+enum class CheckStatus(val value: String) {
+  PENDING("pending"),
+  ACCEPTED("accepted"),
+  REJECTED("rejected"),
+  ;
+
+  companion object {
+    private val BY_VALUE = entries.associateBy { it.value }
+
+    fun fromValue(value: String): CheckStatus =
+      BY_VALUE[value] ?: throw IllegalArgumentException("Unknown CheckStatus: $value")
+  }
+}
+
+@Converter(autoApply = true)
+class CheckStatusConverter : AttributeConverter<CheckStatus, String> {
+  override fun convertToDatabaseColumn(attribute: CheckStatus?): String? = attribute?.value
+  override fun convertToEntityAttribute(dbData: String?): CheckStatus? = dbData?.let { CheckStatus.fromValue(it) }
 }
 
 @Entity
@@ -29,7 +43,6 @@ class SecurityCheck(
   @Column(name = "check_id", columnDefinition = "serial")
   val id: Long? = null,
 
-  @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 50)
   var status: CheckStatus = CheckStatus.PENDING,
 

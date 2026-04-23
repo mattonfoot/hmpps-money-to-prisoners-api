@@ -66,7 +66,7 @@ class PaymentResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_SEND_MONEY')")
+  @PreAuthorize("hasRole('SEND_MONEY')")
   @PostMapping("/")
   @ResponseStatus(HttpStatus.CREATED)
   fun createPayment(
@@ -111,7 +111,7 @@ class PaymentResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_SEND_MONEY')")
+  @PreAuthorize("hasRole('SEND_MONEY')")
   @PatchMapping("/{uuid}/")
   fun updatePayment(
     @PathVariable uuid: UUID,
@@ -136,7 +136,7 @@ class PaymentResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_SEND_MONEY')")
+  @PreAuthorize("hasRole('SEND_MONEY')")
   @GetMapping("/")
   fun listPayments(
     @Parameter(description = "Return only payments modified before this datetime (exclusive)", example = "2024-01-01T00:00:00")
@@ -170,7 +170,7 @@ class PaymentResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_SEND_MONEY')")
+  @PreAuthorize("hasRole('SEND_MONEY')")
   @GetMapping("/{uuid}/")
   fun getPayment(
     @PathVariable uuid: UUID,
@@ -199,7 +199,7 @@ class PaymentResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_BANK_ADMIN')")
+  @PreAuthorize("hasRole('BANK_ADMIN')")
   @GetMapping("/batches/")
   fun listPaymentBatches(
     @Parameter(description = "Filter by settlement date (exact match)", example = "2024-01-31")
@@ -233,7 +233,7 @@ class PaymentResource(
       ),
     ],
   )
-  @PreAuthorize("hasRole('ROLE_BANK_ADMIN')")
+  @PreAuthorize("hasRole('BANK_ADMIN')")
   @PostMapping("/batches/reconcile/")
   fun reconcilePayments(
     @RequestBody request: ReconcilePaymentsRequest,

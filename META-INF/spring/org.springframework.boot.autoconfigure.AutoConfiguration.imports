@@ -1,0 +1,13 @@
+uk.gov.justice.hmpps.kotlin.auth.HmppsAuthenticationHolder
+uk.gov.justice.hmpps.kotlin.auth.HmppsReactiveAuthenticationHolder
+uk.gov.justice.hmpps.kotlin.auth.HmppsResourceServerConfiguration
+uk.gov.justice.hmpps.kotlin.auth.HmppsReactiveResourceServerConfiguration
+uk.gov.justice.hmpps.kotlin.auth.HmppsWebClientConfiguration
+uk.gov.justice.hmpps.kotlin.auth.HmppsReactiveWebClientConfiguration
+uk.gov.justice.hmpps.kotlin.clienttracking.HmppsClientTrackingConfiguration
+uk.gov.justice.hmpps.kotlin.clienttracking.HmppsReactiveClientTrackingConfiguration
+uk.gov.justice.hmpps.kotlin.health.ProductIdInfoContributor
+uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestController
+uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestReactiveController
+uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestTemplateController
+uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestReactiveTemplateController

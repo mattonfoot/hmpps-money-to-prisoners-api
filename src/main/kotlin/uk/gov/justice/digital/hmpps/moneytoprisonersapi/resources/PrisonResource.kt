@@ -73,7 +73,7 @@ class PrisonResource(
       ),
     ],
   )
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("permitAll()")
   @GetMapping("/prison_populations/", produces = ["application/json"])
   fun listPrisonPopulations(
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
@@ -102,7 +102,7 @@ class PrisonResource(
       ),
     ],
   )
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("permitAll()")
   @GetMapping("/prison_categories/", produces = ["application/json"])
   fun listPrisonCategories(
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,

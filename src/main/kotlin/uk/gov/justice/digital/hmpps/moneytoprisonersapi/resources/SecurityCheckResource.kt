@@ -34,7 +34,7 @@ class SecurityCheckResource(
 ) {
 
   @Operation(summary = "List security checks with optional filtering")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/")
   fun listChecks(
     @RequestParam("status") status: CheckStatus? = null,
@@ -63,12 +63,12 @@ class SecurityCheckResource(
   }
 
   @Operation(summary = "Get a single security check by ID")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/{id}/")
   fun getCheck(@PathVariable id: Long): SecurityCheckDto = SecurityCheckDto.from(securityCheckService.getCheck(id))
 
   @Operation(summary = "Assign a security check to a user")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @PatchMapping("/{id}/")
   fun patchCheck(
     @PathVariable id: Long,
@@ -76,7 +76,7 @@ class SecurityCheckResource(
   ): SecurityCheckDto = SecurityCheckDto.from(securityCheckService.patchCheck(id, request.assignedTo))
 
   @Operation(summary = "Accept a security check (SEC-020 to SEC-025)")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @PostMapping("/{id}/accept/")
   fun acceptCheck(
     @PathVariable id: Long,
@@ -88,7 +88,7 @@ class SecurityCheckResource(
   }
 
   @Operation(summary = "Reject a security check (SEC-026 to SEC-030)")
-  @PreAuthorize("hasAnyRole('ROLE_SECURITY_STAFF', 'ROLE_NOMS_OPS')")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @PostMapping("/{id}/reject/")
   fun rejectCheck(
     @PathVariable id: Long,
