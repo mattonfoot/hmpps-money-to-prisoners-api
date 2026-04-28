@@ -95,6 +95,26 @@ data class DisbursementDto(
   @Schema(description = "Timestamp when record was last modified", example = "2024-03-15T10:30:00")
   val modified: LocalDateTime?,
 
+  @Schema(description = "Remittance description", example = "Payment for services")
+  @JsonProperty("remittance_description")
+  val remittanceDescription: String?,
+
+  @Schema(description = "Prisoner profile ID")
+  @JsonProperty("prisoner_profile")
+  val prisonerProfile: Long?,
+
+  @Schema(description = "Recipient profile ID")
+  @JsonProperty("recipient_profile")
+  val recipientProfile: Long?,
+
+  @Schema(description = "Prison name", example = "HMP Leeds")
+  @JsonProperty("prison_name")
+  val prisonName: String?,
+
+  @Schema(description = "Audit log entries for this disbursement")
+  @JsonProperty("log_set")
+  val logSet: List<Map<String, Any?>>,
+
   @Schema(description = "Comments on this disbursement")
   val comments: List<DisbursementCommentDto>,
 ) {
@@ -124,6 +144,13 @@ data class DisbursementDto(
       invoiceNumber = disbursement.invoiceNumber,
       created = disbursement.created,
       modified = disbursement.modified,
+      remittanceDescription = "",
+      prisonerProfile = null, // TODO: resolve from prisoner_number
+      recipientProfile = null, // TODO: resolve from recipient details
+      prisonName = null, // TODO: resolve from prison FK
+      logSet = disbursement.logs.map {
+        mapOf("action" to it.action.value, "created" to it.created, "user" to it.userId)
+      },
       comments = disbursement.comments.map { DisbursementCommentDto.from(it) },
     )
   }

@@ -84,6 +84,14 @@ data class PaymentDto(
   @JsonProperty("prisoner_dob")
   val prisonerDob: LocalDate?,
 
+  @Schema(description = "Worldpay ID")
+  @JsonProperty("worldpay_id")
+  val worldpayId: String?,
+
+  @Schema(description = "When the credit was received")
+  @JsonProperty("received_at")
+  val receivedAt: LocalDateTime?,
+
   @Schema(description = "Billing address", nullable = true)
   @JsonProperty("billing_address")
   val billingAddress: BillingAddressDto?,
@@ -115,6 +123,8 @@ data class PaymentDto(
       ipAddress = payment.ipAddress,
       prisonerNumber = payment.credit?.prisonerNumber,
       prisonerDob = payment.credit?.prisonerDob,
+      worldpayId = null, // Not stored in Kotlin schema
+      receivedAt = payment.credit?.receivedAt,
       billingAddress = payment.billingAddress?.let { BillingAddressDto.from(it) },
       securityCheck = payment.credit?.securityCheck?.let { PaymentSecurityCheckDto.from(it) },
       created = payment.created,

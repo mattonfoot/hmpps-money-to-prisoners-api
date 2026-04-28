@@ -78,6 +78,12 @@ data class CreditDto(
   @Schema(description = "Intended recipient name from payment", example = "John Prisoner")
   @JsonProperty("intended_recipient")
   val intendedRecipient: String?,
+  @Schema(description = "NOMIS transaction ID", example = "TXN001")
+  @JsonProperty("nomis_transaction_id")
+  val nomisTransactionId: String?,
+  @Schema(description = "Reconciliation code")
+  @JsonProperty("reconciliation_code")
+  val reconciliationCode: String?,
   @Schema(description = "Comments on this credit")
   val comments: List<CommentDto>,
 ) {
@@ -109,6 +115,8 @@ data class CreditDto(
       shortPaymentRef = credit.payment?.uuid?.toString()?.replace("-", "")?.take(8),
       anonymous = credit.transaction?.incompleteSenderInfo == true && credit.blocked,
       intendedRecipient = credit.payment?.recipientName,
+      nomisTransactionId = credit.nomisTransactionId,
+      reconciliationCode = credit.transaction?.refCode?.let { "PMT$it" },
       comments = credit.comments.map { CommentDto.from(it) },
     )
   }
