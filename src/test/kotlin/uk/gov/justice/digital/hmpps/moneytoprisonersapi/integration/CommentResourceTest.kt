@@ -60,7 +60,7 @@ class CommentResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-160 - Unauthenticated request returns 401")
     fun `should return 401 for unauthenticated request`() {
       webTestClient.post()
-        .uri("/comments/")
+        .uri("/credits/comments/")
         .header("Content-Type", "application/json")
         .bodyValue("[]")
         .exchange()
@@ -73,7 +73,7 @@ class CommentResourceTest : IntegrationTestBase() {
       val credit = createAndSaveCredit()
 
       webTestClient.post()
-        .uri("/comments/")
+        .uri("/credits/comments/")
         .headers(setAuthorisation())
         .header("Content-Type", "application/json")
         .bodyValue("""[{"credit": ${credit.id}, "comment": "Test comment"}]""")
@@ -92,7 +92,7 @@ class CommentResourceTest : IntegrationTestBase() {
       val credit2 = createAndSaveCredit()
 
       webTestClient.post()
-        .uri("/comments/")
+        .uri("/credits/comments/")
         .headers(setAuthorisation())
         .header("Content-Type", "application/json")
         .bodyValue(
@@ -116,7 +116,7 @@ class CommentResourceTest : IntegrationTestBase() {
       val longComment = "A".repeat(3001)
 
       webTestClient.post()
-        .uri("/comments/")
+        .uri("/credits/comments/")
         .headers(setAuthorisation())
         .header("Content-Type", "application/json")
         .bodyValue("""[{"credit": ${credit.id}, "comment": "$longComment"}]""")
@@ -131,7 +131,7 @@ class CommentResourceTest : IntegrationTestBase() {
       val maxComment = "A".repeat(3000)
 
       webTestClient.post()
-        .uri("/comments/")
+        .uri("/credits/comments/")
         .headers(setAuthorisation())
         .header("Content-Type", "application/json")
         .bodyValue("""[{"credit": ${credit.id}, "comment": "$maxComment"}]""")
@@ -145,7 +145,7 @@ class CommentResourceTest : IntegrationTestBase() {
       val credit = createAndSaveCredit()
 
       webTestClient.post()
-        .uri("/comments/")
+        .uri("/credits/comments/")
         .headers(setAuthorisation(username = "auth_user"))
         .header("Content-Type", "application/json")
         .bodyValue("""[{"credit": ${credit.id}, "comment": "My comment"}]""")
@@ -161,7 +161,7 @@ class CommentResourceTest : IntegrationTestBase() {
       val credit = createAndSaveCredit()
 
       webTestClient.post()
-        .uri("/comments/")
+        .uri("/credits/comments/")
         .headers(setAuthorisation(username = "clerk1"))
         .header("Content-Type", "application/json")
         .bodyValue("""[{"credit": ${credit.id}, "comment": "Important note"}]""")
@@ -179,7 +179,7 @@ class CommentResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-160 - Empty array is accepted and returns empty list")
     fun `should accept empty array and return empty list`() {
       webTestClient.post()
-        .uri("/comments/")
+        .uri("/credits/comments/")
         .headers(setAuthorisation())
         .header("Content-Type", "application/json")
         .bodyValue("[]")

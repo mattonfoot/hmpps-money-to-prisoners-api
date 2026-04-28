@@ -13,4 +13,6 @@ interface DisbursementRepository : JpaRepository<Disbursement, Long> {
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT d FROM Disbursement d WHERE d.id IN :ids")
   fun findByIdInWithLock(ids: List<Long>): List<Disbursement>
+
+  fun findByPrisonerNumber(prisonerNumber: String): List<Disbursement>
 }

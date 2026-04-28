@@ -1,18 +1,25 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
 
-enum class EmailFrequency(val value: String) {
-  DAILY("daily"),
+enum class EmailFrequency(@JsonValue val value: String) {
   NEVER("never"),
+  DAILY("daily"),
+  WEEKLY("weekly"),
+  MONTHLY("monthly"),
   ;
 
   companion object {
     private val BY_VALUE = entries.associateBy { it.value }
+    private val BY_NAME = entries.associateBy { it.name }
 
+    @JvmStatic
+    @JsonCreator
     fun fromValue(value: String): EmailFrequency =
-      BY_VALUE[value] ?: throw IllegalArgumentException("Unknown EmailFrequency: $value")
+      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown EmailFrequency: $value")
   }
 }
 

@@ -46,6 +46,12 @@ class UserService(
     return user to loginTrackingService.isLocked(user, "")
   }
 
+  @Transactional(readOnly = true)
+  fun getUserByUsername(username: String): Pair<MtpUser, Boolean>? {
+    val user = mtpUserRepository.findByUsernameIgnoreCase(username) ?: return null
+    return user to loginTrackingService.isLocked(user, "")
+  }
+
   /**
    * AUTH-012: Creates a new user.
    * AUTH-015: Rejects duplicate usernames (case-insensitive).
@@ -123,6 +129,12 @@ class UserService(
   @Transactional
   fun unlockUser(id: Long): MtpUser? {
     val user = mtpUserRepository.findById(id).orElse(null) ?: return null
+    loginTrackingService.unlockUser(user)
+    return user
+  }
+
+  fun unlockUser(username: String): MtpUser? {
+    val user = mtpUserRepository.findByUsernameIgnoreCase(username) ?: return null
     loginTrackingService.unlockUser(user)
     return user
   }

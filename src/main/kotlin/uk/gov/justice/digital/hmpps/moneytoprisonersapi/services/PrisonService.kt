@@ -37,6 +37,8 @@ class PrisonService(
 
   fun listPrisonPopulations() = prisonPopulationRepository.findAll()
 
+  fun listPrisonerLocations(): List<PrisonerLocation> = prisonerLocationRepository.findAll()
+
   @Transactional
   fun createPrisonerLocations(requests: List<CreatePrisonerLocationRequest>, createdBy: String) {
     for (request in requests) {

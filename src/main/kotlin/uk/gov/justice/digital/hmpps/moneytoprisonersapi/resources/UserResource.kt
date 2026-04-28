@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -87,11 +88,11 @@ class UserResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @GetMapping("/users/{id}/")
+  @GetMapping("/users/{username}/")
   fun getUser(
-    @Parameter(description = "User ID") @PathVariable id: Long,
+    @Parameter(description = "User ID") @PathVariable("username") username: String,
   ): ResponseEntity<UserDto> {
-    val (user, locked) = userService.getUser(id) ?: return ResponseEntity.notFound().build()
+    val (user, locked) = userService.getUserByUsername(username) ?: return ResponseEntity.notFound().build()
     return ResponseEntity.ok(UserDto.from(user, locked))
   }
 
@@ -163,19 +164,19 @@ class UserResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @PatchMapping("/users/{id}/")
+  @RequestMapping(value = ["/users/{username}/"], method = [RequestMethod.PATCH, RequestMethod.PUT])
   fun updateUser(
-    @Parameter(description = "User ID") @PathVariable id: Long,
+    @Parameter(description = "User ID") @PathVariable("username") username: String,
     @RequestBody request: UpdateUserRequest,
     principal: Principal,
   ): ResponseEntity<Any> {
     val role = userService.findRoleByName(request.roleName)
     val prisons = request.prisonIds?.let { userService.findPrisonsByIds(it) }
     return try {
-      val targetUser = userService.findById(id) ?: return ResponseEntity.notFound().build()
+      val targetUser = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
       val isSelf = targetUser.username.equals(principal.name, ignoreCase = true)
       val updated = userService.updateUser(
-        id = id,
+        id = targetUser.id!!,
         email = request.email,
         firstName = request.firstName,
         lastName = request.lastName,
@@ -206,11 +207,12 @@ class UserResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @DeleteMapping("/users/{id}/")
+  @DeleteMapping("/users/{username}/")
   fun deleteUser(
-    @Parameter(description = "User ID") @PathVariable id: Long,
+    @Parameter(description = "User ID") @PathVariable("username") username: String,
   ): ResponseEntity<Any> {
-    userService.deactivateUser(id) ?: return ResponseEntity.notFound().build()
+    val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
+    userService.deactivateUser(user.id!!) ?: return ResponseEntity.notFound().build()
     return ResponseEntity.noContent().build()
   }
 
@@ -234,12 +236,12 @@ class UserResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @PostMapping("/users/{id}/unlock/")
+  @PostMapping("/users/{username}/unlock/")
   fun unlockUser(
-    @Parameter(description = "User ID") @PathVariable id: Long,
+    @Parameter(description = "User ID") @PathVariable("username") username: String,
   ): ResponseEntity<UserDto> {
-    userService.unlockUser(id) ?: return ResponseEntity.notFound().build()
-    val (user, locked) = userService.getUser(id) ?: return ResponseEntity.notFound().build()
+    userService.unlockUser(username) ?: return ResponseEntity.notFound().build()
+    val (user, locked) = userService.getUserByUsername(username) ?: return ResponseEntity.notFound().build()
     return ResponseEntity.ok(UserDto.from(user, locked))
   }
 }

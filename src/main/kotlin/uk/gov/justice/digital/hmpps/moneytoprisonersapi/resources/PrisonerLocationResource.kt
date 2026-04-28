@@ -17,8 +17,10 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
+import org.springframework.web.bind.annotation.RequestParam
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CanUploadResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreatePrisonerLocationRequest
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PrisonerLocationDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PrisonService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -31,6 +33,18 @@ import java.security.Principal
 class PrisonerLocationResource(
   private val prisonService: PrisonService,
 ) {
+
+  @Operation(summary = "List prisoner locations")
+  @PreAuthorize("isAuthenticated()")
+  @GetMapping("/")
+  fun listPrisonerLocations(
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<PrisonerLocationDto> {
+    val locations = prisonService.listPrisonerLocations()
+    val results = locations.map { PrisonerLocationDto.from(it) }
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
+  }
 
   @Operation(
     summary = "Create prisoner locations",
@@ -92,9 +106,9 @@ class PrisonerLocationResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @GetMapping("/{prisonerNumber}/")
+  @GetMapping("/{prisoner_number}/")
   fun getPrisonerLocation(
-    @PathVariable prisonerNumber: String,
+    @PathVariable("prisoner_number") prisonerNumber: String,
   ): PrisonerLocationDto {
     val location = prisonService.getActivePrisonerLocation(prisonerNumber)
       ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "No active location found for prisoner $prisonerNumber")
@@ -144,7 +158,7 @@ class PrisonerLocationResource(
     ],
   )
   @PreAuthorize("hasRole('NOMS_OPS')")
-  @PostMapping("/delete_old/")
+  @PostMapping("/actions/delete_old/")
   fun deleteOld(): ResponseEntity<Any> {
     prisonService.deleteOldLocations()
     return ResponseEntity.noContent().build()
@@ -170,7 +184,7 @@ class PrisonerLocationResource(
     ],
   )
   @PreAuthorize("hasRole('NOMS_OPS')")
-  @PostMapping("/delete_inactive/")
+  @PostMapping("/actions/delete_inactive/")
   fun deleteInactive(): ResponseEntity<Any> {
     prisonService.deleteInactiveLocations()
     return ResponseEntity.noContent().build()

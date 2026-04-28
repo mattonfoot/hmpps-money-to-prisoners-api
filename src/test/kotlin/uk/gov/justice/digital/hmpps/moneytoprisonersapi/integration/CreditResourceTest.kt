@@ -264,8 +264,8 @@ class CreditResourceTest : IntegrationTestBase() {
         .jsonPath("$.results[0].prisoner_number").isEqualTo("A1234BC")
         .jsonPath("$.results[0].prisoner_name").isEqualTo("John Smith")
         .jsonPath("$.results[0].prison").isEqualTo("LEI")
-        .jsonPath("$.results[0].resolution").isEqualTo("PENDING")
-        .jsonPath("$.results[0].source").isEqualTo("BANK_TRANSFER")
+        .jsonPath("$.results[0].resolution").isEqualTo("pending")
+        .jsonPath("$.results[0].source").isEqualTo("bank_transfer")
         .jsonPath("$.results[0].status").isEqualTo("credit_pending")
         .jsonPath("$.results[0].blocked").isEqualTo(false)
         .jsonPath("$.results[0].reviewed").isEqualTo(false)
@@ -896,7 +896,7 @@ class CreditResourceTest : IntegrationTestBase() {
         .isOk
         .expectBody()
         .jsonPath("$.count").isEqualTo(1)
-        .jsonPath("$.results[0].resolution").isEqualTo("CREDITED")
+        .jsonPath("$.results[0].resolution").isEqualTo("credited")
     }
 
     @Test

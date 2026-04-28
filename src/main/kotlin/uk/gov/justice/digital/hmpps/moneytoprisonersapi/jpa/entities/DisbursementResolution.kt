@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
 
-enum class DisbursementResolution(val value: String) {
+enum class DisbursementResolution(@JsonValue val value: String) {
   PENDING("pending"),
   PRECONFIRMED("preconfirmed"),
   CONFIRMED("confirmed"),
@@ -13,9 +15,12 @@ enum class DisbursementResolution(val value: String) {
 
   companion object {
     private val BY_VALUE = entries.associateBy { it.value }
+    private val BY_NAME = entries.associateBy { it.name }
 
+    @JvmStatic
+    @JsonCreator
     fun fromValue(value: String): DisbursementResolution =
-      BY_VALUE[value] ?: throw IllegalArgumentException("Unknown DisbursementResolution: $value")
+      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown DisbursementResolution: $value")
 
     private val VALID_TRANSITIONS: Map<DisbursementResolution, Set<DisbursementResolution>> = mapOf(
       PENDING to setOf(PRECONFIRMED, REJECTED),

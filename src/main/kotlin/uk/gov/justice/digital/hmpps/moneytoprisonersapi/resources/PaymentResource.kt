@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.RequestMethod
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -112,7 +114,7 @@ class PaymentResource(
     ],
   )
   @PreAuthorize("hasRole('SEND_MONEY')")
-  @PatchMapping("/{uuid}/")
+  @RequestMapping(value = ["/{uuid}/"], method = [RequestMethod.PATCH, RequestMethod.PUT])
   fun updatePayment(
     @PathVariable uuid: UUID,
     @RequestBody request: UpdatePaymentRequest,

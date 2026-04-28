@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Column
 import jakarta.persistence.Converter
@@ -14,7 +16,7 @@ import jakarta.persistence.PrePersist
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 
-enum class LogAction(val value: String) {
+enum class LogAction(@JsonValue val value: String) {
   CREATED("created"),
   CREDITED("credited"),
   REFUNDED("refunded"),
@@ -31,9 +33,12 @@ enum class LogAction(val value: String) {
 
   companion object {
     private val BY_VALUE = entries.associateBy { it.value }
+    private val BY_NAME = entries.associateBy { it.name }
 
+    @JvmStatic
+    @JsonCreator
     fun fromValue(value: String): LogAction =
-      BY_VALUE[value] ?: throw IllegalArgumentException("Unknown LogAction: $value")
+      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown LogAction: $value")
   }
 }
 

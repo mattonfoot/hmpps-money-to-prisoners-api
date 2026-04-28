@@ -35,8 +35,9 @@ class EntityColumnNameTest {
   companion object {
     @JvmStatic
     fun columnMappings(): Stream<Arguments> = Stream.of(
-      // Credit FK columns — Django uses prison_id for FK to prison_prison
+      // FK columns — Django uses prison_id for FK to prison_prison
       Arguments.of(Credit::class.java, "prison", "prison_id"),
+      Arguments.of(Disbursement::class.java, "prison", "prison_id"),
     )
   }
 }

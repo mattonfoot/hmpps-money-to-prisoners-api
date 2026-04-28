@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.RequestMethod
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -98,6 +100,44 @@ class DisbursementResource(
     @RequestParam("roll_number") rollNumber: String? = null,
     @Parameter(description = "Filter by postcode (normalized: remove spaces, uppercase)", example = "SW1A 1AA")
     @RequestParam("postcode") postcode: String? = null,
+    @Parameter(description = "Filter by city (case-insensitive substring)")
+    @RequestParam("city") city: String? = null,
+    @Parameter(description = "Filter by recipient email (case-insensitive substring)")
+    @RequestParam("recipient_email") recipientEmail: String? = null,
+    @Parameter(description = "Filter by recipient is company flag")
+    @RequestParam("recipient_is_company") recipientIsCompany: Boolean? = null,
+    @Parameter(description = "Filter by invoice number (exact)")
+    @RequestParam("invoice_number") invoiceNumber: String? = null,
+    @Parameter(description = "Filter by NOMIS transaction ID (exact)")
+    @RequestParam("nomis_transaction_id") nomisTransactionId: String? = null,
+    @Parameter(description = "Filter by exact created date")
+    @RequestParam("created") created: String? = null,
+    @Parameter(description = "Filter by created on or after (inclusive)")
+    @RequestParam("created__gte") createdGte: String? = null,
+    @Parameter(description = "Filter by created before (exclusive)")
+    @RequestParam("created__lt") createdLt: String? = null,
+    @Parameter(description = "Filter by log creation date on or after")
+    @RequestParam("logged_at__gte") loggedAtGte: String? = null,
+    @Parameter(description = "Filter by log creation date before")
+    @RequestParam("logged_at__lt") loggedAtLt: String? = null,
+    @Parameter(description = "Filter by log action")
+    @RequestParam("log__action") logAction: String? = null,
+    @Parameter(description = "Filter by prison region (case-insensitive substring)")
+    @RequestParam("prison_region") prisonRegion: String? = null,
+    @Parameter(description = "Filter by prison category name")
+    @RequestParam("prison_category") prisonCategory: String? = null,
+    @Parameter(description = "Filter by prison population type")
+    @RequestParam("prison_population") prisonPopulation: String? = null,
+    @Parameter(description = "Simple search across recipient and prisoner names")
+    @RequestParam("simple_search") simpleSearch: String? = null,
+    @Parameter(description = "Filter by amount ending with suffix")
+    @RequestParam("amount__endswith") amountEndswith: String? = null,
+    @Parameter(description = "Filter by amount matching regex")
+    @RequestParam("amount__regex") amountRegex: String? = null,
+    @Parameter(description = "Exclude amounts ending with suffix")
+    @RequestParam("exclude_amount__endswith") excludeAmountEndswith: String? = null,
+    @Parameter(description = "Exclude amounts matching regex")
+    @RequestParam("exclude_amount__regex") excludeAmountRegex: String? = null,
     @Parameter(description = "Order results by field. Allowed: created, amount, resolution, method, prisoner_name, recipient_name. Prefix with - for descending.", example = "-created")
     @RequestParam("ordering") ordering: String? = null,
     @Parameter(description = "Filter disbursements for prisoners monitored by the current user")
@@ -127,6 +167,15 @@ class DisbursementResource(
     )
     val results = disbursements.map { DisbursementDto.from(it) }
     return PaginatedResponse.fromList(results, limit = limit, offset = offset)
+  }
+
+  @Operation(summary = "Get a single disbursement by ID")
+  @PreAuthorize("isAuthenticated()")
+  @GetMapping("/{id}/")
+  fun getDisbursement(@PathVariable id: Long): ResponseEntity<DisbursementDto> {
+    val disbursement = disbursementService.getDisbursement(id)
+      ?: return ResponseEntity.notFound().build()
+    return ResponseEntity.ok(DisbursementDto.from(disbursement))
   }
 
   @Operation(
@@ -195,7 +244,7 @@ class DisbursementResource(
     ],
   )
   @PreAuthorize("hasRole('PRISON_CLERK')")
-  @PatchMapping("/{id}/")
+  @RequestMapping(value = ["/{id}/"], method = [RequestMethod.PATCH, RequestMethod.PUT])
   fun updateDisbursement(
     @PathVariable id: Long,
     @RequestBody request: uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdateDisbursementRequest,
@@ -286,10 +335,10 @@ class DisbursementResource(
   @PreAuthorize("hasRole('PRISON_CLERK')")
   @PostMapping("/actions/confirm/")
   fun confirm(
-    @RequestBody request: DisbursementConfirmRequest,
+    @RequestBody items: List<uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementConfirmItem>,
     principal: Principal,
   ): ResponseEntity<Any> {
-    disbursementService.confirm(request, principal.name)
+    disbursementService.confirm(uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementConfirmRequest(items), principal.name)
     return ResponseEntity.noContent().build()
   }
 
@@ -305,7 +354,7 @@ class DisbursementResource(
       ApiResponse(responseCode = "409", description = "Conflict - one or more disbursements cannot be transitioned", content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @PreAuthorize("hasRole('BANK_ADMIN')")
+  @PreAuthorize("hasRole('DISBURSEMENT_BANK_ADMIN')")
   @PostMapping("/actions/send/")
   fun send(
     @RequestBody request: DisbursementActionRequest,

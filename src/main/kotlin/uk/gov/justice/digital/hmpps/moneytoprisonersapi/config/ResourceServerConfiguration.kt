@@ -31,6 +31,8 @@ class ResourceServerConfiguration(
     "/prisons/**",
     "/prison_categories/**",
     "/prison_populations/**",
+    "/service-availability/**",
+    "/notifications/**",
   )
 
   @Bean("hmppsSecurityFilterChain")

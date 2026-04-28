@@ -190,3 +190,30 @@ VALUES
   ('A1409AE', 'IXB', true, 'test-seed', NOW(), NOW()),
   ('A1617FY', 'INP', true, 'test-seed', NOW(), NOW())
 ON CONFLICT DO NOTHING;
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- Test Credits (for state transition tests)
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+INSERT INTO credit_credit (amount, prisoner_number, prisoner_name, prison, resolution, reconciled, reviewed, blocked, source, incomplete_sender_info, created, modified)
+SELECT
+  (n * 100), 'A0545TQ', 'Test Prisoner 1', 'IXB', 'pending', false, false, false, 'online', false, NOW(), NOW()
+FROM generate_series(1, 50) AS n;
+
+INSERT INTO credit_credit (amount, prisoner_number, prisoner_name, prison, resolution, reconciled, reviewed, blocked, source, incomplete_sender_info, created, modified)
+VALUES
+  (6000, 'A0545TQ', 'Test Prisoner 1', 'IXB', 'credited', false, false, false, 'online', false, NOW(), NOW()),
+  (7000, 'A0545TQ', 'Test Prisoner 1', 'IXB', 'refunded', false, false, false, 'online', false, NOW(), NOW());
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- Test Disbursements (for state transition tests)
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+INSERT INTO disbursement_disbursement (amount, method, prison, prisoner_number, prisoner_name, recipient_first_name, recipient_last_name, recipient_is_company, resolution, created, modified)
+VALUES
+  (1000, 'bank_transfer', 'IXB', 'A0545TQ', 'Test Prisoner', 'Recipient', 'Name', false, 'pending', NOW(), NOW()),
+  (2000, 'bank_transfer', 'IXB', 'A0545TQ', 'Test Prisoner', 'Recipient', 'Name', false, 'pending', NOW(), NOW()),
+  (3000, 'bank_transfer', 'IXB', 'A0545TQ', 'Test Prisoner', 'Recipient', 'Name', false, 'preconfirmed', NOW(), NOW()),
+  (4000, 'bank_transfer', 'IXB', 'A0545TQ', 'Test Prisoner', 'Recipient', 'Name', false, 'preconfirmed', NOW(), NOW()),
+  (5000, 'bank_transfer', 'IXB', 'A0545TQ', 'Test Prisoner', 'Recipient', 'Name', false, 'confirmed', NOW(), NOW()),
+  (6000, 'bank_transfer', 'IXB', 'A0545TQ', 'Test Prisoner', 'Recipient', 'Name', false, 'sent', NOW(), NOW());

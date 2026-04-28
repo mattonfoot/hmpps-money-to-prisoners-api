@@ -59,13 +59,13 @@ abstract class IntegrationTestBase {
     if (roles.isEmpty()) return "test-token-no-roles"
 
     return when {
+      roles.any { it.contains("DISBURSEMENT_BANK_ADMIN", ignoreCase = true) } -> "test-token-disbursement-admin"
       roles.any { it.contains("BANK_ADMIN", ignoreCase = true) } -> "test-token-bank-admin"
       roles.any { it.contains("PRISON_CLERK", ignoreCase = true) } -> "test-token-prison-clerk"
       roles.any { it.contains("SECURITY_STAFF", ignoreCase = true) || it.contains("SECURITY", ignoreCase = true) } -> "test-token-security"
       roles.any { it.contains("SEND_MONEY", ignoreCase = true) } -> "test-token-send-money"
       roles.any { it.contains("FIU", ignoreCase = true) } -> "test-token-fiu"
       roles.any { it.contains("NOMS_OPS", ignoreCase = true) } -> "test-token-prisoner-location-admin"
-      roles.any { it.contains("DISBURSEMENT", ignoreCase = true) } -> "test-token-disbursement-admin"
       roles.any { it.contains("USER_ADMIN", ignoreCase = true) } -> "test-token-fiu"
       else -> "test-token-admin"
     }

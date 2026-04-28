@@ -190,6 +190,15 @@ class CreditResource(
     @Parameter(description = "Filter for credits with blank sender sort code from transactions")
     @RequestParam("sender_sort_code__isblank")
     senderSortCodeIsBlank: Boolean? = null,
+    @Parameter(description = "Filter for credits with blank sender account number from transactions")
+    @RequestParam("sender_account_number__isblank")
+    senderAccountNumberIsBlank: Boolean? = null,
+    @Parameter(description = "Filter for credits with blank sender roll number from transactions")
+    @RequestParam("sender_roll_number__isblank")
+    senderRollNumberIsBlank: Boolean? = null,
+    @Parameter(description = "Filter by log action type")
+    @RequestParam("log__action")
+    logAction: String? = null,
     @Parameter(description = "Filter by sender email (case-insensitive substring match on payment email)", example = "john@example.com")
     @RequestParam("sender_email")
     senderEmail: String? = null,

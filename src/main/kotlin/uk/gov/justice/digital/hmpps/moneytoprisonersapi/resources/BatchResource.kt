@@ -18,8 +18,10 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.RequestParam
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.BatchDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateBatchRequest
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Batch
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.BatchRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
@@ -27,7 +29,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
 
 @RestController
-@RequestMapping("/batches", produces = ["application/json"])
+@RequestMapping("/credits/batches", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
 @Tag(name = "Batches", description = "Endpoints for managing processing batches")
 class BatchResource(
@@ -83,7 +85,14 @@ class BatchResource(
   )
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/")
-  fun listBatches(principal: Principal): List<BatchDto> = batchRepository.findByOwner(principal.name).map { BatchDto.from(it) }
+  fun listBatches(
+    principal: Principal,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<BatchDto> {
+    val batches = batchRepository.findByOwner(principal.name).map { BatchDto.from(it) }
+    return PaginatedResponse.fromList(batches, limit = limit, offset = offset)
+  }
 
   @Operation(
     summary = "Delete a processing batch",

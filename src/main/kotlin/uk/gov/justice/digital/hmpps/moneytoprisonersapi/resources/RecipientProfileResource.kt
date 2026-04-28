@@ -18,11 +18,12 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.RecipientProfil
 import java.security.Principal
 
 @RestController
-@RequestMapping("/security/recipients", produces = ["application/json"])
+@RequestMapping("/recipients", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
 @Tag(name = "Recipient Profiles", description = "Recipient profile management and monitoring (SEC-100 to SEC-110)")
 class RecipientProfileResource(
   private val recipientProfileService: RecipientProfileService,
+  private val disbursementRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository,
 ) {
 
   @Operation(summary = "List recipient profiles (SEC-100 to SEC-108)")
@@ -57,15 +58,27 @@ class RecipientProfileResource(
 
   @Operation(summary = "Get disbursements for a recipient profile")
   @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
-  @GetMapping("/{id}/disbursements/")
+  @GetMapping("/{recipient_pk}/disbursements/")
   fun listDisbursements(
-    @PathVariable id: Long,
+    @PathVariable("recipient_pk") id: Long,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<DisbursementDto> {
     val disbursements = recipientProfileService.getDisbursements(id)
     val results = disbursements.map { DisbursementDto.from(it) }
     return PaginatedResponse.fromList(results, limit = limit, offset = offset)
+  }
+
+  @Operation(summary = "Get a single disbursement for a recipient profile")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
+  @GetMapping("/{recipient_pk}/disbursements/{id}/")
+  fun getDisbursementForRecipient(
+    @PathVariable("recipient_pk") recipientPk: Long,
+    @PathVariable id: Long,
+  ): ResponseEntity<DisbursementDto> {
+    val disbursement = disbursementRepository.findById(id).orElse(null)
+      ?: return ResponseEntity.notFound().build()
+    return ResponseEntity.ok(DisbursementDto.from(disbursement))
   }
 
   @Operation(summary = "Monitor a recipient profile (SEC-105)")

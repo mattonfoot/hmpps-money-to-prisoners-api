@@ -213,12 +213,8 @@ class TransactionResource(
     if (request.receivedAtGte == null || request.receivedAtLt == null) {
       return ResponseEntity.badRequest().body(mapOf("error" to "Both received_at__gte and received_at__lt are required"))
     }
-    val result = transactionService.reconcileTransactions(request.receivedAtGte, request.receivedAtLt)
-    return if (result == null) {
-      ResponseEntity.noContent().build()
-    } else {
-      ResponseEntity.status(HttpStatus.CREATED).body(result)
-    }
+    transactionService.reconcileTransactions(request.receivedAtGte, request.receivedAtLt)
+    return ResponseEntity.noContent().build()
   }
 }
 

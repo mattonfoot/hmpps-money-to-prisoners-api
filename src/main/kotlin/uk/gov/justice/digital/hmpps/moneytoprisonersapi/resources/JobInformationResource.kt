@@ -50,7 +50,7 @@ class JobInformationResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @PostMapping("/job_information/")
+  @PostMapping("/job-information/")
   fun createJobInformation(
     @RequestBody request: CreateJobInformationRequest,
     authentication: Authentication,

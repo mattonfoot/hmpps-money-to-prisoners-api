@@ -60,7 +60,7 @@ class BatchResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-170 - Unauthenticated request returns 401")
     fun `should return 401 for unauthenticated POST`() {
       webTestClient.post()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .header("Content-Type", "application/json")
         .bodyValue("""{"credit_ids": []}""")
         .exchange()
@@ -73,7 +73,7 @@ class BatchResourceTest : IntegrationTestBase() {
       val credit = createAndSaveCredit()
 
       webTestClient.post()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .headers(setAuthorisation(username = "clerk1"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"credit_ids": [${credit.id}]}""")
@@ -90,7 +90,7 @@ class BatchResourceTest : IntegrationTestBase() {
       val credit = createAndSaveCredit()
 
       webTestClient.post()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .headers(setAuthorisation(username = "manager1"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"credit_ids": [${credit.id}]}""")
@@ -110,7 +110,7 @@ class BatchResourceTest : IntegrationTestBase() {
       val credit2 = createAndSaveCredit()
 
       webTestClient.post()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .headers(setAuthorisation(username = "clerk1"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"credit_ids": [${credit1.id}, ${credit2.id}]}""")
@@ -129,7 +129,7 @@ class BatchResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-172 - Unauthenticated request returns 401")
     fun `should return 401 for unauthenticated GET`() {
       webTestClient.get()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -142,7 +142,7 @@ class BatchResourceTest : IntegrationTestBase() {
 
       // Create batch for clerk1
       webTestClient.post()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .headers(setAuthorisation(username = "clerk1"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"credit_ids": [${credit1.id}]}""")
@@ -151,7 +151,7 @@ class BatchResourceTest : IntegrationTestBase() {
 
       // Create batch for clerk2
       webTestClient.post()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .headers(setAuthorisation(username = "clerk2"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"credit_ids": [${credit2.id}]}""")
@@ -160,7 +160,7 @@ class BatchResourceTest : IntegrationTestBase() {
 
       // clerk1 should only see their own batches
       webTestClient.get()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .headers(setAuthorisation(username = "clerk1"))
         .exchange()
         .expectStatus().isOk
@@ -173,7 +173,7 @@ class BatchResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-172 - GET /batches/ returns empty list when user has no batches")
     fun `should return empty list when no batches`() {
       webTestClient.get()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .headers(setAuthorisation(username = "clerk1"))
         .exchange()
         .expectStatus().isOk
@@ -202,7 +202,7 @@ class BatchResourceTest : IntegrationTestBase() {
       val credit = createAndSaveCredit()
 
       val batchId = webTestClient.post()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .headers(setAuthorisation(username = "clerk1"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"credit_ids": [${credit.id}]}""")
@@ -233,7 +233,7 @@ class BatchResourceTest : IntegrationTestBase() {
       val originalResolution = credit.resolution
 
       val batchId = webTestClient.post()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .headers(setAuthorisation(username = "clerk1"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"credit_ids": [${credit.id}]}""")

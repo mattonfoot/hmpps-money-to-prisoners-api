@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -140,9 +141,9 @@ class PrisonerCreditNoticeEmailResource(
     ],
   )
   @PreAuthorize("hasRole('PRISON_CLERK')")
-  @PatchMapping("/{prisonId}/")
+  @RequestMapping(value = ["/{prison}/"], method = [RequestMethod.PATCH, RequestMethod.PUT])
   fun updateCreditNoticeEmail(
-    @PathVariable prisonId: String,
+    @PathVariable("prison") prisonId: String,
     @Valid @RequestBody request: UpdatePrisonerCreditNoticeEmailRequest,
   ): PrisonerCreditNoticeEmailDto {
     val email = prisonService.updateCreditNoticeEmail(prisonId, request.email)

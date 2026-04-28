@@ -26,6 +26,9 @@ class DisbursementService(
   private val prisonerProfileRepository: PrisonerProfileRepository,
 ) {
 
+  fun getDisbursement(id: Long): uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursement? =
+    disbursementRepository.findById(id).orElse(null)
+
   fun listDisbursements(
     amount: Long? = null,
     amountGte: Long? = null,

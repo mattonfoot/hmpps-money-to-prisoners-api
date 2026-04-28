@@ -149,7 +149,7 @@ class CrossCuttingPaginationTest : IntegrationTestBase() {
     @DisplayName("XCT-011 GET /batches/ returns a plain array (not a paginated object)")
     fun `batches list endpoint returns array not paginated object`() {
       webTestClient.get()
-        .uri("/batches/")
+        .uri("/credits/batches/")
         .headers(setAuthorisation())
         .exchange()
         .expectStatus().isOk

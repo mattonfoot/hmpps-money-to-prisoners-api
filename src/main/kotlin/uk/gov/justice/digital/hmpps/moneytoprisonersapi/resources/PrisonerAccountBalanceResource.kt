@@ -50,9 +50,9 @@ class PrisonerAccountBalanceResource(
     ],
   )
   @PreAuthorize("hasRole('SEND_MONEY')")
-  @GetMapping("/{prisonerNumber}/")
+  @GetMapping("/{prisoner_number}/")
   fun getPrisonerAccountBalance(
-    @PathVariable prisonerNumber: String,
+    @PathVariable("prisoner_number") prisonerNumber: String,
   ): PrisonerAccountBalanceResponse {
     val balance = prisonService.getPrisonerAccountBalance(prisonerNumber)
     return PrisonerAccountBalanceResponse(combinedAccountBalance = balance)

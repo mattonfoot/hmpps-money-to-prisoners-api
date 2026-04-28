@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestParam
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -29,7 +31,13 @@ class MonitoredEmailResource(
   @Operation(summary = "List all monitored email keywords (SEC-113)")
   @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS', 'FIU')")
   @GetMapping("/")
-  fun listKeywords(): List<String> = repository.findAllByOrderByKeywordAsc().map { it.keyword }
+  fun listKeywords(
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<MonitoredEmailDto> {
+    val results = repository.findAllByOrderByKeywordAsc().map { MonitoredEmailDto(it.keyword) }
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
+  }
 
   @Operation(summary = "Create a monitored email keyword (SEC-110 to SEC-112)")
   @PreAuthorize("hasRole('FIU')")

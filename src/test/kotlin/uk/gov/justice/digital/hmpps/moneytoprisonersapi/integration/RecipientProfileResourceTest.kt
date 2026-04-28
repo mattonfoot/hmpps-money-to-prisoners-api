@@ -43,7 +43,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     @DisplayName("Returns 401 for unauthenticated request")
     fun `should return 401 for unauthenticated request`() {
       webTestClient.get()
-        .uri("/security/recipients/")
+        .uri("/recipients/")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -52,7 +52,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     @DisplayName("Returns 403 for user without required role")
     fun `should return 403 without security role`() {
       webTestClient.get()
-        .uri("/security/recipients/")
+        .uri("/recipients/")
         .headers(setAuthorisation(roles = listOf()))
         .exchange()
         .expectStatus().isForbidden
@@ -65,7 +65,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
       createRecipientProfile("445566", "87654321")
 
       webTestClient.get()
-        .uri("/security/recipients/")
+        .uri("/recipients/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -78,7 +78,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     @DisplayName("Returns empty list when no recipient profiles")
     fun `should return empty list when no profiles`() {
       webTestClient.get()
-        .uri("/security/recipients/")
+        .uri("/recipients/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -97,7 +97,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
       createRecipientProfile("445566", "22222222")
 
       webTestClient.get()
-        .uri("/security/recipients/?monitoring=true")
+        .uri("/recipients/?monitoring=true")
         .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -118,7 +118,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
       createRecipientProfile("778899", "33333333")
 
       webTestClient.get()
-        .uri("/security/recipients/?monitoring=false")
+        .uri("/recipients/?monitoring=false")
         .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -136,7 +136,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     fun `should return 401 for unauthenticated request`() {
       val profile = createRecipientProfile()
       webTestClient.get()
-        .uri("/security/recipients/${profile.id}/")
+        .uri("/recipients/${profile.id}/")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -151,7 +151,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
       }!!
 
       webTestClient.get()
-        .uri("/security/recipients/${profile.id}/")
+        .uri("/recipients/${profile.id}/")
         .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -168,7 +168,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
       val profile = createRecipientProfile()
 
       webTestClient.get()
-        .uri("/security/recipients/${profile.id}/")
+        .uri("/recipients/${profile.id}/")
         .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -180,7 +180,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     @DisplayName("Returns 404 for non-existent profile")
     fun `should return 404 for non-existent profile`() {
       webTestClient.get()
-        .uri("/security/recipients/99999/")
+        .uri("/recipients/99999/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isNotFound
@@ -196,7 +196,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     fun `should return 401 for unauthenticated request`() {
       val profile = createRecipientProfile()
       webTestClient.get()
-        .uri("/security/recipients/${profile.id}/disbursements/")
+        .uri("/recipients/${profile.id}/disbursements/")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -223,7 +223,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
       )
 
       webTestClient.get()
-        .uri("/security/recipients/${profile.id}/disbursements/")
+        .uri("/recipients/${profile.id}/disbursements/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -238,7 +238,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
       val profile = createRecipientProfile(sortCode = "112233", accountNumber = "12345678")
 
       webTestClient.get()
-        .uri("/security/recipients/${profile.id}/disbursements/")
+        .uri("/recipients/${profile.id}/disbursements/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -257,7 +257,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
       val profile = createRecipientProfile()
 
       webTestClient.post()
-        .uri("/security/recipients/${profile.id}/monitor/")
+        .uri("/recipients/${profile.id}/monitor/")
         .headers(setAuthorisation(username = "security_user"))
         .exchange()
         .expectStatus().isNoContent
@@ -279,7 +279,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
       }!!
 
       webTestClient.post()
-        .uri("/security/recipients/${saved.id}/unmonitor/")
+        .uri("/recipients/${saved.id}/unmonitor/")
         .headers(setAuthorisation(username = "security_user"))
         .exchange()
         .expectStatus().isNoContent

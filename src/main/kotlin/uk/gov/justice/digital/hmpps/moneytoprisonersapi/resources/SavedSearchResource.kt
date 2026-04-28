@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -23,7 +24,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SavedSe
 import java.security.Principal
 
 @RestController
-@RequestMapping("/security/searches", produces = ["application/json"])
+@RequestMapping("/searches", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
 @Tag(name = "Saved Searches", description = "User-specific saved search management")
 class SavedSearchResource(
@@ -55,7 +56,7 @@ class SavedSearchResource(
 
   @Operation(summary = "Update a saved search (SEC-123)")
   @PreAuthorize("isAuthenticated()")
-  @PatchMapping("/{id}/")
+  @RequestMapping(value = ["/{id}/"], method = [RequestMethod.PATCH, RequestMethod.PUT])
   fun updateSearch(
     @PathVariable id: Long,
     @RequestBody request: UpdateSavedSearchRequest,

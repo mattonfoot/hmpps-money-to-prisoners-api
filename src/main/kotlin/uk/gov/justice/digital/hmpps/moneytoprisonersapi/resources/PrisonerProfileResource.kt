@@ -18,11 +18,12 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PrisonerProfile
 import java.security.Principal
 
 @RestController
-@RequestMapping("/security/prisoners", produces = ["application/json"])
+@RequestMapping("/prisoners", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
 @Tag(name = "Prisoner Profiles", description = "Prisoner profile management and monitoring")
 class PrisonerProfileResource(
   private val prisonerProfileService: PrisonerProfileService,
+  private val disbursementRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository,
 ) {
 
   @Operation(summary = "List prisoner profiles (SEC-090 to SEC-098)")
@@ -59,15 +60,41 @@ class PrisonerProfileResource(
 
   @Operation(summary = "Get credits for a prisoner profile (SEC-093)")
   @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
-  @GetMapping("/{id}/credits/")
+  @GetMapping("/{prisoner_pk}/credits/")
   fun listCredits(
-    @PathVariable id: Long,
+    @PathVariable("prisoner_pk") id: Long,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<SecurityCreditDto> {
     val profile = prisonerProfileService.getProfile(id)
     val results = profile.credits.map { SecurityCreditDto.from(it, prisonerProfileId = profile.id) }
     return PaginatedResponse.fromList(results, limit = limit, offset = offset)
+  }
+
+  @Operation(summary = "Get disbursements for a prisoner profile")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
+  @GetMapping("/{prisoner_pk}/disbursements/")
+  fun listDisbursements(
+    @PathVariable("prisoner_pk") id: Long,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto> {
+    val profile = prisonerProfileService.getProfile(id)
+    val disbursements = disbursementRepository.findByPrisonerNumber(profile.prisonerNumber ?: "")
+      .map { uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto.from(it) }
+    return PaginatedResponse.fromList(disbursements, limit = limit, offset = offset)
+  }
+
+  @Operation(summary = "Get a single disbursement for a prisoner profile")
+  @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
+  @GetMapping("/{prisoner_pk}/disbursements/{id}/")
+  fun getDisbursementForPrisoner(
+    @PathVariable("prisoner_pk") prisonerPk: Long,
+    @PathVariable id: Long,
+  ): ResponseEntity<uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto> {
+    val disbursement = disbursementRepository.findById(id).orElse(null)
+      ?: return ResponseEntity.notFound().build()
+    return ResponseEntity.ok(uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto.from(disbursement))
   }
 
   @Operation(summary = "Monitor a prisoner profile (SEC-062)")

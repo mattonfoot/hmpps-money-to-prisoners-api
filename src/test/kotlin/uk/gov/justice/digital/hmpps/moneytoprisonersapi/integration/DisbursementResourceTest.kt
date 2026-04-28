@@ -96,14 +96,14 @@ class DisbursementResourceTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.results[0].id").isNotEmpty
         .jsonPath("$.results[0].amount").isEqualTo(5000)
-        .jsonPath("$.results[0].method").isEqualTo("BANK_TRANSFER")
+        .jsonPath("$.results[0].method").isEqualTo("bank_transfer")
         .jsonPath("$.results[0].prison").isEqualTo("LEI")
         .jsonPath("$.results[0].prisoner_number").isEqualTo("A1234BC")
         .jsonPath("$.results[0].prisoner_name").isEqualTo("John Smith")
         .jsonPath("$.results[0].recipient_first_name").isEqualTo("Jane")
         .jsonPath("$.results[0].recipient_last_name").isEqualTo("Doe")
         .jsonPath("$.results[0].recipient_name").isEqualTo("Jane Doe")
-        .jsonPath("$.results[0].resolution").isEqualTo("PENDING")
+        .jsonPath("$.results[0].resolution").isEqualTo("pending")
         .jsonPath("$.results[0].recipient_is_company").isEqualTo(false)
     }
 
@@ -121,7 +121,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
         .isOk
         .expectBody()
         .jsonPath("$.count").isEqualTo(1)
-        .jsonPath("$.results[0].resolution").isEqualTo("PENDING")
+        .jsonPath("$.results[0].resolution").isEqualTo("pending")
     }
 
     @Test
@@ -204,7 +204,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.id").isNotEmpty
         .jsonPath("$.amount").isEqualTo(5000)
-        .jsonPath("$.resolution").isEqualTo("PENDING")
+        .jsonPath("$.resolution").isEqualTo("pending")
         .jsonPath("$.recipient_name").isEqualTo("Jane Doe")
     }
 
@@ -381,7 +381,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
         .uri("/disbursements/actions/confirm/")
         .headers(setAuthorisation(roles = listOf("ROLE_PRISON_CLERK")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"disbursements": [{"id": ${disbursement.id}, "nomis_transaction_id": "TXN001"}]}""")
+        .bodyValue("""[{"id": ${disbursement.id}, "nomis_transaction_id": "TXN001"}]""")
         .exchange()
         .expectStatus()
         .isNoContent
@@ -403,7 +403,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
 
       webTestClient.post()
         .uri("/disbursements/actions/send/")
-        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .headers(setAuthorisation(roles = listOf("ROLE_DISBURSEMENT_BANK_ADMIN")))
         .header("Content-Type", "application/json")
         .bodyValue("""{"disbursement_ids": [${disbursement.id}]}""")
         .exchange()
@@ -415,7 +415,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
     }
 
     @Test
-    @DisplayName("DSB-046 - Send without ROLE_BANK_ADMIN returns 403")
+    @DisplayName("DSB-046 - Send without ROLE_DISBURSEMENT_BANK_ADMIN returns 403")
     fun `should return 403 without bank admin role`() {
       val disbursement = disbursementRepository.save(createDisbursement(resolution = DisbursementResolution.CONFIRMED))
 

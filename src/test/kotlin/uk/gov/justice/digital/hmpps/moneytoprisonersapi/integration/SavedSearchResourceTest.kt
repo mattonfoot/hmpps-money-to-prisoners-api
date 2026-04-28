@@ -27,7 +27,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
     @DisplayName("SEC-122 - Returns 401 for unauthenticated request")
     fun `should return 401 for unauthenticated`() {
       webTestClient.get()
-        .uri("/security/searches/")
+        .uri("/searches/")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -39,7 +39,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
       repository.save(SavedSearch(username = "user2", description = "Other search", endpoint = "/credits/", filters = null))
 
       webTestClient.get()
-        .uri("/security/searches/")
+        .uri("/searches/")
         .headers(setAuthorisation(username = "user1"))
         .exchange()
         .expectStatus().isOk
@@ -57,7 +57,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
     @DisplayName("SEC-120 - Creates a saved search")
     fun `should create a saved search`() {
       webTestClient.post()
-        .uri("/security/searches/")
+        .uri("/searches/")
         .headers(setAuthorisation(username = "user1"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"description": "My search", "endpoint": "/credits/", "filters": null}""")
@@ -81,7 +81,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
       val search = repository.save(SavedSearch(username = "user1", description = "Old", endpoint = "/credits/", filters = null))
 
       webTestClient.patch()
-        .uri("/security/searches/${search.id}/")
+        .uri("/searches/${search.id}/")
         .headers(setAuthorisation(username = "user1"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"description": "Updated"}""")
@@ -97,7 +97,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
       val search = repository.save(SavedSearch(username = "user2", description = "Other", endpoint = "/credits/", filters = null))
 
       webTestClient.patch()
-        .uri("/security/searches/${search.id}/")
+        .uri("/searches/${search.id}/")
         .headers(setAuthorisation(username = "user1"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"description": "Hacked"}""")
@@ -116,7 +116,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
       val search = repository.save(SavedSearch(username = "user1", description = "My search", endpoint = "/credits/", filters = null))
 
       webTestClient.delete()
-        .uri("/security/searches/${search.id}/")
+        .uri("/searches/${search.id}/")
         .headers(setAuthorisation(username = "user1"))
         .exchange()
         .expectStatus().isNoContent
@@ -130,7 +130,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
       val search = repository.save(SavedSearch(username = "user2", description = "Other", endpoint = "/credits/", filters = null))
 
       webTestClient.delete()
-        .uri("/security/searches/${search.id}/")
+        .uri("/searches/${search.id}/")
         .headers(setAuthorisation(username = "user1"))
         .exchange()
         .expectStatus().isNotFound

@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -100,6 +101,30 @@ class PasswordResource(
     return when (passwordService.changePasswordByToken(token, request.newPassword)) {
       is PasswordChangeResult.Success -> ResponseEntity.noContent().build()
       is PasswordChangeResult.InvalidToken -> ResponseEntity.badRequest().body(mapOf("token" to listOf("Token is invalid or has already been used")))
+    }
+  }
+
+  /**
+   * Python-compatible: POST /change_password/{code}/ with new_password in body.
+   * The code is the UUID token from the password reset email.
+   */
+  @SecurityRequirements
+  @PreAuthorize("permitAll()")
+  @PostMapping("/change_password/{code}/")
+  fun changePasswordByCode(
+    @PathVariable code: String,
+    @RequestBody request: Map<String, String>,
+  ): ResponseEntity<Any> {
+    val newPassword = request["new_password"]
+      ?: return ResponseEntity.badRequest().body(mapOf("errors" to mapOf("new_password" to listOf("This field is required."))))
+    val token = try {
+      UUID.fromString(code)
+    } catch (_: IllegalArgumentException) {
+      return ResponseEntity.status(404).build<Any>()
+    }
+    return when (passwordService.changePasswordByToken(token, newPassword)) {
+      is PasswordChangeResult.Success -> ResponseEntity.noContent().build()
+      is PasswordChangeResult.InvalidToken -> ResponseEntity.status(404).build()
     }
   }
 

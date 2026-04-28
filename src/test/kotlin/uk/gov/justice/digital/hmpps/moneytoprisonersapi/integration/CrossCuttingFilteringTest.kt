@@ -128,7 +128,7 @@ class CrossCuttingFilteringTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.count").isEqualTo(1)
-        .jsonPath("$.results[0].resolution").isEqualTo("CREDITED")
+        .jsonPath("$.results[0].resolution").isEqualTo("credited")
     }
 
     @Test

@@ -94,7 +94,7 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.count").isEqualTo(1)
-        .jsonPath("$.results[0].status").isEqualTo("PENDING")
+        .jsonPath("$.results[0].status").isEqualTo("pending")
     }
 
     @Test
@@ -389,7 +389,7 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.id").isEqualTo(check.id!!.toInt())
-        .jsonPath("$.status").isEqualTo("PENDING")
+        .jsonPath("$.status").isEqualTo("pending")
     }
 
     @Test

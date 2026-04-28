@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.SenderProfileSe
 import java.security.Principal
 
 @RestController
-@RequestMapping("/security/senders", produces = ["application/json"])
+@RequestMapping("/senders", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
 @Tag(name = "Sender Profiles", description = "Sender profile management and monitoring")
 class SenderProfileResource(
@@ -54,9 +54,9 @@ class SenderProfileResource(
 
   @Operation(summary = "Get credits for a sender profile (SEC-075)")
   @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
-  @GetMapping("/{id}/credits/")
+  @GetMapping("/{sender_pk}/credits/")
   fun listCredits(
-    @PathVariable id: Long,
+    @PathVariable("sender_pk") id: Long,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<SecurityCreditDto> {

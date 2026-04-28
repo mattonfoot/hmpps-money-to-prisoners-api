@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Column
 import jakarta.persistence.Converter
@@ -15,7 +17,7 @@ import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 
-enum class CheckStatus(val value: String) {
+enum class CheckStatus(@JsonValue val value: String) {
   PENDING("pending"),
   ACCEPTED("accepted"),
   REJECTED("rejected"),
@@ -23,9 +25,12 @@ enum class CheckStatus(val value: String) {
 
   companion object {
     private val BY_VALUE = entries.associateBy { it.value }
+    private val BY_NAME = entries.associateBy { it.name }
 
+    @JvmStatic
+    @JsonCreator
     fun fromValue(value: String): CheckStatus =
-      BY_VALUE[value] ?: throw IllegalArgumentException("Unknown CheckStatus: $value")
+      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown CheckStatus: $value")
   }
 }
 

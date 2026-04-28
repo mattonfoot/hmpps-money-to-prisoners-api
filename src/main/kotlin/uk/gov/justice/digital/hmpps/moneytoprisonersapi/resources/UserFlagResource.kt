@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -56,13 +57,13 @@ class UserFlagResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @GetMapping("/users/{id}/flags/")
+  @GetMapping("/users/{user_username}/flags/")
   fun listFlags(
-    @Parameter(description = "User ID") @PathVariable id: Long,
+    @Parameter(description = "User ID") @PathVariable("user_username") username: String,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): ResponseEntity<PaginatedResponse<UserFlagDto>> {
-    val user = userService.findById(id) ?: return ResponseEntity.notFound().build()
+    val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
     val flags = userFlagRepository.findByUser(user).map { UserFlagDto.from(it) }
     return ResponseEntity.ok(PaginatedResponse.fromList(flags, limit = limit, offset = offset))
   }
@@ -88,12 +89,12 @@ class UserFlagResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @PostMapping("/users/{id}/flags/")
+  @PostMapping("/users/{user_username}/flags/")
   fun createFlag(
-    @Parameter(description = "User ID") @PathVariable id: Long,
+    @Parameter(description = "User ID") @PathVariable("user_username") username: String,
     @RequestBody request: CreateUserFlagRequest,
   ): ResponseEntity<Any> {
-    val user = userService.findById(id) ?: return ResponseEntity.notFound().build()
+    val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
     if (request.flagName.isNullOrBlank()) {
       return ResponseEntity.badRequest().body(mapOf("flagName" to listOf("This field is required")))
     }
@@ -105,7 +106,7 @@ class UserFlagResource(
   }
 
   // -------------------------------------------------------------------------
-  // AUTH-032: DELETE /users/{id}/flags/{flagName}/
+  // AUTH-032: DELETE /users/{id}/flags/{name}/
   // -------------------------------------------------------------------------
 
   @Operation(
@@ -120,12 +121,25 @@ class UserFlagResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @DeleteMapping("/users/{id}/flags/{flagName}/")
-  fun deleteFlag(
-    @Parameter(description = "User ID") @PathVariable id: Long,
-    @Parameter(description = "Flag name to remove") @PathVariable flagName: String,
+  @PutMapping("/users/{user_username}/flags/{name}/")
+  fun putFlag(
+    @PathVariable("user_username") username: String,
+    @PathVariable("name") flagName: String,
   ): ResponseEntity<Any> {
-    val user = userService.findById(id) ?: return ResponseEntity.notFound().build()
+    val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
+    if (userFlagRepository.findByUserAndFlagName(user, flagName) == null) {
+      userFlagRepository.save(uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.UserFlag(user = user, flagName = flagName))
+    }
+    return ResponseEntity.noContent().build()
+  }
+
+  @PreAuthorize("isAuthenticated()")
+  @DeleteMapping("/users/{user_username}/flags/{name}/")
+  fun deleteFlag(
+    @Parameter(description = "User ID") @PathVariable("user_username") username: String,
+    @Parameter(description = "Flag name to remove") @PathVariable("name") flagName: String,
+  ): ResponseEntity<Any> {
+    val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
     val flag = userFlagRepository.findByUserAndFlagName(user, flagName)
       ?: return ResponseEntity.notFound().build()
     userFlagRepository.delete(flag)

@@ -66,6 +66,8 @@ class AccountRequestService(
    * AUTH-063: Accepts a pending request, creating or updating the MTP user.
    * Returns null if the request is not found.
    */
+  fun getRequest(id: Long): AccountRequest? = accountRequestRepository.findById(id).orElse(null)
+
   @Transactional
   fun acceptRequest(id: Long): AccountRequest? {
     val request = accountRequestRepository.findById(id).orElse(null) ?: return null

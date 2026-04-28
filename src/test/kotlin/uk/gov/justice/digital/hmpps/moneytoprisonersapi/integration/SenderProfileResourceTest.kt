@@ -44,7 +44,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     @DisplayName("SEC-070 - Returns 401 for unauthenticated request")
     fun `should return 401 for unauthenticated request`() {
       webTestClient.get()
-        .uri("/security/senders/")
+        .uri("/senders/")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -53,7 +53,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     @DisplayName("SEC-071 - Returns 403 for user without required role")
     fun `should return 403 without security role`() {
       webTestClient.get()
-        .uri("/security/senders/")
+        .uri("/senders/")
         .headers(setAuthorisation(roles = listOf()))
         .exchange()
         .expectStatus().isForbidden
@@ -66,7 +66,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
       createSenderProfile()
 
       webTestClient.get()
-        .uri("/security/senders/")
+        .uri("/senders/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -86,7 +86,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
       val profile = createSenderProfile()
 
       webTestClient.post()
-        .uri("/security/senders/${profile.id}/monitor/")
+        .uri("/senders/${profile.id}/monitor/")
         .headers(setAuthorisation(username = "security_user"))
         .exchange()
         .expectStatus().isNoContent
@@ -108,7 +108,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
       }!!
 
       webTestClient.post()
-        .uri("/security/senders/${saved.id}/unmonitor/")
+        .uri("/senders/${saved.id}/unmonitor/")
         .headers(setAuthorisation(username = "security_user"))
         .exchange()
         .expectStatus().isNoContent
@@ -137,7 +137,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
       createSenderProfile()
 
       webTestClient.get()
-        .uri("/security/senders/?monitoring=true")
+        .uri("/senders/?monitoring=true")
         .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -158,7 +158,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
       createSenderProfile()
 
       webTestClient.get()
-        .uri("/security/senders/?monitoring=false")
+        .uri("/senders/?monitoring=false")
         .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -176,7 +176,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
       }!!
 
       webTestClient.get()
-        .uri("/security/senders/${profile.id}/")
+        .uri("/senders/${profile.id}/")
         .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -189,7 +189,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     @DisplayName("Returns 404 for non-existent sender profile detail")
     fun `should return 404 for non-existent profile`() {
       webTestClient.get()
-        .uri("/security/senders/99999/")
+        .uri("/senders/99999/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isNotFound
@@ -209,7 +209,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
       val saved = senderProfileRepository.save(profile)
 
       webTestClient.get()
-        .uri("/security/senders/${saved.id}/credits/")
+        .uri("/senders/${saved.id}/credits/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk

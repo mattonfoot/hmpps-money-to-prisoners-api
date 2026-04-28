@@ -40,7 +40,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     @DisplayName("SEC-090 - Returns 401 for unauthenticated request")
     fun `should return 401 for unauthenticated request`() {
       webTestClient.get()
-        .uri("/security/prisoners/")
+        .uri("/prisoners/")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -49,7 +49,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     @DisplayName("SEC-091 - Returns 403 for user without required role")
     fun `should return 403 without security role`() {
       webTestClient.get()
-        .uri("/security/prisoners/")
+        .uri("/prisoners/")
         .headers(setAuthorisation(roles = listOf()))
         .exchange()
         .expectStatus().isForbidden
@@ -62,7 +62,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
       createPrisonerProfile("B5678DE")
 
       webTestClient.get()
-        .uri("/security/prisoners/")
+        .uri("/prisoners/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -81,7 +81,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
       val profile = createPrisonerProfile()
 
       webTestClient.post()
-        .uri("/security/prisoners/${profile.id}/monitor/")
+        .uri("/prisoners/${profile.id}/monitor/")
         .headers(setAuthorisation(username = "security_user"))
         .exchange()
         .expectStatus().isNoContent
@@ -103,7 +103,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
       }!!
 
       webTestClient.post()
-        .uri("/security/prisoners/${saved.id}/unmonitor/")
+        .uri("/prisoners/${saved.id}/unmonitor/")
         .headers(setAuthorisation(username = "security_user"))
         .exchange()
         .expectStatus().isNoContent
@@ -132,7 +132,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
       createPrisonerProfile("B2222DE")
 
       webTestClient.get()
-        .uri("/security/prisoners/?monitoring=true")
+        .uri("/prisoners/?monitoring=true")
         .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -153,7 +153,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
       createPrisonerProfile("B2222DE")
 
       webTestClient.get()
-        .uri("/security/prisoners/?monitoring=false")
+        .uri("/prisoners/?monitoring=false")
         .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -171,7 +171,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
       }!!
 
       webTestClient.get()
-        .uri("/security/prisoners/${profile.id}/")
+        .uri("/prisoners/${profile.id}/")
         .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -184,7 +184,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     @DisplayName("Returns 404 for non-existent prisoner profile detail")
     fun `should return 404 for non-existent profile`() {
       webTestClient.get()
-        .uri("/security/prisoners/99999/")
+        .uri("/prisoners/99999/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isNotFound
@@ -201,7 +201,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
       }
 
       webTestClient.get()
-        .uri("/security/prisoners/?simple_search=JOHN")
+        .uri("/prisoners/?simple_search=JOHN")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
@@ -226,7 +226,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
       val saved = prisonerProfileRepository.save(profile)
 
       webTestClient.get()
-        .uri("/security/prisoners/${saved.id}/credits/")
+        .uri("/prisoners/${saved.id}/credits/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk

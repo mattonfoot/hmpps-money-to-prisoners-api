@@ -37,7 +37,7 @@ class Disbursement(
   @Column(nullable = false, length = 50)
   var method: DisbursementMethod,
 
-  @Column(length = 10)
+  @Column(name = "prison_id", length = 10)
   var prison: String? = null,
 
   @Column(name = "prisoner_number", length = 250)

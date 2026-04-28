@@ -24,7 +24,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
 
 @RestController
-@RequestMapping("/comments", produces = ["application/json"])
+@RequestMapping("/credits/comments", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
 @Tag(name = "Comments", description = "Endpoints for managing credit comments")
 class CommentResource(
