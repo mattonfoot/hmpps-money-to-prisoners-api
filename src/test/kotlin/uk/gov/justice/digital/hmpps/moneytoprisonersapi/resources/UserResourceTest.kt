@@ -81,9 +81,9 @@ class UserResourceTest {
     @Test
     fun `AUTH-011 returns user with lock status`() {
       val user = makeUser(role = makeRole())
-      whenever(userService.getUser(1L)).thenReturn(user to true)
+      whenever(userService.getUserByUsername("testuser")).thenReturn(user to true)
 
-      val response = userResource.getUser(1L)
+      val response = userResource.getUser("testuser")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
       assertThat(response.body?.username).isEqualTo("testuser")
@@ -92,9 +92,9 @@ class UserResourceTest {
 
     @Test
     fun `returns 404 when user not found`() {
-      whenever(userService.getUser(99L)).thenReturn(null)
+      whenever(userService.getUserByUsername("nonexistent")).thenReturn(null)
 
-      val response = userResource.getUser(99L)
+      val response = userResource.getUser("nonexistent")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -181,7 +181,7 @@ class UserResourceTest {
       val user = makeUser(username = "other")
       whenever(userService.findRoleByName(null)).thenReturn(null)
       whenever(userService.findPrisonsByIds(emptyList())).thenReturn(emptySet())
-      whenever(userService.findById(1L)).thenReturn(user)
+      whenever(userService.findByUsername("testuser")).thenReturn(user)
       whenever(
         userService.updateUser(
           id = 1L,
@@ -193,10 +193,10 @@ class UserResourceTest {
           isSelf = false,
         ),
       ).thenReturn(user)
-      whenever(userService.getUser(1L)).thenReturn(user to false)
+      whenever(userService.getUserByUsername("testuser")).thenReturn(user to false)
 
       val request = UpdateUserRequest(email = "updated@example.com", prisonIds = emptyList())
-      val response = userResource.updateUser(1L, request, principal)
+      val response = userResource.updateUser("testuser", request, principal)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
     }
@@ -205,10 +205,10 @@ class UserResourceTest {
     fun `returns 404 when user not found`() {
       whenever(userService.findRoleByName(null)).thenReturn(null)
       whenever(userService.findPrisonsByIds(emptyList())).thenReturn(emptySet())
-      whenever(userService.findById(99L)).thenReturn(null)
+      whenever(userService.findByUsername("nonexistent")).thenReturn(null)
 
       val request = UpdateUserRequest(prisonIds = emptyList())
-      val response = userResource.updateUser(99L, request, principal)
+      val response = userResource.updateUser("nonexistent", request, principal)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -218,7 +218,7 @@ class UserResourceTest {
       val user = makeUser(username = "testuser")
       whenever(userService.findRoleByName(null)).thenReturn(null)
       whenever(userService.findPrisonsByIds(emptyList())).thenReturn(emptySet())
-      whenever(userService.findById(1L)).thenReturn(user)
+      whenever(userService.findByUsername("testuser")).thenReturn(user)
       whenever(
         userService.updateUser(
           id = 1L,
@@ -233,7 +233,7 @@ class UserResourceTest {
       whenever(userService.getUser(eq(1L))).thenReturn(user to false)
 
       val request = UpdateUserRequest(firstName = "New", prisonIds = emptyList())
-      val response = userResource.updateUser(1L, request, principal)
+      val response = userResource.updateUser("testuser", request, principal)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
     }
@@ -248,7 +248,7 @@ class UserResourceTest {
       val user = makeUser()
       whenever(userService.deactivateUser(1L)).thenReturn(user)
 
-      val response = userResource.deleteUser(1L)
+      val response = userResource.deleteUser("testuser")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
     }
@@ -257,7 +257,7 @@ class UserResourceTest {
     fun `returns 404 when user not found`() {
       whenever(userService.deactivateUser(99L)).thenReturn(null)
 
-      val response = userResource.deleteUser(99L)
+      val response = userResource.deleteUser("nonexistent")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -270,10 +270,10 @@ class UserResourceTest {
     @Test
     fun `AUTH-017 returns 200 and unlocks user`() {
       val user = makeUser()
-      whenever(userService.unlockUser(1L)).thenReturn(user)
-      whenever(userService.getUser(1L)).thenReturn(user to false)
+      whenever(userService.unlockUser("testuser")).thenReturn(user)
+      whenever(userService.getUserByUsername("testuser")).thenReturn(user to false)
 
-      val response = userResource.unlockUser(1L)
+      val response = userResource.unlockUser("testuser")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
     }

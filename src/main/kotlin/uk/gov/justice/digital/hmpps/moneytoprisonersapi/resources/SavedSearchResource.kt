@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
@@ -34,8 +36,14 @@ class SavedSearchResource(
   @Operation(summary = "List current user's saved searches (SEC-122)")
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/")
-  fun listSearches(principal: Principal): List<SavedSearchDto> = repository.findByUsername(principal.name)
-    .map { SavedSearchDto.from(it) }
+  fun listSearches(
+    principal: Principal,
+    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
+    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
+  ): PaginatedResponse<SavedSearchDto> {
+    val results = repository.findByUsername(principal.name).map { SavedSearchDto.from(it) }
+    return PaginatedResponse.fromList(results, limit = limit, offset = offset)
+  }
 
   @Operation(summary = "Create a saved search (SEC-120 to SEC-121)")
   @PreAuthorize("isAuthenticated()")

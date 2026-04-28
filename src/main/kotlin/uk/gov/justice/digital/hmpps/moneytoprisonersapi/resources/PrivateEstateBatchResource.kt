@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PrivateEstateBatchDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
@@ -74,7 +75,7 @@ class PrivateEstateBatchResource(
     @Parameter(description = "Filter by prison NOMIS ID", example = "PRV")
     @RequestParam("prison")
     prison: String? = null,
-  ): List<PrivateEstateBatchDto> {
+  ): PaginatedResponse<PrivateEstateBatchDto> {
     var batches = privateEstateBatchRepository.findAll()
 
     if (date != null) {
@@ -90,7 +91,8 @@ class PrivateEstateBatchResource(
       batches = batches.filter { it.prison == prison }
     }
 
-    return batches.map { PrivateEstateBatchDto.from(it) }
+    val results = batches.map { PrivateEstateBatchDto.from(it) }
+    return PaginatedResponse(count = results.size, results = results)
   }
 
   @Operation(

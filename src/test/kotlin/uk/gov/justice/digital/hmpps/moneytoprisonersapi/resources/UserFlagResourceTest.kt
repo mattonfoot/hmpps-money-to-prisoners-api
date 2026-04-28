@@ -43,12 +43,12 @@ class UserFlagResourceTest {
     @Test
     fun `AUTH-031 returns flags for user`() {
       val user = makeUser()
-      whenever(userService.findById(1L)).thenReturn(user)
+      whenever(userService.findByUsername("testuser")).thenReturn(user)
       whenever(userFlagRepository.findByUser(user)).thenReturn(
         listOf(makeFlag(user, "flag_a"), makeFlag(user, "flag_b")),
       )
 
-      val response = userFlagResource.listFlags(1L)
+      val response = userFlagResource.listFlags("testuser")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
       assertThat(response.body?.count).isEqualTo(2)
@@ -57,9 +57,9 @@ class UserFlagResourceTest {
 
     @Test
     fun `returns 404 when user not found`() {
-      whenever(userService.findById(99L)).thenReturn(null)
+      whenever(userService.findByUsername("nonexistent")).thenReturn(null)
 
-      val response = userFlagResource.listFlags(99L)
+      val response = userFlagResource.listFlags("nonexistent")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -73,12 +73,12 @@ class UserFlagResourceTest {
     fun `AUTH-030 creates flag for user`() {
       val user = makeUser()
       val flag = makeFlag(user, "new_flag")
-      whenever(userService.findById(1L)).thenReturn(user)
+      whenever(userService.findByUsername("testuser")).thenReturn(user)
       whenever(userFlagRepository.existsByUserAndFlagName(user, "new_flag")).thenReturn(false)
       whenever(userFlagRepository.save(any())).thenReturn(flag)
 
       val request = CreateUserFlagRequest(flagName = "new_flag")
-      val response = userFlagResource.createFlag(1L, request)
+      val response = userFlagResource.createFlag("testuser", request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.CREATED)
       assertThat((response.body as? UserFlagDto)?.flagName).isEqualTo("new_flag")
@@ -87,11 +87,11 @@ class UserFlagResourceTest {
     @Test
     fun `AUTH-030 flag is unique per user - returns 400 on duplicate`() {
       val user = makeUser()
-      whenever(userService.findById(1L)).thenReturn(user)
+      whenever(userService.findByUsername("testuser")).thenReturn(user)
       whenever(userFlagRepository.existsByUserAndFlagName(user, "existing_flag")).thenReturn(true)
 
       val request = CreateUserFlagRequest(flagName = "existing_flag")
-      val response = userFlagResource.createFlag(1L, request)
+      val response = userFlagResource.createFlag("testuser", request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
@@ -99,20 +99,20 @@ class UserFlagResourceTest {
     @Test
     fun `returns 400 when flagName is null`() {
       val user = makeUser()
-      whenever(userService.findById(1L)).thenReturn(user)
+      whenever(userService.findByUsername("testuser")).thenReturn(user)
 
       val request = CreateUserFlagRequest(flagName = null)
-      val response = userFlagResource.createFlag(1L, request)
+      val response = userFlagResource.createFlag("testuser", request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
 
     @Test
     fun `returns 404 when user not found`() {
-      whenever(userService.findById(99L)).thenReturn(null)
+      whenever(userService.findByUsername("nonexistent")).thenReturn(null)
 
       val request = CreateUserFlagRequest(flagName = "test")
-      val response = userFlagResource.createFlag(99L, request)
+      val response = userFlagResource.createFlag("nonexistent", request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -120,12 +120,12 @@ class UserFlagResourceTest {
     @Test
     fun `saves flag with correct user and name`() {
       val user = makeUser()
-      whenever(userService.findById(1L)).thenReturn(user)
+      whenever(userService.findByUsername("testuser")).thenReturn(user)
       whenever(userFlagRepository.existsByUserAndFlagName(user, "test_flag")).thenReturn(false)
       whenever(userFlagRepository.save(any())).thenAnswer { it.arguments[0] }
 
       val captor = argumentCaptor<UserFlag>()
-      userFlagResource.createFlag(1L, CreateUserFlagRequest(flagName = "test_flag"))
+      userFlagResource.createFlag("testuser", CreateUserFlagRequest(flagName = "test_flag"))
       verify(userFlagRepository).save(captor.capture())
 
       assertThat(captor.firstValue.user).isEqualTo(user)
@@ -141,10 +141,10 @@ class UserFlagResourceTest {
     fun `AUTH-032 deletes flag by name`() {
       val user = makeUser()
       val flag = makeFlag(user, "to_delete")
-      whenever(userService.findById(1L)).thenReturn(user)
+      whenever(userService.findByUsername("testuser")).thenReturn(user)
       whenever(userFlagRepository.findByUserAndFlagName(user, "to_delete")).thenReturn(flag)
 
-      val response = userFlagResource.deleteFlag(1L, "to_delete")
+      val response = userFlagResource.deleteFlag("testuser", "to_delete")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
       verify(userFlagRepository).delete(flag)
@@ -152,9 +152,9 @@ class UserFlagResourceTest {
 
     @Test
     fun `returns 404 when user not found`() {
-      whenever(userService.findById(99L)).thenReturn(null)
+      whenever(userService.findByUsername("nonexistent")).thenReturn(null)
 
-      val response = userFlagResource.deleteFlag(99L, "test")
+      val response = userFlagResource.deleteFlag("nonexistent", "test")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -162,10 +162,10 @@ class UserFlagResourceTest {
     @Test
     fun `returns 404 when flag not found`() {
       val user = makeUser()
-      whenever(userService.findById(1L)).thenReturn(user)
+      whenever(userService.findByUsername("testuser")).thenReturn(user)
       whenever(userFlagRepository.findByUserAndFlagName(user, "missing")).thenReturn(null)
 
-      val response = userFlagResource.deleteFlag(1L, "missing")
+      val response = userFlagResource.deleteFlag("testuser", "missing")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
