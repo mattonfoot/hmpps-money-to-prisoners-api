@@ -14,8 +14,9 @@ class BalanceService(
   private val balanceRepository: BalanceRepository,
 ) {
   fun listBalances(dateLt: LocalDate?, dateGte: LocalDate?, limit: Int = 20, offset: Int = 0): Page<Balance> {
-    val pageNumber = if (limit > 0) offset / limit else 0
-    val pageable = PageRequest.of(pageNumber, limit)
+    val effectiveLimit = if (limit > 0) limit else 20
+    val pageNumber = offset / effectiveLimit
+    val pageable = PageRequest.of(pageNumber, effectiveLimit)
 
     return when {
       dateGte != null && dateLt != null ->

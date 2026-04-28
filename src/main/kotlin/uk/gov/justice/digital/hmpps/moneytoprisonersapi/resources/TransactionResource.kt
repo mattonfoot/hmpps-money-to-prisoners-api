@@ -163,12 +163,19 @@ class TransactionResource(
   @PreAuthorize("hasRole('BANK_ADMIN')")
   @PatchMapping("/")
   fun refundTransactions(
-    @RequestBody request: RefundTransactionRequest,
+    @RequestBody items: List<Map<String, Any>>,
   ): ResponseEntity<Any> {
-    if (request.transactionIds.isEmpty()) {
-      return ResponseEntity.badRequest().build()
+    // Python sends [{id: 1, refunded: true}, ...] — extract IDs where refunded=true
+    val transactionIds = items
+      .filter { it["refunded"] == true }
+      .mapNotNull { (it["id"] as? Number)?.toLong() }
+    if (items.isNotEmpty() && transactionIds.isEmpty()) {
+      return ResponseEntity.ok(items) // No refunds requested, return as-is
     }
-    val conflictIds = transactionService.refundTransactions(request.transactionIds)
+    if (transactionIds.isEmpty()) {
+      return ResponseEntity.ok(emptyList<Any>())
+    }
+    val conflictIds = transactionService.refundTransactions(transactionIds)
     return if (conflictIds.isEmpty()) {
       ResponseEntity.noContent().build()
     } else {
