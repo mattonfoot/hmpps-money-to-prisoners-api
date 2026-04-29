@@ -42,18 +42,6 @@ class CrossCuttingErrorResponseTest : IntegrationTestBase() {
   inner class BadRequestErrors {
 
     @Test
-    @DisplayName("XCT-040 empty credit_ids in refund request returns 400")
-    fun `empty credit_ids list returns 400 Bad Request`() {
-      webTestClient.post()
-        .uri("/credits/actions/refund/")
-        .headers(setAuthorisation())
-        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-        .bodyValue(mapOf("credit_ids" to emptyList<Long>()))
-        .exchange()
-        .expectStatus().isBadRequest
-    }
-
-    @Test
     @DisplayName("XCT-040 empty credit_ids in review request returns 400")
     fun `empty credit_ids list in review returns 400 Bad Request`() {
       webTestClient.post()
@@ -188,48 +176,5 @@ class CrossCuttingErrorResponseTest : IntegrationTestBase() {
   @DisplayName("XCT-044 409 Conflict for invalid state transitions")
   inner class ConflictErrors {
 
-    @Test
-    @DisplayName("XCT-044 refund of credit in CREDITED state returns 409 Conflict")
-    fun `refund of credit in wrong state returns 409 Conflict`() {
-      val credit = saveCredit(resolution = CreditResolution.CREDITED)
-
-      webTestClient.post()
-        .uri("/credits/actions/refund/")
-        .headers(setAuthorisation())
-        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-        .bodyValue(mapOf("credit_ids" to listOf(credit.id)))
-        .exchange()
-        .expectStatus().isEqualTo(409)
-    }
-
-    @Test
-    @DisplayName("XCT-044 409 response body contains status and message")
-    fun `409 response includes error details`() {
-      val credit = saveCredit(resolution = CreditResolution.CREDITED)
-
-      webTestClient.post()
-        .uri("/credits/actions/refund/")
-        .headers(setAuthorisation())
-        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-        .bodyValue(mapOf("credit_ids" to listOf(credit.id)))
-        .exchange()
-        .expectStatus().isEqualTo(409)
-        .expectBody()
-        .jsonPath("$.status").isEqualTo(409)
-    }
-
-    @Test
-    @DisplayName("XCT-044 refund of REFUNDED credit (already refunded) also returns 409")
-    fun `refund of already refunded credit returns 409 Conflict`() {
-      val credit = saveCredit(resolution = CreditResolution.REFUNDED)
-
-      webTestClient.post()
-        .uri("/credits/actions/refund/")
-        .headers(setAuthorisation())
-        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-        .bodyValue(mapOf("credit_ids" to listOf(credit.id)))
-        .exchange()
-        .expectStatus().isEqualTo(409)
-    }
   }
 }

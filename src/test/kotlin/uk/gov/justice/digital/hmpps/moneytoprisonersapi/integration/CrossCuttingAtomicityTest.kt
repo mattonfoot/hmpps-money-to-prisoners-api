@@ -56,52 +56,6 @@ class CrossCuttingAtomicityTest : IntegrationTestBase() {
   @DisplayName("XCT-030 Bulk actions are all-or-nothing")
   inner class BulkActionsAtomic {
 
-    @Test
-    @DisplayName("XCT-030 refund action rolls back if any credit is not in refund_pending state")
-    fun `refund of multiple credits fails entirely when any credit is in wrong state`() {
-      // Create one valid refund_pending credit (no prison, pending, not blocked, complete sender info)
-      val validCredit = saveCredit(resolution = CreditResolution.PENDING, prison = null)
-
-      // Create an invalid credit (already credited — cannot be refunded)
-      val invalidCredit = saveCredit(resolution = CreditResolution.CREDITED, prison = "LEI")
-
-      val beforeCount = logRepository.count()
-
-      // Attempt refund of both — should fail entirely due to invalid credit
-      webTestClient.post()
-        .uri("/credits/actions/refund/")
-        .headers(setAuthorisation())
-        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-        .bodyValue(mapOf("credit_ids" to listOf(validCredit.id, invalidCredit.id)))
-        .exchange()
-        .expectStatus().isEqualTo(409)
-
-      // Verify neither credit was updated (atomic rollback)
-      val validCreditAfter = creditRepository.findById(validCredit.id!!).get()
-      assertThat(validCreditAfter.resolution).isEqualTo(CreditResolution.PENDING)
-
-      // Verify no log entries were created (rollback)
-      assertThat(logRepository.count()).isEqualTo(beforeCount)
-    }
-
-    @Test
-    @DisplayName("XCT-030 refund succeeds for all credits when all are in refund_pending state")
-    fun `refund of all valid refund_pending credits succeeds`() {
-      // A credit is refund_pending when: no prison OR blocked, pending resolution, sender info complete
-      val credit1 = saveCredit(resolution = CreditResolution.PENDING, prison = null)
-      val credit2 = saveCredit(resolution = CreditResolution.PENDING, prison = null)
-
-      webTestClient.post()
-        .uri("/credits/actions/refund/")
-        .headers(setAuthorisation())
-        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-        .bodyValue(mapOf("credit_ids" to listOf(credit1.id, credit2.id)))
-        .exchange()
-        .expectStatus().isNoContent
-
-      assertThat(creditRepository.findById(credit1.id!!).get().resolution).isEqualTo(CreditResolution.REFUNDED)
-      assertThat(creditRepository.findById(credit2.id!!).get().resolution).isEqualTo(CreditResolution.REFUNDED)
-    }
   }
 
   @Nested

@@ -505,10 +505,10 @@ class PaymentResourceTest : IntegrationTestBase() {
     }
   }
 
-  // -------------------------------------------------------------------------
-  // PAY-050 to PAY-053: GET /batches/ (payment amount aggregation)
-  // -------------------------------------------------------------------------
+  // NOTE: /payments/batches/ and /payments/batches/reconcile/ were removed
+  // as they don't exist in the Python API. Payment batches are at /batches/.
 
+  /*
   @Nested
   @DisplayName("GET /payments/batches/ (PAY-050 to PAY-053)")
   inner class ListPaymentBatches {
@@ -692,4 +692,5 @@ class PaymentResourceTest : IntegrationTestBase() {
         .jsonPath("$.ref_code").isEqualTo(2)
     }
   }
+  */
 }

@@ -51,12 +51,14 @@ abstract class IntegrationTestBase {
     roles: List<String> = listOf(),
     scopes: List<String> = listOf("read"),
   ): (HttpHeaders) -> Unit {
-    val token = resolveToken(roles)
+    val token = resolveToken(username, roles)
     return { headers -> headers.setBearerAuth(token) }
   }
 
-  private fun resolveToken(roles: List<String>): String {
-    if (roles.isEmpty()) return "test-token-no-roles"
+  private fun resolveToken(username: String?, roles: List<String>): String {
+    // When no roles specified: use admin (all groups) if a username was given,
+    // otherwise use no-roles token (for negative auth tests)
+    if (roles.isEmpty()) return if (username != null) "test-token-admin" else "test-token-no-roles"
 
     return when {
       roles.any { it.contains("DISBURSEMENT_BANK_ADMIN", ignoreCase = true) } -> "test-token-disbursement-admin"
@@ -67,7 +69,7 @@ abstract class IntegrationTestBase {
       roles.any { it.contains("FIU", ignoreCase = true) } -> "test-token-fiu"
       roles.any { it.contains("NOMS_OPS", ignoreCase = true) } -> "test-token-prisoner-location-admin"
       roles.any { it.contains("USER_ADMIN", ignoreCase = true) } -> "test-token-fiu"
-      else -> "test-token-admin"
+      else -> "test-token-no-roles"
     }
   }
 }
