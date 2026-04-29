@@ -11,6 +11,10 @@ data class SavedSearchDto(
   val description: String,
   val endpoint: String,
   val filters: String?,
+  @JsonProperty("last_result_count")
+  val lastResultCount: Int,
+  @JsonProperty("site_url")
+  val siteUrl: String?,
   val created: LocalDateTime?,
   val modified: LocalDateTime?,
 ) {
@@ -20,6 +24,8 @@ data class SavedSearchDto(
       description = search.description,
       endpoint = search.endpoint,
       filters = search.filters,
+      lastResultCount = search.lastResultCount,
+      siteUrl = search.siteUrl,
       created = search.created,
       modified = search.modified,
     )
@@ -31,6 +37,10 @@ data class CreateSavedSearchRequest(
   val description: String,
   val endpoint: String,
   val filters: String? = null,
+  @JsonProperty("last_result_count")
+  val lastResultCount: Int? = null,
+  @JsonProperty("site_url")
+  val siteUrl: String? = null,
 )
 
 @Schema(description = "Request body for updating a saved search")
@@ -38,6 +48,10 @@ data class UpdateSavedSearchRequest(
   val description: String? = null,
   val endpoint: String? = null,
   val filters: String? = null,
+  @JsonProperty("last_result_count")
+  val lastResultCount: Int? = null,
+  @JsonProperty("site_url")
+  val siteUrl: String? = null,
 )
 
 @Schema(description = "Response containing the count of monitored senders + prisoners")

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_CREDITS
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -17,17 +18,13 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.AttachProfilesRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ProcessedCreditGroupDto
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReconcileRequest
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.RefundRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReviewRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdatePrisonRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.AttachProfilesService
@@ -42,7 +39,7 @@ import java.time.LocalDateTime
 @RestController
 @RequestMapping("/credits", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Credits", description = "Endpoints for managing prisoner credits")
+@Tag(name = TAG_CREDITS)
 class CreditResource(
   private val creditService: CreditService,
   private val reconcileService: ReconcileService,
@@ -294,6 +291,7 @@ class CreditResource(
       source = source,
       loggedAtGte = loggedAtGte,
       loggedAtLt = loggedAtLt,
+      logAction = logAction,
       securityCheckIsnull = securityCheckIsnull,
       securityCheckActionedByIsnull = securityCheckActionedByIsnull,
       excludeCreditIn = excludeCreditIn,
@@ -530,6 +528,7 @@ class CreditResource(
     @RequestParam("logged_at__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     loggedAtLt: LocalDateTime? = null,
+    @RequestParam("log__action") logAction: String? = null,
     @RequestParam("security_check__isnull") securityCheckIsnull: Boolean? = null,
     @RequestParam("security_check__actioned_by__isnull") securityCheckActionedByIsnull: Boolean? = null,
     @RequestParam("exclude_credit__in") excludeCreditIn: List<Long>? = null,
@@ -575,6 +574,7 @@ class CreditResource(
     source = source,
     loggedAtGte = loggedAtGte,
     loggedAtLt = loggedAtLt,
+    logAction = logAction,
     securityCheckIsnull = securityCheckIsnull,
     securityCheckActionedByIsnull = securityCheckActionedByIsnull,
     excludeCreditIn = excludeCreditIn,

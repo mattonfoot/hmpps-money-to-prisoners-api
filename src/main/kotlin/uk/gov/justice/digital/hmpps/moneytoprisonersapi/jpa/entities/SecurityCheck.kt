@@ -29,8 +29,7 @@ enum class CheckStatus(@JsonValue val value: String) {
 
     @JvmStatic
     @JsonCreator
-    fun fromValue(value: String): CheckStatus =
-      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown CheckStatus: $value")
+    fun fromValue(value: String): CheckStatus = BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown CheckStatus: $value")
   }
 }
 

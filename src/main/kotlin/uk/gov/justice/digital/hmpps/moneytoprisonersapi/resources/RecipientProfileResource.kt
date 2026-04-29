@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.resources
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_RECIPIENTS
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -20,11 +21,14 @@ import java.security.Principal
 @RestController
 @RequestMapping("/recipients", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Recipient Profiles", description = "Recipient profile management and monitoring (SEC-100 to SEC-110)")
+@Tag(name = TAG_RECIPIENTS)
 class RecipientProfileResource(
   private val recipientProfileService: RecipientProfileService,
   private val disbursementRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository,
+  private val prisonRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository,
 ) {
+
+  private fun prisonNameMap(): Map<String, String> = prisonRepository.findAll().associate { it.nomisId to it.name }
 
   @Operation(summary = "List recipient profiles (SEC-100 to SEC-108)")
   @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
@@ -65,7 +69,7 @@ class RecipientProfileResource(
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<DisbursementDto> {
     val disbursements = recipientProfileService.getDisbursements(id)
-    val results = disbursements.map { DisbursementDto.from(it) }
+    val results = disbursements.map { DisbursementDto.from(it, prisonNameMap()) }
     return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
@@ -78,7 +82,7 @@ class RecipientProfileResource(
   ): ResponseEntity<DisbursementDto> {
     val disbursement = disbursementRepository.findById(id).orElse(null)
       ?: return ResponseEntity.notFound().build()
-    return ResponseEntity.ok(DisbursementDto.from(disbursement))
+    return ResponseEntity.ok(DisbursementDto.from(disbursement, prisonNameMap()))
   }
 
   @Operation(summary = "Monitor a recipient profile (SEC-105)")

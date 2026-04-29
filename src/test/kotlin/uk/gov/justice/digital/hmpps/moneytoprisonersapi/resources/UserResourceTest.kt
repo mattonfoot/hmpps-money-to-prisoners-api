@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateUserRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdateUserRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpRole
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.UserFlagRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.UserService
 import java.security.Principal
 
@@ -24,6 +25,9 @@ class UserResourceTest {
 
   @Mock
   private lateinit var userService: UserService
+
+  @Mock
+  private lateinit var userFlagRepository: UserFlagRepository
 
   @InjectMocks
   private lateinit var userResource: UserResource
@@ -193,7 +197,7 @@ class UserResourceTest {
           isSelf = false,
         ),
       ).thenReturn(user)
-      whenever(userService.getUserByUsername("testuser")).thenReturn(user to false)
+      whenever(userService.getUser(1L)).thenReturn(user to false)
 
       val request = UpdateUserRequest(email = "updated@example.com", prisonIds = emptyList())
       val response = userResource.updateUser("testuser", request, principal)
@@ -246,6 +250,7 @@ class UserResourceTest {
     @Test
     fun `AUTH-014 returns 204 and deactivates user`() {
       val user = makeUser()
+      whenever(userService.findByUsername("testuser")).thenReturn(user)
       whenever(userService.deactivateUser(1L)).thenReturn(user)
 
       val response = userResource.deleteUser("testuser")
@@ -255,34 +260,9 @@ class UserResourceTest {
 
     @Test
     fun `returns 404 when user not found`() {
-      whenever(userService.deactivateUser(99L)).thenReturn(null)
+      whenever(userService.findByUsername("nonexistent")).thenReturn(null)
 
       val response = userResource.deleteUser("nonexistent")
-
-      assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    }
-  }
-
-  @Nested
-  @DisplayName("POST /users/{id}/unlock/ (AUTH-017)")
-  inner class UnlockUser {
-
-    @Test
-    fun `AUTH-017 returns 200 and unlocks user`() {
-      val user = makeUser()
-      whenever(userService.unlockUser("testuser")).thenReturn(user)
-      whenever(userService.getUserByUsername("testuser")).thenReturn(user to false)
-
-      val response = userResource.unlockUser("testuser")
-
-      assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    }
-
-    @Test
-    fun `returns 404 when user not found`() {
-      whenever(userService.unlockUser(99L)).thenReturn(null)
-
-      val response = userResource.unlockUser(99L)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }

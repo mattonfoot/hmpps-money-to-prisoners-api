@@ -5,9 +5,10 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
-import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_CHANGE_PASSWORD
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_RESET_PASSWORD
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PathVariable
@@ -25,7 +26,6 @@ import java.util.UUID
 
 @RestController
 @RequestMapping(produces = ["application/json"])
-@Tag(name = "Password Management", description = "Password reset and change endpoints (AUTH-040 to AUTH-049)")
 class PasswordResource(
   private val passwordService: PasswordService,
 ) {
@@ -47,6 +47,7 @@ class PasswordResource(
       ApiResponse(responseCode = "404", description = "User not found", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
+  @Tag(name = TAG_RESET_PASSWORD)
   @SecurityRequirements
   @PreAuthorize("permitAll()")
   @PostMapping("/reset_password/")
@@ -81,6 +82,7 @@ class PasswordResource(
       ApiResponse(responseCode = "400", description = "Invalid, missing, or already-used token", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
+  @Tag(name = TAG_CHANGE_PASSWORD)
   @SecurityRequirements
   @PreAuthorize("permitAll()")
   @PostMapping("/change_password/")
@@ -108,6 +110,7 @@ class PasswordResource(
    * Python-compatible: POST /change_password/{code}/ with new_password in body.
    * The code is the UUID token from the password reset email.
    */
+  @Tag(name = TAG_CHANGE_PASSWORD)
   @SecurityRequirements
   @PreAuthorize("permitAll()")
   @PostMapping("/change_password/{code}/")
@@ -127,5 +130,4 @@ class PasswordResource(
       is PasswordChangeResult.InvalidToken -> ResponseEntity.status(404).build()
     }
   }
-
 }

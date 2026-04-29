@@ -20,8 +20,7 @@ enum class CreditResolution(@JsonValue val value: String) {
 
     @JvmStatic
     @JsonCreator
-    fun fromValue(value: String): CreditResolution =
-      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown CreditResolution: $value")
+    fun fromValue(value: String): CreditResolution = BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown CreditResolution: $value")
 
     private val VALID_TRANSITIONS: Map<CreditResolution, Set<CreditResolution>> = mapOf(
       INITIAL to setOf(PENDING, FAILED),

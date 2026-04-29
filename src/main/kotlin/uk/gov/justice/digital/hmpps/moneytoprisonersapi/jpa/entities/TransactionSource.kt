@@ -16,8 +16,7 @@ enum class TransactionSource(@JsonValue val value: String) {
 
     @JvmStatic
     @JsonCreator
-    fun fromValue(value: String): TransactionSource =
-      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown TransactionSource: $value")
+    fun fromValue(value: String): TransactionSource = BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown TransactionSource: $value")
   }
 }
 

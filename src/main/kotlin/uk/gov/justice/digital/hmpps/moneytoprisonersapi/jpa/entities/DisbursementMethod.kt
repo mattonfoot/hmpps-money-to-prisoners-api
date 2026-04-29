@@ -16,8 +16,7 @@ enum class DisbursementMethod(@JsonValue val value: String) {
 
     @JvmStatic
     @JsonCreator
-    fun fromValue(value: String): DisbursementMethod =
-      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown DisbursementMethod: $value")
+    fun fromValue(value: String): DisbursementMethod = BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown DisbursementMethod: $value")
   }
 }
 

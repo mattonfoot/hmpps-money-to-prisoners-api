@@ -92,8 +92,7 @@ class DjangoOAuth2AuthenticationFilter(
     return header.substring(7).trim()
   }
 
-  private fun isExpired(token: OAuthAccessToken): Boolean =
-    token.expires.isBefore(OffsetDateTime.now())
+  private fun isExpired(token: OAuthAccessToken): Boolean = token.expires.isBefore(OffsetDateTime.now())
 
   private fun buildAuthentication(token: OAuthAccessToken): DjangoOAuth2Authentication {
     val user = token.user

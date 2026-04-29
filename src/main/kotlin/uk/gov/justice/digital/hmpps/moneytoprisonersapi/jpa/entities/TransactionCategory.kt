@@ -16,8 +16,7 @@ enum class TransactionCategory(@JsonValue val value: String) {
 
     @JvmStatic
     @JsonCreator
-    fun fromValue(value: String): TransactionCategory =
-      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown TransactionCategory: $value")
+    fun fromValue(value: String): TransactionCategory = BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown TransactionCategory: $value")
   }
 }
 

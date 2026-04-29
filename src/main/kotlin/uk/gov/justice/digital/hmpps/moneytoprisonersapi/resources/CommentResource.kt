@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_CREDITS
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -26,7 +27,7 @@ import java.security.Principal
 @RestController
 @RequestMapping("/credits/comments", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Comments", description = "Endpoints for managing credit comments")
+@Tag(name = TAG_CREDITS)
 class CommentResource(
   private val commentRepository: CommentRepository,
   private val creditRepository: CreditRepository,

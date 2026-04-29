@@ -155,8 +155,7 @@ class SecurityCheckService(
     return specs.reduce { acc, s -> acc.and(s) }
   }
 
-  fun getAutoAcceptRule(id: Long): AutoAcceptRule =
-    autoAcceptRuleRepository.findById(id).orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND) }
+  fun getAutoAcceptRule(id: Long): AutoAcceptRule = autoAcceptRuleRepository.findById(id).orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND) }
 
   @Transactional
   fun createAutoAcceptRule(

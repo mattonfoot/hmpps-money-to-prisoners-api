@@ -37,8 +37,7 @@ enum class LogAction(@JsonValue val value: String) {
 
     @JvmStatic
     @JsonCreator
-    fun fromValue(value: String): LogAction =
-      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown LogAction: $value")
+    fun fromValue(value: String): LogAction = BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown LogAction: $value")
   }
 }
 

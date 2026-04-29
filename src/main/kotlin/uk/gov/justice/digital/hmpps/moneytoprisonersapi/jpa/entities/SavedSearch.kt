@@ -30,6 +30,12 @@ class SavedSearch(
   @Column(columnDefinition = "text")
   var filters: String? = null,
 
+  @Column(name = "last_result_count", nullable = false)
+  var lastResultCount: Int = 0,
+
+  @Column(name = "site_url", length = 1000)
+  var siteUrl: String? = null,
+
   @Column(nullable = false, updatable = false)
   var created: LocalDateTime? = null,
 

@@ -1,11 +1,15 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
 
 @Schema(description = "MTP user details")
 data class UserDto(
   @Schema(description = "User ID")
+  val pk: Long?,
+
+  @Schema(description = "User ID (alias)")
   val id: Long?,
 
   @Schema(description = "Username")
@@ -15,28 +19,42 @@ data class UserDto(
   val email: String,
 
   @Schema(description = "First name")
+  @JsonProperty("first_name")
   val firstName: String,
 
   @Schema(description = "Last name")
+  @JsonProperty("last_name")
   val lastName: String,
 
   @Schema(description = "Whether the user account is active")
+  @JsonProperty("is_active")
   val isActive: Boolean,
 
   @Schema(description = "Assigned role name, or null if none")
+  @JsonProperty("role")
   val roleName: String?,
 
   @Schema(description = "Application the role belongs to, or null if no role")
+  @JsonProperty("role_application")
   val roleApplication: String?,
 
   @Schema(description = "NOMIS IDs of prisons assigned to this user")
-  val prisonIds: List<String>,
+  val prisons: List<String>,
+
+  @Schema(description = "User flags (e.g. hmpps-employee)")
+  val flags: List<String>,
+
+  @Schema(description = "Whether the user has UserAdmin permissions")
+  @JsonProperty("user_admin")
+  val userAdmin: Boolean,
 
   @Schema(description = "Whether the account is locked due to too many failed logins")
+  @JsonProperty("is_locked")
   val isLocked: Boolean,
 ) {
   companion object {
-    fun from(user: MtpUser, isLocked: Boolean): UserDto = UserDto(
+    fun from(user: MtpUser, isLocked: Boolean, flags: List<String> = emptyList(), isUserAdmin: Boolean = false): UserDto = UserDto(
+      pk = user.id,
       id = user.id,
       username = user.username,
       email = user.email,
@@ -45,7 +63,9 @@ data class UserDto(
       isActive = user.isActive,
       roleName = user.role?.name,
       roleApplication = user.role?.application,
-      prisonIds = user.prisons.map { it.nomisId }.sorted(),
+      prisons = user.prisons.map { it.nomisId }.sorted(),
+      flags = flags,
+      userAdmin = isUserAdmin,
       isLocked = isLocked,
     )
   }

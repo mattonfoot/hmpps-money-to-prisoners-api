@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.resources
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_PRISONERS
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -20,11 +21,14 @@ import java.security.Principal
 @RestController
 @RequestMapping("/prisoners", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Prisoner Profiles", description = "Prisoner profile management and monitoring")
+@Tag(name = TAG_PRISONERS)
 class PrisonerProfileResource(
   private val prisonerProfileService: PrisonerProfileService,
   private val disbursementRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository,
+  private val prisonRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository,
 ) {
+
+  private fun prisonNameMap(): Map<String, String> = prisonRepository.findAll().associate { it.nomisId to it.name }
 
   @Operation(summary = "List prisoner profiles (SEC-090 to SEC-098)")
   @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
@@ -81,7 +85,7 @@ class PrisonerProfileResource(
   ): PaginatedResponse<uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto> {
     val profile = prisonerProfileService.getProfile(id)
     val disbursements = disbursementRepository.findByPrisonerNumber(profile.prisonerNumber ?: "")
-      .map { uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto.from(it) }
+      .map { uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto.from(it, prisonNameMap()) }
     return PaginatedResponse.fromList(disbursements, limit = limit, offset = offset)
   }
 
@@ -94,7 +98,7 @@ class PrisonerProfileResource(
   ): ResponseEntity<uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto> {
     val disbursement = disbursementRepository.findById(id).orElse(null)
       ?: return ResponseEntity.notFound().build()
-    return ResponseEntity.ok(uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto.from(disbursement))
+    return ResponseEntity.ok(uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto.from(disbursement, prisonNameMap()))
   }
 
   @Operation(summary = "Monitor a prisoner profile (SEC-062)")

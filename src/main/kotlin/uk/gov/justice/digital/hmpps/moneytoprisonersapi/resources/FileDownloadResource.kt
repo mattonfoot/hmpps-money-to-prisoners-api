@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_FILE_DOWNLOADS
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -28,7 +29,7 @@ import java.time.format.DateTimeParseException
 
 @RestController
 @RequestMapping(produces = ["application/json"])
-@Tag(name = "File Downloads", description = "File download tracking endpoints (COR-001 to COR-003)")
+@Tag(name = TAG_FILE_DOWNLOADS)
 class FileDownloadResource(
   private val fileDownloadService: FileDownloadService,
 ) {

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_PRISONER_LOCATIONS
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -15,9 +16,9 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
-import org.springframework.web.bind.annotation.RequestParam
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CanUploadResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreatePrisonerLocationRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
@@ -29,7 +30,7 @@ import java.security.Principal
 @RestController
 @RequestMapping("/prisoner_locations", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Prisoner Locations", description = "Endpoints for managing prisoner locations")
+@Tag(name = TAG_PRISONER_LOCATIONS)
 class PrisonerLocationResource(
   private val prisonService: PrisonService,
 ) {

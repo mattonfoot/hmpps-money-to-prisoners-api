@@ -1,7 +1,5 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
-
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -11,6 +9,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
 import java.time.LocalDate
 import java.time.LocalDateTime
 

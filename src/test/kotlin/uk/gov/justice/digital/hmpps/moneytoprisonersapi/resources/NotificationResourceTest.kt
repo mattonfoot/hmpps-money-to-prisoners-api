@@ -202,7 +202,7 @@ class NotificationResourceTest {
 
     @Test
     fun `returns 400 for unrecognised frequency value`() {
-      val request = SetEmailPreferencesRequest(frequency = "weekly")
+      val request = SetEmailPreferencesRequest(frequency = "biweekly")
 
       val response = notificationResource.setEmailPreferences(request, principal)
 

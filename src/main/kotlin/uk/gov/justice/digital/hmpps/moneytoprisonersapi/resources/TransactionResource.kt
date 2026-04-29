@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_TRANSACTIONS
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -23,7 +24,6 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReconcileTransactionRequest
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.RefundTransactionRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.TransactionDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.TransactionService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.TransactionStatus
@@ -33,7 +33,7 @@ import java.time.LocalDateTime
 @RestController
 @RequestMapping("/transactions", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Transactions", description = "Endpoints for managing bank transfer transactions")
+@Tag(name = TAG_TRANSACTIONS)
 class TransactionResource(
   private val transactionService: TransactionService,
 ) {

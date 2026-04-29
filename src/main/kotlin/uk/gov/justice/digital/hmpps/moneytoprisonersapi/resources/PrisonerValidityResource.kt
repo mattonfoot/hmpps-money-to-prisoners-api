@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_PRISONER_VALIDITY
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -22,7 +23,7 @@ import java.time.LocalDate
 @RestController
 @RequestMapping("/prisoner_validity", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Prisoner Validity", description = "Endpoints for checking prisoner validity")
+@Tag(name = TAG_PRISONER_VALIDITY)
 class PrisonerValidityResource(
   private val prisonService: PrisonService,
 ) {

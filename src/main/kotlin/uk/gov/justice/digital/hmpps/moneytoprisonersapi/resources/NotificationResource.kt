@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_NOTIFICATIONS
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -34,7 +35,7 @@ import java.time.LocalDateTime
 @RestController
 @RequestMapping(produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Notifications", description = "Notification events, rules, and email preferences")
+@Tag(name = TAG_NOTIFICATIONS)
 class NotificationResource(
   private val notificationService: NotificationService,
 ) {

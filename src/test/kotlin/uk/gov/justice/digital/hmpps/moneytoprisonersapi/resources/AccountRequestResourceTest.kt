@@ -116,6 +116,7 @@ class AccountRequestResourceTest {
     fun `AUTH-062 includes existing user info in response when username exists`() {
       val request = makeRequest()
       val existingUser = uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UserDto(
+        pk = 5L,
         id = 5L,
         username = "newuser",
         email = "existing@example.com",
@@ -124,7 +125,9 @@ class AccountRequestResourceTest {
         isActive = true,
         roleName = "CASHBOOK",
         roleApplication = "cashbook",
-        prisonIds = listOf("LEI"),
+        prisons = listOf("LEI"),
+        flags = emptyList(),
+        userAdmin = false,
         isLocked = false,
       )
       whenever(accountRequestService.createRequest(any(), any(), any(), any(), any(), any()))

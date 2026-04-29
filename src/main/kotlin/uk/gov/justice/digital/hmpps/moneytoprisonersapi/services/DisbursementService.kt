@@ -15,7 +15,9 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursemen
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementLogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
+import java.time.LocalDateTime
 
 private const val INVOICE_NUMBER_BASE = 1000000L
 
@@ -24,25 +26,44 @@ class DisbursementService(
   private val disbursementRepository: DisbursementRepository,
   private val disbursementLogRepository: DisbursementLogRepository,
   private val prisonerProfileRepository: PrisonerProfileRepository,
+  private val prisonRepository: PrisonRepository,
 ) {
 
-  fun getDisbursement(id: Long): uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursement? =
-    disbursementRepository.findById(id).orElse(null)
+  fun getDisbursement(id: Long): uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursement? = disbursementRepository.findById(id).orElse(null)
 
   fun listDisbursements(
     amount: Long? = null,
     amountGte: Long? = null,
     amountLte: Long? = null,
+    amountEndswith: String? = null,
+    amountRegex: String? = null,
+    excludeAmountEndswith: String? = null,
+    excludeAmountRegex: String? = null,
     resolution: List<DisbursementResolution>? = null,
     method: DisbursementMethod? = null,
     prisonerNumber: String? = null,
     prisonerName: String? = null,
     recipientName: String? = null,
+    recipientEmail: String? = null,
+    recipientIsCompany: Boolean? = null,
     prisons: List<String>? = null,
+    prisonRegion: String? = null,
+    prisonCategory: String? = null,
+    prisonPopulation: String? = null,
     sortCode: String? = null,
     accountNumber: String? = null,
     rollNumber: String? = null,
     postcode: String? = null,
+    city: String? = null,
+    invoiceNumber: String? = null,
+    nomisTransactionId: String? = null,
+    created: LocalDateTime? = null,
+    createdGte: LocalDateTime? = null,
+    createdLt: LocalDateTime? = null,
+    loggedAtGte: LocalDateTime? = null,
+    loggedAtLt: LocalDateTime? = null,
+    logAction: String? = null,
+    simpleSearch: String? = null,
     ordering: String? = null,
     monitoredByUsername: String? = null,
   ): List<Disbursement> {
@@ -102,6 +123,105 @@ class DisbursementService(
       disbursements = disbursements.filter {
         val pc = it.postcode
         pc != null && pc.replace("\\s".toRegex(), "").lowercase() == normalizedFilter
+      }
+    }
+
+    if (city != null) {
+      disbursements = disbursements.filter { it.city?.contains(city, ignoreCase = true) == true }
+    }
+
+    if (recipientEmail != null) {
+      disbursements = disbursements.filter { it.recipientEmail?.contains(recipientEmail, ignoreCase = true) == true }
+    }
+
+    if (recipientIsCompany != null) {
+      disbursements = disbursements.filter { it.recipientIsCompany == recipientIsCompany }
+    }
+
+    if (invoiceNumber != null) {
+      disbursements = disbursements.filter { it.invoiceNumber == invoiceNumber }
+    }
+
+    if (nomisTransactionId != null) {
+      disbursements = disbursements.filter { it.nomisTransactionId == nomisTransactionId }
+    }
+
+    if (created != null) {
+      val date = created.toLocalDate()
+      disbursements = disbursements.filter { it.created?.toLocalDate() == date }
+    }
+
+    if (createdGte != null) {
+      disbursements = disbursements.filter { it.created != null && !it.created!!.isBefore(createdGte) }
+    }
+
+    if (createdLt != null) {
+      disbursements = disbursements.filter { it.created != null && it.created!!.isBefore(createdLt) }
+    }
+
+    if (loggedAtGte != null) {
+      val gteDate = loggedAtGte.toLocalDate()
+      disbursements = disbursements.filter { d ->
+        d.logs.any { log -> log.created != null && !log.created!!.toLocalDate().isBefore(gteDate) }
+      }
+    }
+
+    if (loggedAtLt != null) {
+      val ltDate = loggedAtLt.toLocalDate()
+      disbursements = disbursements.filter { d ->
+        d.logs.any { log -> log.created != null && log.created!!.toLocalDate().isBefore(ltDate) }
+      }
+    }
+
+    if (logAction != null) {
+      val action = LogAction.fromValue(logAction)
+      disbursements = disbursements.filter { d ->
+        d.logs.any { log -> log.action == action }
+      }
+    }
+
+    if (prisonRegion != null) {
+      val matchingPrisonIds = prisonRepository.findByRegionContainingIgnoreCase(prisonRegion)
+        .map { it.nomisId }.toSet()
+      disbursements = disbursements.filter { it.prison in matchingPrisonIds }
+    }
+
+    if (prisonCategory != null) {
+      val matchingPrisonIds = prisonRepository.findByCategoryName(prisonCategory)
+        .map { it.nomisId }.toSet()
+      disbursements = disbursements.filter { it.prison in matchingPrisonIds }
+    }
+
+    if (prisonPopulation != null) {
+      val matchingPrisonIds = prisonRepository.findByPopulationName(prisonPopulation)
+        .map { it.nomisId }.toSet()
+      disbursements = disbursements.filter { it.prison in matchingPrisonIds }
+    }
+
+    if (amountEndswith != null) {
+      disbursements = disbursements.filter { it.amount.toString().endsWith(amountEndswith) }
+    }
+
+    if (amountRegex != null) {
+      val regex = Regex(amountRegex)
+      disbursements = disbursements.filter { regex.containsMatchIn(it.amount.toString()) }
+    }
+
+    if (excludeAmountEndswith != null) {
+      disbursements = disbursements.filter { !it.amount.toString().endsWith(excludeAmountEndswith) }
+    }
+
+    if (excludeAmountRegex != null) {
+      val regex = Regex(excludeAmountRegex)
+      disbursements = disbursements.filter { !regex.containsMatchIn(it.amount.toString()) }
+    }
+
+    if (!simpleSearch.isNullOrBlank()) {
+      val term = simpleSearch.trim()
+      disbursements = disbursements.filter { d ->
+        d.prisonerName?.contains(term, ignoreCase = true) == true ||
+          d.prisonerNumber?.contains(term, ignoreCase = true) == true ||
+          d.recipientName?.contains(term, ignoreCase = true) == true
       }
     }
 

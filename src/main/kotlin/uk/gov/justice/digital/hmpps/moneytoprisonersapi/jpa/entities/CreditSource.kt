@@ -17,8 +17,7 @@ enum class CreditSource(@JsonValue val value: String) {
 
     @JvmStatic
     @JsonCreator
-    fun fromValue(value: String): CreditSource =
-      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown CreditSource: $value")
+    fun fromValue(value: String): CreditSource = BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown CreditSource: $value")
   }
 }
 

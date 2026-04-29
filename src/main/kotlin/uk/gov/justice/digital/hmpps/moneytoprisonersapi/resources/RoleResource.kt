@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_ROLES
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -20,7 +21,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 @RestController
 @RequestMapping(produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Roles", description = "MTP role definitions (AUTH-020 to AUTH-023)")
+@Tag(name = TAG_ROLES)
 class RoleResource(
   private val mtpRoleRepository: MtpRoleRepository,
 ) {

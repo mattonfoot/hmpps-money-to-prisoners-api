@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_JOB_INFORMATION
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -24,7 +25,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 @RestController
 @RequestMapping(produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Job Information", description = "Job information submitted alongside account requests (AUTH-070 to AUTH-072)")
+@Tag(name = TAG_JOB_INFORMATION)
 class JobInformationResource(
   private val jobInformationService: JobInformationService,
   private val userService: UserService,

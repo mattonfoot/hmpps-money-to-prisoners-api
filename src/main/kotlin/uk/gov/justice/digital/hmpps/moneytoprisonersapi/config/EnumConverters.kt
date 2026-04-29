@@ -36,8 +36,7 @@ class StringToCreditSource : Converter<String, CreditSource> {
 }
 
 class StringToCreditStatus : Converter<String, CreditStatus> {
-  override fun convert(source: String): CreditStatus =
-    CreditStatus.entries.first { it.name.equals(source, ignoreCase = true) }
+  override fun convert(source: String): CreditStatus = CreditStatus.entries.first { it.name.equals(source, ignoreCase = true) }
 }
 
 class StringToDisbursementResolution : Converter<String, DisbursementResolution> {

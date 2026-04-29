@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_USERS
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -31,7 +32,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 @RestController
 @RequestMapping(produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "User Flags", description = "Flags set on MTP user accounts (AUTH-030 to AUTH-033)")
+@Tag(name = TAG_USERS)
 class UserFlagResource(
   private val userFlagRepository: UserFlagRepository,
   private val userService: UserService,

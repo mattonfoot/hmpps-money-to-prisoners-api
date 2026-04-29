@@ -1,7 +1,5 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidDisbursementStateException
-
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -14,6 +12,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidDisbursementStateException
 import java.time.LocalDateTime
 
 @Entity

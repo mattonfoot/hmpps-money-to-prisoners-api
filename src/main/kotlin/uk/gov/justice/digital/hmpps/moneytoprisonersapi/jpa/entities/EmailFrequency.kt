@@ -18,8 +18,7 @@ enum class EmailFrequency(@JsonValue val value: String) {
 
     @JvmStatic
     @JsonCreator
-    fun fromValue(value: String): EmailFrequency =
-      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown EmailFrequency: $value")
+    fun fromValue(value: String): EmailFrequency = BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown EmailFrequency: $value")
   }
 }
 

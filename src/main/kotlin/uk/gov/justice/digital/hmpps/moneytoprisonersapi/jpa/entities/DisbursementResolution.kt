@@ -19,8 +19,7 @@ enum class DisbursementResolution(@JsonValue val value: String) {
 
     @JvmStatic
     @JsonCreator
-    fun fromValue(value: String): DisbursementResolution =
-      BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown DisbursementResolution: $value")
+    fun fromValue(value: String): DisbursementResolution = BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown DisbursementResolution: $value")
 
     private val VALID_TRANSITIONS: Map<DisbursementResolution, Set<DisbursementResolution>> = mapOf(
       PENDING to setOf(PRECONFIRMED, REJECTED),

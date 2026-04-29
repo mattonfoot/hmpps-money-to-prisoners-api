@@ -8,21 +8,22 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_DISBURSEMENTS
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PatchMapping
-import org.springframework.web.bind.annotation.RequestMethod
-import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotFoundException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotPendingException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateDisbursementRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementActionRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementCommentDto
@@ -35,8 +36,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursemen
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementCommentRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotFoundException
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotPendingException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.DisbursementService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
@@ -44,12 +44,15 @@ import java.security.Principal
 @RestController
 @RequestMapping("/disbursements", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Disbursements", description = "Endpoints for managing prisoner disbursements")
+@Tag(name = TAG_DISBURSEMENTS)
 class DisbursementResource(
   private val disbursementService: DisbursementService,
   private val disbursementRepository: DisbursementRepository,
   private val disbursementCommentRepository: DisbursementCommentRepository,
+  private val prisonRepository: PrisonRepository,
 ) {
+
+  private fun prisonNameMap(): Map<String, String> = prisonRepository.findAll().associate { it.nomisId to it.name }
 
   @Operation(
     summary = "List disbursements",
@@ -152,20 +155,40 @@ class DisbursementResource(
       amount = amount,
       amountGte = amountGte,
       amountLte = amountLte,
+      amountEndswith = amountEndswith,
+      amountRegex = amountRegex,
+      excludeAmountEndswith = excludeAmountEndswith,
+      excludeAmountRegex = excludeAmountRegex,
       resolution = resolution,
       method = method,
       prisonerNumber = prisonerNumber,
       prisonerName = prisonerName,
       recipientName = recipientName,
+      recipientEmail = recipientEmail,
+      recipientIsCompany = recipientIsCompany,
       prisons = prison,
+      prisonRegion = prisonRegion,
+      prisonCategory = prisonCategory,
+      prisonPopulation = prisonPopulation,
       sortCode = sortCode,
       accountNumber = accountNumber,
       rollNumber = rollNumber,
       postcode = postcode,
+      city = city,
+      invoiceNumber = invoiceNumber,
+      nomisTransactionId = nomisTransactionId,
+      created = created?.let { java.time.LocalDateTime.parse(it + "T00:00:00") },
+      createdGte = createdGte?.let { java.time.LocalDateTime.parse(it + "T00:00:00") },
+      createdLt = createdLt?.let { java.time.LocalDateTime.parse(it + "T00:00:00") },
+      loggedAtGte = loggedAtGte?.let { java.time.LocalDateTime.parse(it + "T00:00:00") },
+      loggedAtLt = loggedAtLt?.let { java.time.LocalDateTime.parse(it + "T00:00:00") },
+      logAction = logAction,
+      simpleSearch = simpleSearch,
       ordering = ordering,
       monitoredByUsername = if (monitored == true) principal.name else null,
     )
-    val results = disbursements.map { DisbursementDto.from(it) }
+    val nameMap = prisonNameMap()
+    val results = disbursements.map { DisbursementDto.from(it, nameMap) }
     return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
@@ -175,7 +198,7 @@ class DisbursementResource(
   fun getDisbursement(@PathVariable id: Long): ResponseEntity<DisbursementDto> {
     val disbursement = disbursementService.getDisbursement(id)
       ?: return ResponseEntity.notFound().build()
-    return ResponseEntity.ok(DisbursementDto.from(disbursement))
+    return ResponseEntity.ok(DisbursementDto.from(disbursement, prisonNameMap()))
   }
 
   @Operation(
@@ -208,7 +231,7 @@ class DisbursementResource(
     principal: Principal,
   ): DisbursementDto {
     val disbursement = disbursementService.createDisbursement(request, principal.name)
-    return DisbursementDto.from(disbursement)
+    return DisbursementDto.from(disbursement, prisonNameMap())
   }
 
   @Operation(
@@ -251,7 +274,7 @@ class DisbursementResource(
     principal: Principal,
   ): ResponseEntity<Any> = try {
     val updated = disbursementService.updateDisbursement(id, request, principal.name)
-    ResponseEntity.ok(DisbursementDto.from(updated))
+    ResponseEntity.ok(DisbursementDto.from(updated, prisonNameMap()))
   } catch (_: DisbursementNotFoundException) {
     ResponseEntity.notFound().build()
   } catch (_: DisbursementNotPendingException) {

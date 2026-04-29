@@ -8,37 +8,32 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_PAYMENTS
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PatchMapping
-import org.springframework.web.bind.annotation.RequestMethod
-import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreatePaymentRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaymentBatchDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaymentDto
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReconcilePaymentsRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdatePaymentRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
 @RestController
 @RequestMapping("/payments", produces = ["application/json"])
 @SecurityRequirement(name = "bearer-jwt")
-@Tag(name = "Payments", description = "Endpoints for managing online prisoner money payments")
+@Tag(name = TAG_PAYMENTS)
 class PaymentResource(
   private val paymentService: PaymentService,
 ) {
@@ -180,5 +175,4 @@ class PaymentResource(
     val payment = paymentService.getPayment(uuid)
     return PaymentDto.from(payment)
   }
-
 }

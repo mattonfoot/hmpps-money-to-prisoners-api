@@ -73,6 +73,7 @@ class CreditService(
     source: CreditSource? = null,
     loggedAtGte: LocalDateTime? = null,
     loggedAtLt: LocalDateTime? = null,
+    logAction: String? = null,
     securityCheckIsnull: Boolean? = null,
     securityCheckActionedByIsnull: Boolean? = null,
     excludeCreditIn: List<Long>? = null,
@@ -272,6 +273,13 @@ class CreditService(
       val ltDate = loggedAtLt.toLocalDate()
       credits = credits.filter { credit ->
         credit.logs.any { log -> log.created != null && log.created!!.toLocalDate().isBefore(ltDate) }
+      }
+    }
+
+    if (logAction != null) {
+      val action = LogAction.fromValue(logAction)
+      credits = credits.filter { credit ->
+        credit.logs.any { log -> log.action == action }
       }
     }
 
@@ -615,6 +623,7 @@ class CreditService(
     source: CreditSource? = null,
     loggedAtGte: LocalDateTime? = null,
     loggedAtLt: LocalDateTime? = null,
+    logAction: String? = null,
     securityCheckIsnull: Boolean? = null,
     securityCheckActionedByIsnull: Boolean? = null,
     excludeCreditIn: List<Long>? = null,
@@ -662,6 +671,7 @@ class CreditService(
       source = source,
       loggedAtGte = loggedAtGte,
       loggedAtLt = loggedAtLt,
+      logAction = logAction,
       securityCheckIsnull = securityCheckIsnull,
       securityCheckActionedByIsnull = securityCheckActionedByIsnull,
       excludeCreditIn = excludeCreditIn,

@@ -12,6 +12,8 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotPendingException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidDisbursementStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateDisbursementRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementActionRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementConfirmItem
@@ -21,12 +23,12 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursemen
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementLog
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementMethod
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotPendingException
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidDisbursementStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementLogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
+import java.time.LocalDateTime
 import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
@@ -35,6 +37,7 @@ class DisbursementServiceTest {
   private val disbursementRepository: DisbursementRepository = mock()
   private val disbursementLogRepository: DisbursementLogRepository = mock()
   private val prisonerProfileRepository: PrisonerProfileRepository = mock()
+  private val prisonRepository: PrisonRepository = mock()
   private lateinit var disbursementService: DisbursementService
 
   @BeforeEach
@@ -43,6 +46,7 @@ class DisbursementServiceTest {
       disbursementRepository = disbursementRepository,
       disbursementLogRepository = disbursementLogRepository,
       prisonerProfileRepository = prisonerProfileRepository,
+      prisonRepository = prisonRepository,
     )
   }
 
@@ -398,6 +402,131 @@ class DisbursementServiceTest {
       assertThat(result).containsExactly(d1)
     }
 
+    @Test
+    @DisplayName("DSB-071 - Filter by city (case-insensitive substring)")
+    fun `should filter by city`() {
+      val d1 = disbursement(city = "London")
+      val d2 = disbursement(city = "Manchester")
+      `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2))
+
+      val result = disbursementService.listDisbursements(city = "lond")
+      assertThat(result).containsExactly(d1)
+    }
+
+    @Test
+    @DisplayName("DSB-072 - Filter by recipient email (case-insensitive substring)")
+    fun `should filter by recipient email`() {
+      val d1 = disbursement(recipientEmail = "alice@example.com")
+      val d2 = disbursement(recipientEmail = "bob@example.com")
+      `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2))
+
+      val result = disbursementService.listDisbursements(recipientEmail = "alice")
+      assertThat(result).containsExactly(d1)
+    }
+
+    @Test
+    @DisplayName("DSB-073 - Filter by recipient is company")
+    fun `should filter by recipient is company`() {
+      val d1 = disbursement(recipientIsCompany = true)
+      val d2 = disbursement(recipientIsCompany = false)
+      `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2))
+
+      val result = disbursementService.listDisbursements(recipientIsCompany = true)
+      assertThat(result).containsExactly(d1)
+    }
+
+    @Test
+    @DisplayName("DSB-074 - Filter by invoice number (exact)")
+    fun `should filter by invoice number`() {
+      val d1 = disbursement(invoiceNumber = "PMD1000001")
+      val d2 = disbursement(invoiceNumber = "PMD1000002")
+      `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2))
+
+      val result = disbursementService.listDisbursements(invoiceNumber = "PMD1000001")
+      assertThat(result).containsExactly(d1)
+    }
+
+    @Test
+    @DisplayName("DSB-075 - Filter by NOMIS transaction ID (exact)")
+    fun `should filter by nomis transaction id`() {
+      val d1 = disbursement(nomisTransactionId = "TXN-001")
+      val d2 = disbursement(nomisTransactionId = "TXN-002")
+      `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2))
+
+      val result = disbursementService.listDisbursements(nomisTransactionId = "TXN-001")
+      assertThat(result).containsExactly(d1)
+    }
+
+    @Test
+    @DisplayName("DSB-076 - Filter by created date range (gte/lt)")
+    fun `should filter by created date range`() {
+      val d1 = disbursement().also { it.created = LocalDateTime.of(2024, 1, 15, 10, 0) }
+      val d2 = disbursement().also { it.created = LocalDateTime.of(2024, 2, 15, 10, 0) }
+      val d3 = disbursement().also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) }
+      `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2, d3))
+
+      val result = disbursementService.listDisbursements(
+        createdGte = LocalDateTime.of(2024, 2, 1, 0, 0),
+        createdLt = LocalDateTime.of(2024, 3, 1, 0, 0),
+      )
+      assertThat(result).containsExactly(d2)
+    }
+
+    @Test
+    @DisplayName("DSB-077 - Filter by amount ending with suffix")
+    fun `should filter by amount endswith`() {
+      val d1 = disbursement(amount = 1050L)
+      val d2 = disbursement(amount = 2000L)
+      `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2))
+
+      val result = disbursementService.listDisbursements(amountEndswith = "50")
+      assertThat(result).containsExactly(d1)
+    }
+
+    @Test
+    @DisplayName("DSB-078 - Filter by amount regex")
+    fun `should filter by amount regex`() {
+      val d1 = disbursement(amount = 1050L)
+      val d2 = disbursement(amount = 2000L)
+      `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2))
+
+      val result = disbursementService.listDisbursements(amountRegex = "^1.*")
+      assertThat(result).containsExactly(d1)
+    }
+
+    @Test
+    @DisplayName("DSB-079 - Exclude amounts ending with suffix")
+    fun `should exclude amount endswith`() {
+      val d1 = disbursement(amount = 1050L)
+      val d2 = disbursement(amount = 2000L)
+      `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2))
+
+      val result = disbursementService.listDisbursements(excludeAmountEndswith = "50")
+      assertThat(result).containsExactly(d2)
+    }
+
+    @Test
+    @DisplayName("DSB-080 - Exclude amounts matching regex")
+    fun `should exclude amount regex`() {
+      val d1 = disbursement(amount = 1050L)
+      val d2 = disbursement(amount = 2000L)
+      `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2))
+
+      val result = disbursementService.listDisbursements(excludeAmountRegex = "^1.*")
+      assertThat(result).containsExactly(d2)
+    }
+
+    @Test
+    @DisplayName("DSB-081 - Simple search across names")
+    fun `should simple search across prisoner and recipient names`() {
+      val d1 = disbursement(prisonerName = "John Smith", recipientFirstName = "Alice")
+      val d2 = disbursement(prisonerName = "Jane Jones", recipientFirstName = "Bob")
+      `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2))
+
+      val result = disbursementService.listDisbursements(simpleSearch = "john")
+      assertThat(result).containsExactly(d1)
+    }
+
     private fun disbursement(
       amount: Long = 1000L,
       method: DisbursementMethod = DisbursementMethod.BANK_TRANSFER,
@@ -406,9 +535,14 @@ class DisbursementServiceTest {
       prisonerName: String = "John Smith",
       recipientFirstName: String = "Jane",
       recipientLastName: String? = "Doe",
+      recipientEmail: String? = null,
+      recipientIsCompany: Boolean = false,
       resolution: DisbursementResolution = DisbursementResolution.PENDING,
       sortCode: String? = null,
       postcode: String? = null,
+      city: String? = null,
+      invoiceNumber: String? = null,
+      nomisTransactionId: String? = null,
     ) = Disbursement(
       amount = amount,
       method = method,
@@ -417,9 +551,14 @@ class DisbursementServiceTest {
       prisonerName = prisonerName,
       recipientFirstName = recipientFirstName,
       recipientLastName = recipientLastName,
+      recipientEmail = recipientEmail,
+      recipientIsCompany = recipientIsCompany,
       resolution = resolution,
       sortCode = sortCode,
       postcode = postcode,
+      city = city,
+      invoiceNumber = invoiceNumber,
+      nomisTransactionId = nomisTransactionId,
     )
   }
 

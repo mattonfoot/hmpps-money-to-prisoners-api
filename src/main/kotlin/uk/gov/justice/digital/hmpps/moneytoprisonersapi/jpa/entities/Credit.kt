@@ -1,7 +1,5 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
-
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -15,6 +13,7 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
 import java.time.LocalDate
 import java.time.LocalDateTime
 

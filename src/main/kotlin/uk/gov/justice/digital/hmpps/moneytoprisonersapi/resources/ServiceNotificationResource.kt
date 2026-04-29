@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_NOTIFICATIONS
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -21,7 +22,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ServiceNotifica
 
 @RestController
 @RequestMapping(produces = ["application/json"])
-@Tag(name = "Service Notifications", description = "Banner and alert notifications shown in front-end applications")
+@Tag(name = TAG_NOTIFICATIONS)
 class ServiceNotificationResource(
   private val serviceNotificationService: ServiceNotificationService,
 ) {
