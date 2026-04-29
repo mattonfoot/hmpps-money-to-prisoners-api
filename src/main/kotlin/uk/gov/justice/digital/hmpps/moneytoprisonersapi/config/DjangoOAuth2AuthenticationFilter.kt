@@ -36,8 +36,6 @@ private val GROUP_TO_AUTHORITY = mapOf(
  */
 class DjangoOAuth2Authentication(
   private val username: String,
-  private val userId: Long,
-  val clientId: String?,
   authorities: Collection<GrantedAuthority>,
 ) : AbstractAuthenticationToken(authorities) {
   init {
@@ -47,7 +45,6 @@ class DjangoOAuth2Authentication(
   override fun getCredentials(): Any? = null
   override fun getPrincipal(): Any = username
   override fun getName(): String = username
-  fun getUserId(): Long = userId
 }
 
 /**
@@ -97,12 +94,9 @@ class DjangoOAuth2AuthenticationFilter(
   private fun buildAuthentication(token: OAuthAccessToken): DjangoOAuth2Authentication {
     val user = token.user
     val authorities = buildAuthorities(user)
-    val clientId = token.application?.clientId
 
     return DjangoOAuth2Authentication(
       username = user?.username ?: "anonymous",
-      userId = user?.id ?: 0,
-      clientId = clientId,
       authorities = authorities,
     )
   }

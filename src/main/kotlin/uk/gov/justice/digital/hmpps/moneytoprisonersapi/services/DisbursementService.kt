@@ -29,7 +29,7 @@ class DisbursementService(
   private val prisonRepository: PrisonRepository,
 ) {
 
-  fun getDisbursement(id: Long): uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursement? = disbursementRepository.findById(id).orElse(null)
+  fun getDisbursement(id: Long): Disbursement? = disbursementRepository.findById(id).orElse(null)
 
   fun listDisbursements(
     amount: Long? = null,

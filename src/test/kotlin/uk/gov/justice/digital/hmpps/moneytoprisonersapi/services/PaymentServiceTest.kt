@@ -383,6 +383,7 @@ class PaymentServiceTest {
       val credit1 = makeCredit(CreditResolution.INITIAL)
       val credit2 = makeCredit(CreditResolution.PENDING)
       val pendingPayment = makePayment(status = "pending", credit = credit1)
+      @Suppress("UNUSED_VARIABLE")
       val takenPayment = makePayment(status = "taken", credit = credit2)
 
       `when`(paymentRepository.findByStatus("pending")).thenReturn(listOf(pendingPayment))
@@ -425,6 +426,7 @@ class PaymentServiceTest {
 
       val credit = makeCredit(CreditResolution.PENDING)
       credit.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0)
+      @Suppress("UNUSED_VARIABLE")
       val payment = makePayment(status = "taken", credit = credit)
 
       `when`(

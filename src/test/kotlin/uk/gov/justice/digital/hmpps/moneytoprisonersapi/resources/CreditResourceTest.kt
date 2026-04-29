@@ -32,12 +32,15 @@ class CreditResourceTest {
   @Mock
   private lateinit var creditService: CreditService
 
+  @Suppress("unused")
   @Mock
   private lateinit var reconcileService: ReconcileService
 
+  @Suppress("unused")
   @Mock
   private lateinit var attachProfilesService: AttachProfilesService
 
+  @Suppress("unused")
   @Mock
   private lateinit var updatePrisonService: UpdatePrisonService
 

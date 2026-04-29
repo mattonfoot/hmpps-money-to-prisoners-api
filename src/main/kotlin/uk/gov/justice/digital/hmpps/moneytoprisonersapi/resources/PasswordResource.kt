@@ -58,7 +58,7 @@ class PasswordResource(
       return ResponseEntity.badRequest().body(mapOf("error" to listOf("Provide username or email")))
     }
     val application = request.application ?: ""
-    return when (val result = passwordService.initiatePasswordReset(request.username, request.email, application)) {
+    return when (passwordService.initiatePasswordReset(request.username, request.email, application)) {
       is PasswordResetResult.TokenCreated -> ResponseEntity.noContent().build()
       is PasswordResetResult.UserNotFound -> ResponseEntity.notFound().build()
       is PasswordResetResult.AccountLocked -> ResponseEntity.badRequest().body(mapOf("error" to listOf("Account is locked")))

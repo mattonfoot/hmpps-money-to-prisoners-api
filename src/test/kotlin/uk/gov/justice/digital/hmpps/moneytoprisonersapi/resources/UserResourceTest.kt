@@ -26,6 +26,7 @@ class UserResourceTest {
   @Mock
   private lateinit var userService: UserService
 
+  @Suppress("unused")
   @Mock
   private lateinit var userFlagRepository: UserFlagRepository
 

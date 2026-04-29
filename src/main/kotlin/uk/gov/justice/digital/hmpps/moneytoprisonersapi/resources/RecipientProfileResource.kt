@@ -77,7 +77,7 @@ class RecipientProfileResource(
   @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/{recipient_pk}/disbursements/{id}/")
   fun getDisbursementForRecipient(
-    @PathVariable("recipient_pk") recipientPk: Long,
+    @PathVariable("recipient_pk") _recipientPk: Long,
     @PathVariable id: Long,
   ): ResponseEntity<DisbursementDto> {
     val disbursement = disbursementRepository.findById(id).orElse(null)

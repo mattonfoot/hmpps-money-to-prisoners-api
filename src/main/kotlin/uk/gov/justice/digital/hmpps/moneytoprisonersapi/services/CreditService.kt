@@ -63,6 +63,8 @@ class CreditService(
     senderRollNumber: String? = null,
     senderNameIsBlank: Boolean? = null,
     senderSortCodeIsBlank: Boolean? = null,
+    senderAccountNumberIsBlank: Boolean? = null,
+    senderRollNumberIsBlank: Boolean? = null,
     senderEmail: String? = null,
     senderIpAddress: String? = null,
     cardNumberFirstDigits: String? = null,
@@ -215,6 +217,18 @@ class CreditService(
     if (senderSortCodeIsBlank == true) {
       credits = credits.filter {
         it.transaction != null && it.transaction!!.senderSortCode.isNullOrEmpty()
+      }
+    }
+
+    if (senderAccountNumberIsBlank == true) {
+      credits = credits.filter {
+        it.transaction != null && it.transaction!!.senderAccountNumber.isNullOrEmpty()
+      }
+    }
+
+    if (senderRollNumberIsBlank == true) {
+      credits = credits.filter {
+        it.transaction != null && it.transaction!!.senderRollNumber.isNullOrEmpty()
       }
     }
 
@@ -613,6 +627,8 @@ class CreditService(
     senderRollNumber: String? = null,
     senderNameIsBlank: Boolean? = null,
     senderSortCodeIsBlank: Boolean? = null,
+    senderAccountNumberIsBlank: Boolean? = null,
+    senderRollNumberIsBlank: Boolean? = null,
     senderEmail: String? = null,
     senderIpAddress: String? = null,
     cardNumberFirstDigits: String? = null,
@@ -661,6 +677,8 @@ class CreditService(
       senderRollNumber = senderRollNumber,
       senderNameIsBlank = senderNameIsBlank,
       senderSortCodeIsBlank = senderSortCodeIsBlank,
+      senderAccountNumberIsBlank = senderAccountNumberIsBlank,
+      senderRollNumberIsBlank = senderRollNumberIsBlank,
       senderEmail = senderEmail,
       senderIpAddress = senderIpAddress,
       cardNumberFirstDigits = cardNumberFirstDigits,

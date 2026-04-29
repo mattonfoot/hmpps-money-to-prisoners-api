@@ -64,7 +64,6 @@ class SecurityAutoAcceptResource(
     val rule = securityCheckService.createAutoAcceptRule(
       senderProfileId = request.senderProfile,
       prisonerProfileId = request.prisonerProfile,
-      initialState = {},
       createdBy = principal.name,
       active = stateReq.active,
       reason = stateReq.reason,

@@ -141,7 +141,7 @@ class PrivateEstateBatchResource(
   @Transactional
   fun patchPrivateEstateBatch(
     @PathVariable ref: String,
-    @RequestBody(required = false) body: Map<String, Any>?,
+    @RequestBody(required = false) _body: Map<String, Any>?,
     principal: Principal,
   ): ResponseEntity<PrivateEstateBatchDto> {
     val batch = privateEstateBatchRepository.findById(ref).orElse(null)

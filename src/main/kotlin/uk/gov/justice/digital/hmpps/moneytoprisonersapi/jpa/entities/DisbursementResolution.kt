@@ -33,8 +33,6 @@ enum class DisbursementResolution(@JsonValue val value: String) {
       if (from == to) return true // idempotent
       return VALID_TRANSITIONS[from]?.contains(to) ?: false
     }
-
-    val TERMINAL_STATES: Set<DisbursementResolution> = setOf(SENT)
   }
 }
 

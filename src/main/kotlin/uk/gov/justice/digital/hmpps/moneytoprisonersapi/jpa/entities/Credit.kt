@@ -83,16 +83,16 @@ class Credit(
   @Column(nullable = false)
   var source: CreditSource = CreditSource.UNKNOWN
 
-  @OneToOne(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToOne(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
   var transaction: Transaction? = null
 
-  @OneToOne(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToOne(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
   var payment: Payment? = null
 
   @OneToMany(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   var logs: MutableList<Log> = mutableListOf()
 
-  @OneToOne(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToOne(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
   var securityCheck: SecurityCheck? = null
 
   @OneToMany(mappedBy = "credit", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)

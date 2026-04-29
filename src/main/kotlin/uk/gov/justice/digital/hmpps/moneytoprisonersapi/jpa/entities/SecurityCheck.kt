@@ -66,10 +66,6 @@ class SecurityCheck(
   @Column(name = "rule_codes", columnDefinition = "text")
   var ruleCodes: String? = null,
 
-  /** JSON array of human-readable descriptions matching the rule codes */
-  @Column(columnDefinition = "text")
-  var descriptions: String? = null,
-
   /** JSON array of rejection reason codes, populated on reject */
   @Column(name = "rejection_reasons", columnDefinition = "text")
   var rejectionReasons: String? = null,

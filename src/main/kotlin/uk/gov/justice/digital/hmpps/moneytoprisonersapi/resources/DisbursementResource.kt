@@ -28,9 +28,11 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateDisbursementRe
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementActionRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementCommentDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementCommentRequest
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementConfirmItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementConfirmRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdateDisbursementRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementComment
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementMethod
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution
@@ -270,7 +272,7 @@ class DisbursementResource(
   @RequestMapping(value = ["/{id}/"], method = [RequestMethod.PATCH, RequestMethod.PUT])
   fun updateDisbursement(
     @PathVariable id: Long,
-    @RequestBody request: uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdateDisbursementRequest,
+    @RequestBody request: UpdateDisbursementRequest,
     principal: Principal,
   ): ResponseEntity<Any> = try {
     val updated = disbursementService.updateDisbursement(id, request, principal.name)
@@ -358,10 +360,10 @@ class DisbursementResource(
   @PreAuthorize("hasRole('PRISON_CLERK')")
   @PostMapping("/actions/confirm/")
   fun confirm(
-    @RequestBody items: List<uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementConfirmItem>,
+    @RequestBody items: List<DisbursementConfirmItem>,
     principal: Principal,
   ): ResponseEntity<Any> {
-    disbursementService.confirm(uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementConfirmRequest(items), principal.name)
+    disbursementService.confirm(DisbursementConfirmRequest(items), principal.name)
     return ResponseEntity.noContent().build()
   }
 

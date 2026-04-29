@@ -129,7 +129,7 @@ class UserFlagResource(
   ): ResponseEntity<Any> {
     val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
     if (userFlagRepository.findByUserAndFlagName(user, flagName) == null) {
-      userFlagRepository.save(uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.UserFlag(user = user, flagName = flagName))
+      userFlagRepository.save(UserFlag(user = user, flagName = flagName))
     }
     return ResponseEntity.noContent().build()
   }

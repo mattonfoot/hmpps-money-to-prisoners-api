@@ -1036,8 +1036,8 @@ class CreditServiceTest {
 
     @Test
     fun `CRD-072 filters by payment_reference prefix match on payment uuid`() {
-      val uuid1 = java.util.UUID.fromString("abcdef12-3456-7890-abcd-ef1234567890")
-      val uuid2 = java.util.UUID.fromString("12345678-abcd-ef12-3456-7890abcdef12")
+      val uuid1 = UUID.fromString("abcdef12-3456-7890-abcd-ef1234567890")
+      val uuid2 = UUID.fromString("12345678-abcd-ef12-3456-7890abcdef12")
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
       c1.payment = Payment(uuid = uuid1, credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)

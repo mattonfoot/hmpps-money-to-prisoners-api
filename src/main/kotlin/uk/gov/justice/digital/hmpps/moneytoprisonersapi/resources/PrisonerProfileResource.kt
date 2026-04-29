@@ -93,7 +93,7 @@ class PrisonerProfileResource(
   @PreAuthorize("hasAnyRole('SECURITY_STAFF', 'NOMS_OPS')")
   @GetMapping("/{prisoner_pk}/disbursements/{id}/")
   fun getDisbursementForPrisoner(
-    @PathVariable("prisoner_pk") prisonerPk: Long,
+    @PathVariable("prisoner_pk") _prisonerPk: Long,
     @PathVariable id: Long,
   ): ResponseEntity<uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementDto> {
     val disbursement = disbursementRepository.findById(id).orElse(null)

@@ -144,7 +144,7 @@ class SecurityCheckService(
 
     if (creditResolution != null) {
       specs.add(
-        Specification { root, query, cb ->
+        Specification { root, _, cb ->
           val creditJoin = root.join<SecurityCheck, Any>("credit", jakarta.persistence.criteria.JoinType.LEFT)
           cb.equal(cb.upper(creditJoin.get("resolution")), creditResolution.uppercase())
         },
@@ -161,7 +161,6 @@ class SecurityCheckService(
   fun createAutoAcceptRule(
     senderProfileId: Long,
     prisonerProfileId: Long,
-    initialState: AutoAcceptRuleState.() -> Unit,
     createdBy: String?,
     active: Boolean,
     reason: String?,

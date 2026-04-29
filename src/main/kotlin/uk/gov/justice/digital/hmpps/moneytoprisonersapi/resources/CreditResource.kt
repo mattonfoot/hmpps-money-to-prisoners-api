@@ -27,11 +27,8 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReviewRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.AttachProfilesService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ReconcileService
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.UpdatePrisonService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
 import java.time.LocalDateTime
@@ -42,9 +39,6 @@ import java.time.LocalDateTime
 @Tag(name = TAG_CREDITS)
 class CreditResource(
   private val creditService: CreditService,
-  private val reconcileService: ReconcileService,
-  private val attachProfilesService: AttachProfilesService,
-  private val updatePrisonService: UpdatePrisonService,
 ) {
 
   @Operation(
@@ -281,6 +275,8 @@ class CreditResource(
       senderRollNumber = senderRollNumber,
       senderNameIsBlank = senderNameIsBlank,
       senderSortCodeIsBlank = senderSortCodeIsBlank,
+      senderAccountNumberIsBlank = senderAccountNumberIsBlank,
+      senderRollNumberIsBlank = senderRollNumberIsBlank,
       senderEmail = senderEmail,
       senderIpAddress = senderIpAddress,
       cardNumberFirstDigits = cardNumberFirstDigits,
