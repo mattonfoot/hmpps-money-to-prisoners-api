@@ -128,29 +128,4 @@ class PasswordResource(
     }
   }
 
-  // -------------------------------------------------------------------------
-  // AUTH-040: POST /change_password/ (authenticated, by old password)
-  // -------------------------------------------------------------------------
-
-  @Operation(
-    summary = "Change own password",
-    description = "Changes the current user's password by providing the old password. " +
-      "Wrong old password increments the failed attempt counter (AUTH-040, AUTH-041).",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(responseCode = "204", description = "Password changed"),
-      ApiResponse(responseCode = "400", description = "Missing or incorrect old password", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
-      ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
-    ],
-  )
-  @SecurityRequirement(name = "bearer-jwt")
-  @PreAuthorize("isAuthenticated()")
-  @PostMapping("/change_password/authenticated/")
-  fun changePassword(): ResponseEntity<Any> {
-    // Password change for authenticated users is delegated to HMPPS Auth in this implementation.
-    // This endpoint is a placeholder to document the requirement; actual password management
-    // is handled by the OAuth2 provider.
-    return ResponseEntity.noContent().build()
-  }
 }

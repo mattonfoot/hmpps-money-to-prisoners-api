@@ -216,34 +216,6 @@ class UserResource(
     return ResponseEntity.noContent().build()
   }
 
-  // -------------------------------------------------------------------------
-  // AUTH-017: POST /users/{id}/unlock/
-  // -------------------------------------------------------------------------
-
-  @Operation(
-    summary = "Unlock a user account",
-    description = "Clears all failed login attempts for the user, unlocking their account (AUTH-017).",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "User unlocked",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = UserDto::class))],
-      ),
-      ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
-      ApiResponse(responseCode = "404", description = "User not found", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
-    ],
-  )
-  @PreAuthorize("isAuthenticated()")
-  @PostMapping("/users/{username}/unlock/")
-  fun unlockUser(
-    @Parameter(description = "User ID") @PathVariable("username") username: String,
-  ): ResponseEntity<UserDto> {
-    userService.unlockUser(username) ?: return ResponseEntity.notFound().build()
-    val (user, locked) = userService.getUserByUsername(username) ?: return ResponseEntity.notFound().build()
-    return ResponseEntity.ok(UserDto.from(user, locked))
-  }
 }
 
 @Schema(name = "PaginatedResponseUserDto", description = "Paginated response containing MTP users")
