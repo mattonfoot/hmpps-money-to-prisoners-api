@@ -63,9 +63,9 @@ class UserFlagResource(
     @Parameter(description = "User ID") @PathVariable("user_username") username: String,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
-  ): ResponseEntity<PaginatedResponse<UserFlagDto>> {
+  ): ResponseEntity<PaginatedResponse<String>> {
     val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
-    val flags = userFlagRepository.findByUser(user).map { UserFlagDto.from(it) }
+    val flags = userFlagRepository.findByUser(user).map { it.flagName }
     return ResponseEntity.ok(PaginatedResponse.fromList(flags, limit = limit, offset = offset))
   }
 
@@ -103,7 +103,7 @@ class UserFlagResource(
       return ResponseEntity.badRequest().body(mapOf("flagName" to listOf("Flag already exists for this user")))
     }
     val saved = userFlagRepository.save(UserFlag(user = user, flagName = request.flagName))
-    return ResponseEntity.status(HttpStatus.CREATED).body(UserFlagDto.from(saved))
+    return ResponseEntity.status(HttpStatus.CREATED).body(saved.flagName)
   }
 
   // -------------------------------------------------------------------------

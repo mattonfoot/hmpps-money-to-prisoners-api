@@ -14,7 +14,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateUserFlagRequest
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UserFlagDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.UserFlag
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.UserFlagRepository
@@ -52,7 +51,7 @@ class UserFlagResourceTest {
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
       assertThat(response.body?.count).isEqualTo(2)
-      assertThat(response.body?.results?.map { it.flagName }).containsExactlyInAnyOrder("flag_a", "flag_b")
+      assertThat(response.body?.results).containsExactlyInAnyOrder("flag_a", "flag_b")
     }
 
     @Test
@@ -81,7 +80,7 @@ class UserFlagResourceTest {
       val response = userFlagResource.createFlag("testuser", request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.CREATED)
-      assertThat((response.body as? UserFlagDto)?.flagName).isEqualTo("new_flag")
+      assertThat(response.body).isEqualTo("new_flag")
     }
 
     @Test
