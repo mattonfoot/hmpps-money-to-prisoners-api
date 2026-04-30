@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_NOTIFICATIONS
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_NOTIFICATIONS
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ServiceNotificationDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ServiceNotificationService

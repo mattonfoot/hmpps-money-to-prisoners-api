@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_PRIVATE_ESTATE_BATCHES
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_PRIVATE_ESTATE_BATCHES
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PrivateEstateBatchDto
@@ -111,10 +111,12 @@ class PrivateEstateBatchResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @GetMapping("/{ref}/")
+  @GetMapping("/{prison}/{date}/")
   fun getPrivateEstateBatch(
-    @PathVariable ref: String,
+    @PathVariable prison: String,
+    @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
   ): ResponseEntity<PrivateEstateBatchDto> {
+    val ref = "$prison/$date"
     val batch = privateEstateBatchRepository.findById(ref).orElse(null)
       ?: return ResponseEntity.notFound().build()
     return ResponseEntity.ok(PrivateEstateBatchDto.from(batch))
@@ -137,13 +139,15 @@ class PrivateEstateBatchResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @RequestMapping(value = ["/{ref}/"], method = [RequestMethod.PATCH, RequestMethod.PUT])
+  @RequestMapping(value = ["/{prison}/{date}/"], method = [RequestMethod.PATCH, RequestMethod.PUT])
   @Transactional
   fun patchPrivateEstateBatch(
-    @PathVariable ref: String,
+    @PathVariable prison: String,
+    @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
     @RequestBody(required = false) _body: Map<String, Any>?,
     principal: Principal,
   ): ResponseEntity<PrivateEstateBatchDto> {
+    val ref = "$prison/$date"
     val batch = privateEstateBatchRepository.findById(ref).orElse(null)
       ?: return ResponseEntity.notFound().build()
 
@@ -178,10 +182,12 @@ class PrivateEstateBatchResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @GetMapping("/{batch_ref}/credits/")
+  @GetMapping("/{prison}/{date}/credits/")
   fun getPrivateEstateBatchCredits(
-    @PathVariable("batch_ref") ref: String,
+    @PathVariable prison: String,
+    @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
   ): ResponseEntity<List<CreditDto>> {
+    val ref = "$prison/$date"
     val batch = privateEstateBatchRepository.findById(ref).orElse(null)
       ?: return ResponseEntity.notFound().build()
     return ResponseEntity.ok(batch.credits.map { CreditDto.from(it) })

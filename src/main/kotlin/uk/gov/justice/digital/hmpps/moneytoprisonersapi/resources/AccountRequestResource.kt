@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_REQUESTS
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -22,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_REQUESTS
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.AccountRequestDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateAccountRequestRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse

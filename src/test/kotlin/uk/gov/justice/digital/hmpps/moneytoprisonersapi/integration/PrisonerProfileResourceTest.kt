@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResol
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerProfile
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 
 class PrisonerProfileResourceTest : IntegrationTestBase() {
 
@@ -24,8 +25,13 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var transactionTemplate: TransactionTemplate
 
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
     prisonerProfileRepository.deleteAll()
     creditRepository.deleteAll()
   }
@@ -82,7 +88,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
 
       webTestClient.post()
         .uri("/prisoners/${profile.id}/monitor/")
-        .headers(setAuthorisation(username = "security_user"))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -90,7 +96,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
         val p = prisonerProfileRepository.findById(profile.id!!).get()
         p.monitoringUsers.toSet()
       }!!
-      assertThat(monitoringUsers).contains("security_user")
+      assertThat(monitoringUsers).contains("test-security")
     }
 
     @Test
@@ -98,13 +104,13 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     fun `should remove user from monitoring`() {
       val saved = transactionTemplate.execute {
         val p = PrisonerProfile(prisonerNumber = "A1234BC", prisonerName = "John Smith")
-        p.monitoringUsers.add("security_user")
+        p.monitoringUsers.add("test-security")
         prisonerProfileRepository.save(p)
       }!!
 
       webTestClient.post()
         .uri("/prisoners/${saved.id}/unmonitor/")
-        .headers(setAuthorisation(username = "security_user"))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -112,7 +118,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
         val p = prisonerProfileRepository.findById(saved.id!!).get()
         p.monitoringUsers.toSet()
       }!!
-      assertThat(monitoringUsers).doesNotContain("security_user")
+      assertThat(monitoringUsers).doesNotContain("test-security")
     }
   }
 
@@ -125,7 +131,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     fun `should filter by monitoring true`() {
       val monitoredProfile = transactionTemplate.execute {
         val p = PrisonerProfile(prisonerNumber = "MONITORED1", prisonerName = "Monitored Prisoner")
-        p.monitoringUsers.add("security_user")
+        p.monitoringUsers.add("test-security")
         prisonerProfileRepository.save(p)
       }!!
       createPrisonerProfile("A1111BC")
@@ -133,7 +139,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/prisoners/?monitoring=true")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -146,7 +152,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     fun `should filter by monitoring false`() {
       transactionTemplate.execute {
         val p = PrisonerProfile(prisonerNumber = "MONITORED1", prisonerName = "Monitored Prisoner")
-        p.monitoringUsers.add("security_user")
+        p.monitoringUsers.add("test-security")
         prisonerProfileRepository.save(p)
       }
       createPrisonerProfile("A1111BC")
@@ -154,7 +160,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/prisoners/?monitoring=false")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -166,13 +172,13 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     fun `should return monitoring field on detail endpoint`() {
       val profile = transactionTemplate.execute {
         val p = PrisonerProfile(prisonerNumber = "A1234BC", prisonerName = "John Smith")
-        p.monitoringUsers.add("security_user")
+        p.monitoringUsers.add("test-security")
         prisonerProfileRepository.save(p)
       }!!
 
       webTestClient.get()
         .uri("/prisoners/${profile.id}/")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
         .expectBody()

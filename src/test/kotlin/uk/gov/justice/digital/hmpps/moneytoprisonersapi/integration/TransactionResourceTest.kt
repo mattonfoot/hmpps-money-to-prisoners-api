@@ -35,6 +35,7 @@ class TransactionResourceTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
     privateEstateBatchRepository.deleteAll()
     transactionRepository.deleteAll()
     creditRepository.deleteAll()
@@ -317,7 +318,7 @@ class TransactionResourceTest : IntegrationTestBase() {
       webTestClient.patch()
         .uri("/transactions/")
         .header("Content-Type", "application/json")
-        .bodyValue("""{"transaction_ids": [1]}""")
+        .bodyValue("""[{"id": 1, "refunded": true}]""")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -329,7 +330,7 @@ class TransactionResourceTest : IntegrationTestBase() {
         .uri("/transactions/")
         .headers(setAuthorisation(roles = listOf("ROLE_OTHER")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"transaction_ids": [1]}""")
+        .bodyValue("""[{"id": 1, "refunded": true}]""")
         .exchange()
         .expectStatus().isForbidden
     }
@@ -355,7 +356,7 @@ class TransactionResourceTest : IntegrationTestBase() {
         .uri("/transactions/")
         .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"transaction_ids": [${savedTxn.id}]}""")
+        .bodyValue("""[{"id": ${savedTxn.id}, "refunded": true}]""")
         .exchange()
         .expectStatus().isNoContent
 
@@ -380,7 +381,7 @@ class TransactionResourceTest : IntegrationTestBase() {
         .uri("/transactions/")
         .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"transaction_ids": [${savedTxn.id}]}""")
+        .bodyValue("""[{"id": ${savedTxn.id}, "refunded": true}]""")
         .exchange()
         .expectStatus().isEqualTo(409)
         .expectBody()
@@ -388,15 +389,15 @@ class TransactionResourceTest : IntegrationTestBase() {
     }
 
     @Test
-    @DisplayName("TXN-023 - Returns 400 for empty transaction_ids list")
-    fun `should return 400 for empty transaction_ids`() {
+    @DisplayName("TXN-023 - Returns 200 for empty refund list")
+    fun `should return 200 for empty refund list`() {
       webTestClient.patch()
         .uri("/transactions/")
         .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"transaction_ids": []}""")
+        .bodyValue("""[]""")
         .exchange()
-        .expectStatus().isBadRequest
+        .expectStatus().isOk
     }
   }
 

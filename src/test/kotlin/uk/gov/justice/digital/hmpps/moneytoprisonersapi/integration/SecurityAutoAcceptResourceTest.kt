@@ -217,7 +217,7 @@ class SecurityAutoAcceptResourceTest : IntegrationTestBase() {
 
       webTestClient.post()
         .uri("/security/checks/auto-accept/")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(username = "test-security", roles = listOf("ROLE_SECURITY_STAFF")))
         .header("Content-Type", "application/json")
         .bodyValue(
           """
@@ -236,7 +236,7 @@ class SecurityAutoAcceptResourceTest : IntegrationTestBase() {
         .jsonPath("$.is_active").isEqualTo(true)
         .jsonPath("$.states[0].active").isEqualTo(true)
         .jsonPath("$.states[0].reason").isEqualTo("Known sender")
-        .jsonPath("$.states[0].created_by").isEqualTo("security_user")
+        .jsonPath("$.states[0].created_by").isEqualTo("test-security")
 
       assertThat(autoAcceptRuleRepository.count()).isEqualTo(1L)
     }
@@ -317,7 +317,7 @@ class SecurityAutoAcceptResourceTest : IntegrationTestBase() {
 
       webTestClient.patch()
         .uri("/security/checks/auto-accept/${rule.id}/")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(username = "test-security", roles = listOf("ROLE_SECURITY_STAFF")))
         .header("Content-Type", "application/json")
         .bodyValue("""{"states": [{"active": false, "reason": "Revoked"}]}""")
         .exchange()
@@ -327,7 +327,7 @@ class SecurityAutoAcceptResourceTest : IntegrationTestBase() {
         .jsonPath("$.states.length()").isEqualTo(2)
         .jsonPath("$.states[1].active").isEqualTo(false)
         .jsonPath("$.states[1].reason").isEqualTo("Revoked")
-        .jsonPath("$.states[1].created_by").isEqualTo("security_user")
+        .jsonPath("$.states[1].created_by").isEqualTo("test-security")
     }
 
     @Test

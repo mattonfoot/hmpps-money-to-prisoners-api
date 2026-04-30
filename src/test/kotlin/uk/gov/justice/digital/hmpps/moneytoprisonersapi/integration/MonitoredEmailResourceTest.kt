@@ -44,8 +44,8 @@ class MonitoredEmailResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$[0]").isEqualTo("apple")
-        .jsonPath("$[1]").isEqualTo("zebra")
+        .jsonPath("$.results[0].keyword").isEqualTo("apple")
+        .jsonPath("$.results[1].keyword").isEqualTo("zebra")
     }
   }
 

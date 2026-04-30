@@ -7,9 +7,12 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerBalance
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerBalanceRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerLocationRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
 
 class PrisonerAccountBalanceResourceTest : IntegrationTestBase() {
 
@@ -22,10 +25,23 @@ class PrisonerAccountBalanceResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var prisonerLocationRepository: PrisonerLocationRepository
 
+  @Autowired
+  private lateinit var creditRepository: CreditRepository
+
+  @Autowired
+  private lateinit var securityCheckRepository: SecurityCheckRepository
+
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
+    securityCheckRepository.deleteAll()
     prisonerLocationRepository.deleteAll()
     prisonerBalanceRepository.deleteAll()
+    creditRepository.deleteAll()
     prisonRepository.deleteAll()
   }
 

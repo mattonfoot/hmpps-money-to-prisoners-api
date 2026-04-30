@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_BALANCES
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DuplicateBalanceDateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_BALANCES
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.BalanceDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateBalanceRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse

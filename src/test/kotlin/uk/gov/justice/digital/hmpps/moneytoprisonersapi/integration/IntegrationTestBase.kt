@@ -63,6 +63,7 @@ abstract class IntegrationTestBase {
     return when {
       roles.any { it.contains("DISBURSEMENT_BANK_ADMIN", ignoreCase = true) } -> "test-token-disbursement-admin"
       roles.any { it.contains("BANK_ADMIN", ignoreCase = true) } -> "test-token-bank-admin"
+      roles.any { it.contains("CASHBOOK", ignoreCase = true) } -> "test-token-prison-clerk"
       roles.any { it.contains("PRISON_CLERK", ignoreCase = true) } -> "test-token-prison-clerk"
       roles.any { it.contains("SECURITY_STAFF", ignoreCase = true) || it.contains("SECURITY", ignoreCase = true) } -> "test-token-security"
       roles.any { it.contains("SEND_MONEY", ignoreCase = true) } -> "test-token-send-money"

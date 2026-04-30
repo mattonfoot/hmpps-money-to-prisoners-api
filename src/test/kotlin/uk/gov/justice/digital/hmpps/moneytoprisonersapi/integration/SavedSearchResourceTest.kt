@@ -35,17 +35,17 @@ class SavedSearchResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("SEC-122 - Returns only user's own searches")
     fun `should return only current user's searches`() {
-      repository.save(SavedSearch(username = "user1", description = "My search", endpoint = "/credits/", filters = null))
-      repository.save(SavedSearch(username = "user2", description = "Other search", endpoint = "/credits/", filters = null))
+      repository.save(SavedSearch(username = "admin", description = "My search", endpoint = "/credits/", filters = null))
+      repository.save(SavedSearch(username = "other-user", description = "Other search", endpoint = "/credits/", filters = null))
 
       webTestClient.get()
         .uri("/searches/")
-        .headers(setAuthorisation(username = "user1"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.length()").isEqualTo(1)
-        .jsonPath("$[0].description").isEqualTo("My search")
+        .jsonPath("$.results.length()").isEqualTo(1)
+        .jsonPath("$.results[0].description").isEqualTo("My search")
     }
   }
 
@@ -58,7 +58,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
     fun `should create a saved search`() {
       webTestClient.post()
         .uri("/searches/")
-        .headers(setAuthorisation(username = "user1"))
+        .headers(setAuthorisation(username = "admin"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"description": "My search", "endpoint": "/credits/", "filters": null}""")
         .exchange()
@@ -67,7 +67,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
         .jsonPath("$.description").isEqualTo("My search")
         .jsonPath("$.endpoint").isEqualTo("/credits/")
 
-      assertThat(repository.findByUsername("user1")).hasSize(1)
+      assertThat(repository.findByUsername("admin")).hasSize(1)
     }
   }
 
@@ -78,11 +78,11 @@ class SavedSearchResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("SEC-123 - Updates a saved search")
     fun `should update a saved search`() {
-      val search = repository.save(SavedSearch(username = "user1", description = "Old", endpoint = "/credits/", filters = null))
+      val search = repository.save(SavedSearch(username = "admin", description = "Old", endpoint = "/credits/", filters = null))
 
       webTestClient.patch()
         .uri("/searches/${search.id}/")
-        .headers(setAuthorisation(username = "user1"))
+        .headers(setAuthorisation(username = "admin"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"description": "Updated"}""")
         .exchange()
@@ -94,11 +94,11 @@ class SavedSearchResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("SEC-123 - Returns 404 if search belongs to different user")
     fun `should return 404 if search belongs to different user`() {
-      val search = repository.save(SavedSearch(username = "user2", description = "Other", endpoint = "/credits/", filters = null))
+      val search = repository.save(SavedSearch(username = "other-user", description = "Other", endpoint = "/credits/", filters = null))
 
       webTestClient.patch()
         .uri("/searches/${search.id}/")
-        .headers(setAuthorisation(username = "user1"))
+        .headers(setAuthorisation(username = "admin"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"description": "Hacked"}""")
         .exchange()
@@ -113,11 +113,11 @@ class SavedSearchResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("SEC-124 - Deletes a saved search")
     fun `should delete a saved search`() {
-      val search = repository.save(SavedSearch(username = "user1", description = "My search", endpoint = "/credits/", filters = null))
+      val search = repository.save(SavedSearch(username = "admin", description = "My search", endpoint = "/credits/", filters = null))
 
       webTestClient.delete()
         .uri("/searches/${search.id}/")
-        .headers(setAuthorisation(username = "user1"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isNoContent
 
@@ -127,11 +127,11 @@ class SavedSearchResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("SEC-124 - Returns 404 if search belongs to different user")
     fun `should return 404 if search belongs to different user`() {
-      val search = repository.save(SavedSearch(username = "user2", description = "Other", endpoint = "/credits/", filters = null))
+      val search = repository.save(SavedSearch(username = "other-user", description = "Other", endpoint = "/credits/", filters = null))
 
       webTestClient.delete()
         .uri("/searches/${search.id}/")
-        .headers(setAuthorisation(username = "user1"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isNotFound
     }

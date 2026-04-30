@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditR
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PaymentRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.TransactionRepository
 import java.time.LocalDateTime
 import java.util.UUID
@@ -46,8 +47,13 @@ class CrossCuttingFilteringTest : IntegrationTestBase() {
   @Autowired
   private lateinit var billingAddressRepository: BillingAddressRepository
 
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
     paymentRepository.deleteAll()
     transactionRepository.deleteAll()
     disbursementRepository.deleteAll()

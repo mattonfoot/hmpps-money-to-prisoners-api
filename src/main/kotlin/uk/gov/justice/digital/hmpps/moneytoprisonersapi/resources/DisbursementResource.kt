@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_DISBURSEMENTS
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -24,6 +23,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotFoundException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.DisbursementNotPendingException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_DISBURSEMENTS
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateDisbursementRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementActionRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementCommentDto

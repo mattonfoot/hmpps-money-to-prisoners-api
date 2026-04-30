@@ -34,6 +34,7 @@ class CommentResourceTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
     privateEstateBatchRepository.deleteAll()
     senderProfileRepository.deleteAll()
     prisonerProfileRepository.deleteAll()
@@ -152,7 +153,7 @@ class CommentResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isCreated
         .expectBody()
-        .jsonPath("$[0].user_id").isEqualTo("auth_user")
+        .jsonPath("$[0].user_id").isEqualTo("admin")
     }
 
     @Test
@@ -171,7 +172,7 @@ class CommentResourceTest : IntegrationTestBase() {
         .jsonPath("$[0].id").isNotEmpty
         .jsonPath("$[0].credit").isEqualTo(credit.id!!.toInt())
         .jsonPath("$[0].comment").isEqualTo("Important note")
-        .jsonPath("$[0].user_id").isEqualTo("clerk1")
+        .jsonPath("$[0].user_id").isEqualTo("admin")
         .jsonPath("$[0].created").isNotEmpty
     }
 

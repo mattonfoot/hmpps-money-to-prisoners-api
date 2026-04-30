@@ -49,6 +49,7 @@ class PaymentResourceTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
     privateEstateBatchRepository.deleteAll()
     senderProfileRepository.deleteAll()
     prisonerProfileRepository.deleteAll()
@@ -692,5 +693,5 @@ class PaymentResourceTest : IntegrationTestBase() {
         .jsonPath("$.ref_code").isEqualTo(2)
     }
   }
-  */
+   */
 }

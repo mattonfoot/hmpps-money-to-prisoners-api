@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 
 @DisplayName("14.4 Atomicity & Data Integrity")
@@ -33,8 +34,13 @@ class CrossCuttingAtomicityTest : IntegrationTestBase() {
   @Autowired
   private lateinit var prisonRepository: PrisonRepository
 
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
     logRepository.deleteAll()
     creditRepository.deleteAll()
     prisonRepository.deleteAll()
@@ -54,9 +60,7 @@ class CrossCuttingAtomicityTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("XCT-030 Bulk actions are all-or-nothing")
-  inner class BulkActionsAtomic {
-
-  }
+  inner class BulkActionsAtomic
 
   @Nested
   @DisplayName("XCT-031 State transitions use pessimistic locking")

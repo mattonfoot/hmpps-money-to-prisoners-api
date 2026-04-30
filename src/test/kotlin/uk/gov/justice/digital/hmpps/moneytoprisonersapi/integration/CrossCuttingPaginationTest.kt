@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursemen
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.BalanceRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 import java.math.BigInteger
 import java.time.LocalDate
 
@@ -30,8 +31,13 @@ class CrossCuttingPaginationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var disbursementRepository: DisbursementRepository
 
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
     disbursementRepository.deleteAll()
     creditRepository.deleteAll()
     balanceRepository.deleteAll()
@@ -142,31 +148,33 @@ class CrossCuttingPaginationTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("XCT-011 Some endpoints are explicitly non-paginated")
-  inner class NonPaginatedEndpoints {
+  @DisplayName("XCT-011 All list endpoints return paginated {count, results} envelope")
+  inner class PaginatedListEndpoints {
 
     @Test
-    @DisplayName("XCT-011 GET /batches/ returns a plain array (not a paginated object)")
-    fun `batches list endpoint returns array not paginated object`() {
+    @DisplayName("XCT-011 GET /credits/batches/ returns paginated response")
+    fun `batches list endpoint returns paginated response`() {
       webTestClient.get()
         .uri("/credits/batches/")
-        .headers(setAuthorisation())
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$").isArray
+        .jsonPath("$.count").isNumber
+        .jsonPath("$.results").isArray
     }
 
     @Test
-    @DisplayName("XCT-011 GET /security/monitored-email-addresses/ returns a plain array (not a paginated object)")
-    fun `monitored email addresses list endpoint returns plain array`() {
+    @DisplayName("XCT-011 GET /security/monitored-email-addresses/ returns paginated response")
+    fun `monitored email addresses list endpoint returns paginated response`() {
       webTestClient.get()
         .uri("/security/monitored-email-addresses/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$").isArray
+        .jsonPath("$.count").isNumber
+        .jsonPath("$.results").isArray
     }
   }
 }

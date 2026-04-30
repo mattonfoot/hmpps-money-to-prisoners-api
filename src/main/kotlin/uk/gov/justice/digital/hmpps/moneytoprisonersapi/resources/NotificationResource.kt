@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_NOTIFICATIONS
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_NOTIFICATIONS
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.EmailPreferencesDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.EventDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.EventPagesResponse

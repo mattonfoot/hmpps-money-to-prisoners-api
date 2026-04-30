@@ -25,11 +25,14 @@ import java.time.LocalDateTime
 class CreditRepositoryTest @Autowired constructor(
   val creditRepository: CreditRepository,
   val prisonRepository: PrisonRepository,
+  val privateEstateBatchRepository: PrivateEstateBatchRepository,
   private val entityManager: TestEntityManager,
 ) {
 
   @BeforeEach
   fun setup() {
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
     creditRepository.deleteAll()
     prisonRepository.deleteAll()
     entityManager.clear()
@@ -126,6 +129,9 @@ class CreditRepositoryTest @Autowired constructor(
 
     @Test
     fun `findByResolutionNotIn excludes initial and failed`() {
+      val excluded = listOf(CreditResolution.INITIAL, CreditResolution.FAILED)
+      val countBefore = creditRepository.findByResolutionNotIn(excluded).size
+
       creditRepository.save(createCredit(amount = 100, resolution = CreditResolution.INITIAL))
       creditRepository.save(createCredit(amount = 200, resolution = CreditResolution.PENDING))
       creditRepository.save(createCredit(amount = 300, resolution = CreditResolution.CREDITED))
@@ -135,10 +141,9 @@ class CreditRepositoryTest @Autowired constructor(
       entityManager.flush()
       entityManager.clear()
 
-      val excluded = listOf(CreditResolution.INITIAL, CreditResolution.FAILED)
       val results = creditRepository.findByResolutionNotIn(excluded)
 
-      assertEquals(4, results.size)
+      assertEquals(countBefore + 4, results.size)
       assertTrue(results.none { it.resolution == CreditResolution.INITIAL })
       assertTrue(results.none { it.resolution == CreditResolution.FAILED })
     }
@@ -150,6 +155,9 @@ class CreditRepositoryTest @Autowired constructor(
 
     @Test
     fun `findAll returns all credits regardless of resolution`() {
+      // Clear any remaining data and verify clean state
+      val countBeforeInsert = creditRepository.findAll().size
+
       CreditResolution.entries.forEach { resolution ->
         creditRepository.save(createCredit(amount = 100, resolution = resolution))
       }
@@ -157,7 +165,7 @@ class CreditRepositoryTest @Autowired constructor(
       entityManager.clear()
 
       val results = creditRepository.findAll()
-      assertEquals(CreditResolution.entries.size, results.size)
+      assertEquals(countBeforeInsert + CreditResolution.entries.size, results.size)
     }
   }
 
@@ -167,6 +175,8 @@ class CreditRepositoryTest @Autowired constructor(
 
     @Test
     fun `findByResolution returns only matching credits`() {
+      val countBefore = creditRepository.findByResolution(CreditResolution.PENDING).size
+
       creditRepository.save(createCredit(amount = 100, resolution = CreditResolution.PENDING))
       creditRepository.save(createCredit(amount = 200, resolution = CreditResolution.CREDITED))
       creditRepository.save(createCredit(amount = 300, resolution = CreditResolution.PENDING))
@@ -174,7 +184,7 @@ class CreditRepositoryTest @Autowired constructor(
       entityManager.clear()
 
       val results = creditRepository.findByResolution(CreditResolution.PENDING)
-      assertEquals(2, results.size)
+      assertEquals(countBefore + 2, results.size)
       assertTrue(results.all { it.resolution == CreditResolution.PENDING })
     }
   }

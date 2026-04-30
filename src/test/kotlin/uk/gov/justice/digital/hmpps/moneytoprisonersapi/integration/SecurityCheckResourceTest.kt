@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
 import java.time.LocalDateTime
 
@@ -22,8 +23,13 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var securityCheckRepository: SecurityCheckRepository
 
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
     securityCheckRepository.deleteAll()
     creditRepository.deleteAll()
   }
@@ -225,7 +231,7 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
       val updated = securityCheckRepository.findById(check.id!!).get()
       assertThat(updated.status).isEqualTo(CheckStatus.ACCEPTED)
       assertThat(updated.decisionReason).isEqualTo("Known sender")
-      assertThat(updated.actionedBy).isEqualTo("security_user")
+      assertThat(updated.actionedBy).isEqualTo("test-security")
       assertThat(updated.actionedAt).isNotNull
     }
 
@@ -296,7 +302,7 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
 
       webTestClient.post()
         .uri("/security/checks/${check.id}/reject/")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .header("Content-Type", "application/json")
         .bodyValue("""{"decision_reason": "Suspicious activity", "rejection_reasons": ["FIUMONP"]}""")
         .exchange()
@@ -305,7 +311,7 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
       val updated = securityCheckRepository.findById(check.id!!).get()
       assertThat(updated.status).isEqualTo(CheckStatus.REJECTED)
       assertThat(updated.decisionReason).isEqualTo("Suspicious activity")
-      assertThat(updated.actionedBy).isEqualTo("security_user")
+      assertThat(updated.actionedBy).isEqualTo("test-security")
       assertThat(updated.rejectionReasons).contains("FIUMONP")
     }
 

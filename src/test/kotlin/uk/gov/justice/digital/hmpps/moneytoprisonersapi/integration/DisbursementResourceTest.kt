@@ -517,10 +517,11 @@ class DisbursementResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("DSB-091 - Returns only disbursements for monitored prisoners when monitored=true")
     fun `should return disbursements for monitored prisoners`() {
-      // Create a prisoner profile monitored by security_user
+      // Create a prisoner profile monitored by the test-security user
+      // The test-token-security token authenticates as username "test-security"
       transactionTemplate.execute {
         val profile = PrisonerProfile(prisonerNumber = "A1234BC", prisonerName = "John Smith")
-        profile.monitoringUsers.add("security_user")
+        profile.monitoringUsers.add("test-security")
         prisonerProfileRepository.save(profile)
       }
 
@@ -531,7 +532,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/disbursements/?monitored=true")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -546,7 +547,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/disbursements/?monitored=true")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
         .expectBody()

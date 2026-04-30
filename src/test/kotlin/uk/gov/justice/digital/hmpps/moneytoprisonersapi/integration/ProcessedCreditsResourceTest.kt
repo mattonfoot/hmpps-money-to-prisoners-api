@@ -41,6 +41,7 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
     privateEstateBatchRepository.deleteAll()
     senderProfileRepository.deleteAll()
     prisonerProfileRepository.deleteAll()

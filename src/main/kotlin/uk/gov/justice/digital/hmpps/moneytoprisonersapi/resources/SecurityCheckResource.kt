@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.resources
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_SECURITY
 import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_SECURITY
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.AcceptCheckRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PatchCheckRequest

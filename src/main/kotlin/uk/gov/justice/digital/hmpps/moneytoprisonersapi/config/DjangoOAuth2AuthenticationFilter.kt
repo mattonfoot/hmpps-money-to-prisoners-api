@@ -31,6 +31,15 @@ private val GROUP_TO_AUTHORITY = mapOf(
 )
 
 /**
+ * Some Django groups grant additional Spring authorities beyond the primary mapping.
+ * PrisonClerk users also get ROLE_CASHBOOK since the cashbook application
+ * uses the PrisonClerk group for its access control.
+ */
+private val GROUP_TO_EXTRA_AUTHORITY = mapOf(
+  "PrisonClerk" to "ROLE_CASHBOOK",
+)
+
+/**
  * Authentication token that carries the Django OAuth2 user principal,
  * their Spring authorities (mapped from Django groups), and the OAuth2 client_id.
  */
@@ -111,6 +120,11 @@ class DjangoOAuth2AuthenticationFilter(
       val authority = GROUP_TO_AUTHORITY[group.name]
       if (authority != null) {
         authorities.add(SimpleGrantedAuthority(authority))
+      }
+      // PrisonClerk group also grants ROLE_CASHBOOK (the cashbook app's role)
+      val extraAuthority = GROUP_TO_EXTRA_AUTHORITY[group.name]
+      if (extraAuthority != null) {
+        authorities.add(SimpleGrantedAuthority(extraAuthority))
       }
     }
 

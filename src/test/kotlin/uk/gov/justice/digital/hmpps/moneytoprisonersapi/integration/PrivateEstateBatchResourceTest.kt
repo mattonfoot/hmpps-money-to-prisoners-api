@@ -37,6 +37,7 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
     privateEstateBatchRepository.deleteAll()
     senderProfileRepository.deleteAll()
     prisonerProfileRepository.deleteAll()
@@ -113,8 +114,9 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$").isArray
-        .jsonPath("$.length()").isEqualTo(1)
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results").isArray
+        .jsonPath("$.results.length()").isEqualTo(1)
     }
 
     @Test
@@ -130,8 +132,8 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.length()").isEqualTo(1)
-        .jsonPath("$[0].ref").isEqualTo("PRV/2024-03-15")
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].ref").isEqualTo("PRV/2024-03-15")
     }
 
     @Test
@@ -148,7 +150,7 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.length()").isEqualTo(2)
+        .jsonPath("$.count").isEqualTo(2)
     }
 
     @Test
@@ -165,8 +167,8 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.length()").isEqualTo(1)
-        .jsonPath("$[0].prison").isEqualTo("PRV1")
+        .jsonPath("$.count").isEqualTo(1)
+        .jsonPath("$.results[0].prison").isEqualTo("PRV1")
     }
   }
 
@@ -266,6 +268,7 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
+        .jsonPath("$").isArray
         .jsonPath("$.length()").isEqualTo(2)
     }
 

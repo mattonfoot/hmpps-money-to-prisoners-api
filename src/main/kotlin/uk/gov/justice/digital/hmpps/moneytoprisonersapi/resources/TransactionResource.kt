@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_TRANSACTIONS
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_TRANSACTIONS
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReconcileTransactionRequest
@@ -220,8 +220,12 @@ class TransactionResource(
     if (request.receivedAtGte == null || request.receivedAtLt == null) {
       return ResponseEntity.badRequest().body(mapOf("error" to "Both received_at__gte and received_at__lt are required"))
     }
-    transactionService.reconcileTransactions(request.receivedAtGte, request.receivedAtLt)
-    return ResponseEntity.noContent().build()
+    val result = transactionService.reconcileTransactions(request.receivedAtGte, request.receivedAtLt)
+    return if (result != null) {
+      ResponseEntity.status(HttpStatus.CREATED).body(result)
+    } else {
+      ResponseEntity.noContent().build()
+    }
   }
 }
 

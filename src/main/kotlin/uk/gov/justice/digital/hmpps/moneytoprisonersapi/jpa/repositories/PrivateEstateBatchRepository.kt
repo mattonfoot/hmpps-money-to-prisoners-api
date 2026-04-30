@@ -1,7 +1,10 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories
 
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrivateEstateBatch
 import java.time.LocalDate
 
@@ -11,4 +14,9 @@ interface PrivateEstateBatchRepository : JpaRepository<PrivateEstateBatch, Strin
   fun findByDate(date: LocalDate): List<PrivateEstateBatch>
   fun findByDateGreaterThanEqual(date: LocalDate): List<PrivateEstateBatch>
   fun findByDateLessThan(date: LocalDate): List<PrivateEstateBatch>
+
+  @Modifying
+  @Transactional
+  @Query("DELETE FROM credit_privateestatebatch_credits", nativeQuery = true)
+  fun clearJoinTable()
 }

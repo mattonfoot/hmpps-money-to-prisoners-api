@@ -114,7 +114,7 @@ class HmppsMoneyToPrisonersAPIExceptionHandler {
       ),
     ).also { log.info("DisbursementNotPendingException: {}", e.message) }
 
-  @ExceptionHandler(value = [MethodArgumentTypeMismatchException::class, MethodArgumentNotValidException::class])
+  @ExceptionHandler(MethodArgumentTypeMismatchException::class)
   fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> = ResponseEntity
     .status(HttpStatus.BAD_REQUEST)
     .body(
@@ -124,6 +124,17 @@ class HmppsMoneyToPrisonersAPIExceptionHandler {
         developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("Invalid parameter type exception: {}", e.message) }
+
+  @ExceptionHandler(MethodArgumentNotValidException::class)
+  fun handleMethodArgumentNotValidException(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Validation failure",
+        developerMessage = if (envIsProd) null else e.message,
+      ),
+    ).also { log.info("Validation exception: {}", e.message) }
 
   @ExceptionHandler(ResponseStatusException::class)
   fun handleResponseStatusException(e: ResponseStatusException): ResponseEntity<ErrorResponse> = ResponseEntity
@@ -147,7 +158,7 @@ class HmppsMoneyToPrisonersAPIExceptionHandler {
       ),
     ).also { log.info("MissingServletRequestParameterException: {}", e.message) }
 
-  @ExceptionHandler(value = [ValidationException::class, HttpMessageNotReadableException::class, MissingRequestHeaderException::class])
+  @ExceptionHandler(ValidationException::class)
   fun handleValidationException(e: ValidationException): ResponseEntity<ErrorResponse> = ResponseEntity
     .status(HttpStatus.BAD_REQUEST)
     .body(
@@ -157,6 +168,28 @@ class HmppsMoneyToPrisonersAPIExceptionHandler {
         developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("Validation exception") }
+
+  @ExceptionHandler(HttpMessageNotReadableException::class)
+  fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Validation failure",
+        developerMessage = if (envIsProd) null else e.message,
+      ),
+    ).also { log.info("HTTP message not readable: {}", e.message) }
+
+  @ExceptionHandler(MissingRequestHeaderException::class)
+  fun handleMissingRequestHeaderException(e: MissingRequestHeaderException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Validation failure",
+        developerMessage = if (envIsProd) null else e.message,
+      ),
+    ).also { log.info("Missing request header: {}", e.message) }
 
   @ExceptionHandler(value = [HandlerMethodValidationException::class])
   fun handleMethodValidationException(e: HandlerMethodValidationException): ResponseEntity<ErrorResponse> = ResponseEntity

@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 
 @DisplayName("14.1 Authentication & Authorization Patterns")
 class CrossCuttingAuthTest : IntegrationTestBase() {
@@ -28,8 +29,13 @@ class CrossCuttingAuthTest : IntegrationTestBase() {
   @Autowired
   private lateinit var disbursementRepository: DisbursementRepository
 
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
     disbursementRepository.deleteAll()
     creditRepository.deleteAll()
     prisonRepository.deleteAll()

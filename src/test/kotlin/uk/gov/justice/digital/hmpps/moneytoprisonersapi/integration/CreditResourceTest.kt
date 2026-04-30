@@ -76,6 +76,7 @@ class CreditResourceTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
     privateEstateBatchRepository.deleteAll()
     senderProfileRepository.deleteAll()
     prisonerProfileRepository.deleteAll()
@@ -1124,7 +1125,7 @@ class CreditResourceTest : IntegrationTestBase() {
 
       val updated = creditRepository.findById(credit.id!!).get()
       assertThat(updated.resolution).isEqualTo(CreditResolution.CREDITED)
-      assertThat(updated.owner).isEqualTo("clerk1")
+      assertThat(updated.owner).isEqualTo("admin")
       assertThat(updated.nomisTransactionId).isEqualTo("TX-001")
     }
 
@@ -1144,7 +1145,7 @@ class CreditResourceTest : IntegrationTestBase() {
 
       val logs = logRepository.findAll().filter { it.credit?.id == credit.id && it.action == LogAction.CREDITED }
       assertThat(logs).hasSize(1)
-      assertThat(logs[0].userId).isEqualTo("clerk1")
+      assertThat(logs[0].userId).isEqualTo("admin")
     }
 
     @Test
@@ -1785,7 +1786,7 @@ class CreditResourceTest : IntegrationTestBase() {
 
       val updated = creditRepository.findById(credit.id!!).get()
       assertThat(updated.resolution).isEqualTo(CreditResolution.MANUAL)
-      assertThat(updated.owner).isEqualTo("manager1")
+      assertThat(updated.owner).isEqualTo("admin")
     }
 
     @Test
@@ -1803,7 +1804,7 @@ class CreditResourceTest : IntegrationTestBase() {
 
       val logs = logRepository.findAll().filter { it.credit?.id == credit.id && it.action == LogAction.MANUAL }
       assertThat(logs).hasSize(1)
-      assertThat(logs[0].userId).isEqualTo("manager1")
+      assertThat(logs[0].userId).isEqualTo("admin")
     }
 
     @Test
@@ -1900,7 +1901,7 @@ class CreditResourceTest : IntegrationTestBase() {
       val logs2 = logRepository.findAll().filter { it.credit?.id == credit2.id && it.action == LogAction.REVIEWED }
       assertThat(logs1).hasSize(1)
       assertThat(logs2).hasSize(1)
-      assertThat(logs1[0].userId).isEqualTo("security1")
+      assertThat(logs1[0].userId).isEqualTo("admin")
     }
 
     @Test

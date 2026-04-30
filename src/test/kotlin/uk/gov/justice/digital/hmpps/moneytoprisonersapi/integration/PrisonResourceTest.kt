@@ -9,10 +9,16 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonCategory
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPopulation
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerLocation
+import org.springframework.jdbc.core.JdbcTemplate
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonCategoryRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonPopulationRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerLocationRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
 
 class PrisonResourceTest : IntegrationTestBase() {
 
@@ -28,8 +34,37 @@ class PrisonResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var prisonerLocationRepository: PrisonerLocationRepository
 
+  @Autowired
+  private lateinit var creditRepository: CreditRepository
+
+  @Autowired
+  private lateinit var logRepository: LogRepository
+
+  @Autowired
+  private lateinit var securityCheckRepository: SecurityCheckRepository
+
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
+  @Autowired
+  private lateinit var disbursementRepository: DisbursementRepository
+
+  @Autowired
+  private lateinit var jdbcTemplate: JdbcTemplate
+
   @BeforeEach
   fun setUp() {
+    // Clear all tables that reference prison_prison (FK order matters)
+    jdbcTemplate.execute("DELETE FROM mtp_auth_accountrequest")
+    jdbcTemplate.execute("DELETE FROM mtp_auth_prisonusermapping_prisons")
+    jdbcTemplate.execute("DELETE FROM prison_prisonercreditnoticeemail")
+    jdbcTemplate.execute("DELETE FROM prison_prisonerbalance")
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
+    securityCheckRepository.deleteAll()
+    logRepository.deleteAll()
+    creditRepository.deleteAll()
+    disbursementRepository.deleteAll()
     prisonerLocationRepository.deleteAll()
     prisonRepository.deleteAll()
     prisonCategoryRepository.deleteAll()
@@ -223,13 +258,13 @@ class PrisonResourceTest : IntegrationTestBase() {
   inner class ListPrisonPopulations {
 
     @Test
-    @DisplayName("PRS-080 - Returns 401 without authentication")
-    fun `should return 401 without authentication`() {
+    @DisplayName("PRS-080 - Public endpoint returns 200 without authentication")
+    fun `should return 200 without authentication`() {
       webTestClient.get()
         .uri("/prison_populations/")
         .exchange()
         .expectStatus()
-        .isUnauthorized
+        .isOk
     }
 
     @Test
@@ -255,13 +290,13 @@ class PrisonResourceTest : IntegrationTestBase() {
   inner class ListPrisonCategories {
 
     @Test
-    @DisplayName("PRS-082 - Returns 401 without authentication")
-    fun `should return 401 without authentication`() {
+    @DisplayName("PRS-082 - Public endpoint returns 200 without authentication")
+    fun `should return 200 without authentication`() {
       webTestClient.get()
         .uri("/prison_categories/")
         .exchange()
         .expectStatus()
-        .isUnauthorized
+        .isOk
     }
 
     @Test

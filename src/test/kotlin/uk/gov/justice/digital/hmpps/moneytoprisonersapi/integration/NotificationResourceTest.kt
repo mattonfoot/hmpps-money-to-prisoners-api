@@ -34,7 +34,7 @@ class NotificationResourceTest : IntegrationTestBase() {
 
   private fun saveEvent(
     rule: String = "MONP",
-    username: String? = "AUTH_ADM",
+    username: String? = "admin",
     triggeredAt: LocalDateTime = LocalDateTime.of(2024, 1, 15, 10, 0),
     credit: Credit? = null,
   ): Event = eventRepository.save(
@@ -67,13 +67,13 @@ class NotificationResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("NOT-003 returns user's own events and global events")
     fun `should return own events and global events`() {
-      saveEvent(username = "AUTH_ADM")
+      saveEvent(username = "admin")
       saveEvent(username = null) // global
       saveEvent(username = "other_user") // another user's — should not appear
 
       webTestClient.get()
         .uri("/events/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -83,12 +83,12 @@ class NotificationResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("NOT-004 filters events by rule code")
     fun `should filter by rule code`() {
-      saveEvent(rule = "MONP", username = "AUTH_ADM")
-      saveEvent(rule = "MONS", username = "AUTH_ADM")
+      saveEvent(rule = "MONP", username = "admin")
+      saveEvent(rule = "MONS", username = "admin")
 
       webTestClient.get()
         .uri("/events/?rule=MONP")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -99,13 +99,13 @@ class NotificationResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("NOT-004 filters by multiple rule codes")
     fun `should filter by multiple rule codes`() {
-      saveEvent(rule = "MONP", username = "AUTH_ADM")
-      saveEvent(rule = "MONS", username = "AUTH_ADM")
-      saveEvent(rule = "NWN", username = "AUTH_ADM")
+      saveEvent(rule = "MONP", username = "admin")
+      saveEvent(rule = "MONS", username = "admin")
+      saveEvent(rule = "NWN", username = "admin")
 
       webTestClient.get()
         .uri("/events/?rule=MONP&rule=MONS")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -120,7 +120,7 @@ class NotificationResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/events/?triggered_at__gte=2024-01-15T00:00:00")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -135,7 +135,7 @@ class NotificationResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/events/?triggered_at__lt=2024-01-15T00:00:00")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -152,7 +152,7 @@ class NotificationResourceTest : IntegrationTestBase() {
 
       val body = webTestClient.get()
         .uri("/events/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody(Map::class.java)
@@ -173,7 +173,7 @@ class NotificationResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/events/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -187,7 +187,7 @@ class NotificationResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/events/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -221,7 +221,7 @@ class NotificationResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/events/pages/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -235,7 +235,7 @@ class NotificationResourceTest : IntegrationTestBase() {
     fun `should return null dates when no events`() {
       webTestClient.get()
         .uri("/events/pages/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -247,12 +247,12 @@ class NotificationResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("NOT-007 includes only events visible to the user")
     fun `should include only user visible events in pages`() {
-      saveEvent(username = "AUTH_ADM", triggeredAt = LocalDateTime.of(2024, 1, 10, 0, 0))
+      saveEvent(username = "admin", triggeredAt = LocalDateTime.of(2024, 1, 10, 0, 0))
       saveEvent(username = "other_user", triggeredAt = LocalDateTime.of(2024, 1, 20, 0, 0))
 
       webTestClient.get()
         .uri("/events/pages/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -315,7 +315,7 @@ class NotificationResourceTest : IntegrationTestBase() {
     fun `should return never when no preference set`() {
       webTestClient.get()
         .uri("/emailpreferences/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -326,12 +326,12 @@ class NotificationResourceTest : IntegrationTestBase() {
     @DisplayName("NOT-010 returns stored frequency when preference exists")
     fun `should return stored frequency`() {
       emailPreferencesRepository.save(
-        EmailNotificationPreferences(username = "AUTH_ADM", frequency = EmailFrequency.DAILY),
+        EmailNotificationPreferences(username = "admin", frequency = EmailFrequency.DAILY),
       )
 
       webTestClient.get()
         .uri("/emailpreferences/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -359,13 +359,13 @@ class NotificationResourceTest : IntegrationTestBase() {
     fun `should set frequency to daily`() {
       webTestClient.post()
         .uri("/emailpreferences/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"frequency": "daily"}""")
         .exchange()
         .expectStatus().isNoContent
 
-      val prefs = emailPreferencesRepository.findByUsername("AUTH_ADM")
+      val prefs = emailPreferencesRepository.findByUsername("admin")
       assertThat(prefs).isNotNull
       assertThat(prefs!!.frequency).isEqualTo(EmailFrequency.DAILY)
     }
@@ -375,31 +375,31 @@ class NotificationResourceTest : IntegrationTestBase() {
     fun `should create preference when none exists`() {
       webTestClient.post()
         .uri("/emailpreferences/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"frequency": "never"}""")
         .exchange()
         .expectStatus().isNoContent
 
-      assertThat(emailPreferencesRepository.findByUsername("AUTH_ADM")).isNotNull
+      assertThat(emailPreferencesRepository.findByUsername("admin")).isNotNull
     }
 
     @Test
     @DisplayName("NOT-012 updates existing preference")
     fun `should update existing preference`() {
       emailPreferencesRepository.save(
-        EmailNotificationPreferences(username = "AUTH_ADM", frequency = EmailFrequency.NEVER),
+        EmailNotificationPreferences(username = "admin", frequency = EmailFrequency.NEVER),
       )
 
       webTestClient.post()
         .uri("/emailpreferences/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .header("Content-Type", "application/json")
         .bodyValue("""{"frequency": "daily"}""")
         .exchange()
         .expectStatus().isNoContent
 
-      val prefs = emailPreferencesRepository.findByUsername("AUTH_ADM")
+      val prefs = emailPreferencesRepository.findByUsername("admin")
       assertThat(prefs!!.frequency).isEqualTo(EmailFrequency.DAILY)
     }
 
@@ -408,9 +408,9 @@ class NotificationResourceTest : IntegrationTestBase() {
     fun `should return 400 for invalid frequency`() {
       webTestClient.post()
         .uri("/emailpreferences/")
-        .headers(setAuthorisation(username = "AUTH_ADM"))
+        .headers(setAuthorisation(username = "admin"))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"frequency": "weekly"}""")
+        .bodyValue("""{"frequency": "hourly"}""")
         .exchange()
         .expectStatus().isBadRequest
     }

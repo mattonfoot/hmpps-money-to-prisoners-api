@@ -7,9 +7,12 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerCreditNoticeEmail
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerCreditNoticeEmailRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerLocationRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
 
 class PrisonerCreditNoticeEmailResourceTest : IntegrationTestBase() {
 
@@ -22,10 +25,23 @@ class PrisonerCreditNoticeEmailResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var prisonerLocationRepository: PrisonerLocationRepository
 
+  @Autowired
+  private lateinit var creditRepository: CreditRepository
+
+  @Autowired
+  private lateinit var securityCheckRepository: SecurityCheckRepository
+
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
+    securityCheckRepository.deleteAll()
     prisonerLocationRepository.deleteAll()
     prisonerCreditNoticeEmailRepository.deleteAll()
+    creditRepository.deleteAll()
     prisonRepository.deleteAll()
   }
 
@@ -131,7 +147,7 @@ class PrisonerCreditNoticeEmailResourceTest : IntegrationTestBase() {
     fun `should return 403 without ROLE_PRISON_CLERK`() {
       webTestClient.post()
         .uri("/prisoner_credit_notice_email/")
-        .headers(setAuthorisation(roles = listOf("ROLE_CASHBOOK")))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .header("Content-Type", "application/json")
         .bodyValue("""{"prison": "LEI", "email": "test@example.com"}""")
         .exchange()

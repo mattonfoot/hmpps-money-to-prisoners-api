@@ -91,14 +91,14 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     fun `should filter by monitoring true`() {
       val monitoredProfile = transactionTemplate.execute {
         val p = RecipientProfile(sortCode = "112233", accountNumber = "11111111")
-        p.monitoringUsers.add("security_user")
+        p.monitoringUsers.add("test-security")
         recipientProfileRepository.save(p)
       }!!
       createRecipientProfile("445566", "22222222")
 
       webTestClient.get()
         .uri("/recipients/?monitoring=true")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -111,7 +111,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     fun `should filter by monitoring false`() {
       transactionTemplate.execute {
         val p = RecipientProfile(sortCode = "112233", accountNumber = "11111111")
-        p.monitoringUsers.add("security_user")
+        p.monitoringUsers.add("test-security")
         recipientProfileRepository.save(p)
       }
       createRecipientProfile("445566", "22222222")
@@ -119,7 +119,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/recipients/?monitoring=false")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -146,13 +146,13 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     fun `should return profile with monitoring field`() {
       val profile = transactionTemplate.execute {
         val p = RecipientProfile(sortCode = "112233", accountNumber = "12345678")
-        p.monitoringUsers.add("security_user")
+        p.monitoringUsers.add("test-security")
         recipientProfileRepository.save(p)
       }!!
 
       webTestClient.get()
         .uri("/recipients/${profile.id}/")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -169,7 +169,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/recipients/${profile.id}/")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -258,7 +258,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
 
       webTestClient.post()
         .uri("/recipients/${profile.id}/monitor/")
-        .headers(setAuthorisation(username = "security_user"))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -266,7 +266,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         val p = recipientProfileRepository.findById(profile.id!!).get()
         p.monitoringUsers.toSet()
       }!!
-      assertThat(monitoringUsers).contains("security_user")
+      assertThat(monitoringUsers).contains("test-security")
     }
 
     @Test
@@ -274,13 +274,13 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     fun `should remove user from monitoring`() {
       val saved = transactionTemplate.execute {
         val p = RecipientProfile(sortCode = "112233", accountNumber = "12345678")
-        p.monitoringUsers.add("security_user")
+        p.monitoringUsers.add("test-security")
         recipientProfileRepository.save(p)
       }!!
 
       webTestClient.post()
         .uri("/recipients/${saved.id}/unmonitor/")
-        .headers(setAuthorisation(username = "security_user"))
+        .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -288,7 +288,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         val p = recipientProfileRepository.findById(saved.id!!).get()
         p.monitoringUsers.toSet()
       }!!
-      assertThat(monitoringUsers).doesNotContain("security_user")
+      assertThat(monitoringUsers).doesNotContain("test-security")
     }
   }
 }

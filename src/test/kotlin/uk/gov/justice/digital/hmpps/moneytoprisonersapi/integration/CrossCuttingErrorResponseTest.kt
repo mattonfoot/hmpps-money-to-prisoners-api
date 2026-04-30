@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSourc
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 
 @DisplayName("14.5 Error Response Conventions")
 class CrossCuttingErrorResponseTest : IntegrationTestBase() {
@@ -24,8 +25,13 @@ class CrossCuttingErrorResponseTest : IntegrationTestBase() {
   @Autowired
   private lateinit var prisonRepository: PrisonRepository
 
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
     logRepository.deleteAll()
     creditRepository.deleteAll()
     prisonRepository.deleteAll()
@@ -174,7 +180,5 @@ class CrossCuttingErrorResponseTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("XCT-044 409 Conflict for invalid state transitions")
-  inner class ConflictErrors {
-
-  }
+  inner class ConflictErrors
 }

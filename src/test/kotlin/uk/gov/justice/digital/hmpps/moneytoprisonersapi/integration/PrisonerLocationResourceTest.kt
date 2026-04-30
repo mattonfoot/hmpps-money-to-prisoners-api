@@ -8,8 +8,11 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerLocation
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerLocationRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
 
 class PrisonerLocationResourceTest : IntegrationTestBase() {
 
@@ -19,9 +22,22 @@ class PrisonerLocationResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var prisonerLocationRepository: PrisonerLocationRepository
 
+  @Autowired
+  private lateinit var creditRepository: CreditRepository
+
+  @Autowired
+  private lateinit var securityCheckRepository: SecurityCheckRepository
+
+  @Autowired
+  private lateinit var privateEstateBatchRepository: PrivateEstateBatchRepository
+
   @BeforeEach
   fun setUp() {
+    privateEstateBatchRepository.clearJoinTable()
+    privateEstateBatchRepository.deleteAll()
+    securityCheckRepository.deleteAll()
     prisonerLocationRepository.deleteAll()
+    creditRepository.deleteAll()
     prisonRepository.deleteAll()
   }
 
@@ -124,7 +140,7 @@ class PrisonerLocationResourceTest : IntegrationTestBase() {
 
       webTestClient.post()
         .uri("/prisoner_locations/")
-        .headers(setAuthorisation(username = "NOMS_USER", roles = listOf("ROLE_NOMS_OPS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMS_OPS")))
         .header("Content-Type", "application/json")
         .bodyValue("""[{"prisoner_number": "A1234BC", "prison": "LEI"}]""")
         .exchange()
@@ -134,7 +150,7 @@ class PrisonerLocationResourceTest : IntegrationTestBase() {
       assertThat(locations).hasSize(1)
       assertThat(locations[0].active).isTrue()
       assertThat(locations[0].prisonerNumber).isEqualTo("A1234BC")
-      assertThat(locations[0].createdBy).isEqualTo("NOMS_USER")
+      assertThat(locations[0].createdBy).isEqualTo("test-prisoner-location-admin")
     }
 
     @Test
@@ -272,7 +288,7 @@ class PrisonerLocationResourceTest : IntegrationTestBase() {
     @DisplayName("PRS-043 - Returns 401 without authentication")
     fun `should return 401 without authentication`() {
       webTestClient.post()
-        .uri("/prisoner_locations/delete_old/")
+        .uri("/prisoner_locations/actions/delete_old/")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -281,7 +297,7 @@ class PrisonerLocationResourceTest : IntegrationTestBase() {
     @DisplayName("PRS-044 - Without ROLE_NOMS_OPS returns 403")
     fun `should return 403 without ROLE_NOMS_OPS`() {
       webTestClient.post()
-        .uri("/prisoner_locations/delete_old/")
+        .uri("/prisoner_locations/actions/delete_old/")
         .headers(setAuthorisation(roles = listOf("ROLE_CASHBOOK")))
         .exchange()
         .expectStatus().isForbidden
@@ -295,7 +311,7 @@ class PrisonerLocationResourceTest : IntegrationTestBase() {
       createLocation("B5678DE", prison, active = true)
 
       webTestClient.post()
-        .uri("/prisoner_locations/delete_old/")
+        .uri("/prisoner_locations/actions/delete_old/")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMS_OPS")))
         .exchange()
         .expectStatus().isNoContent
@@ -313,7 +329,7 @@ class PrisonerLocationResourceTest : IntegrationTestBase() {
     @DisplayName("PRS-046 - Returns 401 without authentication")
     fun `should return 401 without authentication`() {
       webTestClient.post()
-        .uri("/prisoner_locations/delete_inactive/")
+        .uri("/prisoner_locations/actions/delete_inactive/")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -322,7 +338,7 @@ class PrisonerLocationResourceTest : IntegrationTestBase() {
     @DisplayName("PRS-047 - Without ROLE_NOMS_OPS returns 403")
     fun `should return 403 without ROLE_NOMS_OPS`() {
       webTestClient.post()
-        .uri("/prisoner_locations/delete_inactive/")
+        .uri("/prisoner_locations/actions/delete_inactive/")
         .headers(setAuthorisation(roles = listOf("ROLE_CASHBOOK")))
         .exchange()
         .expectStatus().isForbidden
@@ -337,7 +353,7 @@ class PrisonerLocationResourceTest : IntegrationTestBase() {
       createLocation("C9012FG", prison, active = false)
 
       webTestClient.post()
-        .uri("/prisoner_locations/delete_inactive/")
+        .uri("/prisoner_locations/actions/delete_inactive/")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMS_OPS")))
         .exchange()
         .expectStatus().isNoContent
