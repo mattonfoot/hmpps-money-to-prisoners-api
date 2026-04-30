@@ -88,7 +88,7 @@ data class CreditDto(
   val comments: List<CommentDto>,
 ) {
   companion object {
-    fun from(credit: Credit): CreditDto = CreditDto(
+    fun from(credit: Credit, ownerNameMap: Map<String, String> = emptyMap()): CreditDto = CreditDto(
       id = credit.id,
       amount = credit.amount,
       prisonerNumber = credit.prisonerNumber,
@@ -99,7 +99,7 @@ data class CreditDto(
       source = credit.source,
       status = computeFrom(credit),
       owner = credit.owner,
-      ownerName = null,
+      ownerName = credit.owner?.let { ownerNameMap[it] },
       blocked = credit.blocked,
       reviewed = credit.reviewed,
       reconciled = credit.reconciled,

@@ -50,7 +50,7 @@ class PrisonerProfileResource(
       notMonitoredByUsername = notMonitoredBy,
       simpleSearch = simpleSearch,
     )
-    val results = profiles.map { PrisonerProfileDto.from(it, currentUsername = principal.name) }
+    val results = profiles.map { buildDto(it, principal.name) }
     return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
@@ -59,7 +59,16 @@ class PrisonerProfileResource(
   @GetMapping("/{id}/")
   fun getProfile(@PathVariable id: Long, principal: Principal): PrisonerProfileDto {
     val profile = prisonerProfileService.getProfile(id)
-    return PrisonerProfileDto.from(profile, currentUsername = principal.name)
+    return buildDto(profile, principal.name)
+  }
+
+  private fun buildDto(profile: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerProfile, username: String): PrisonerProfileDto {
+    val disbursements = disbursementRepository.findByPrisonerNumber(profile.prisonerNumber ?: "")
+    return PrisonerProfileDto.from(
+      profile = profile,
+      currentUsername = username,
+      disbursements = disbursements,
+    )
   }
 
   @Operation(summary = "Get credits for a prisoner profile (SEC-093)")

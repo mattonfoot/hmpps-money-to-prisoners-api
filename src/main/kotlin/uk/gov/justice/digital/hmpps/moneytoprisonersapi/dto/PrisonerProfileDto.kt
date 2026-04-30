@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursement
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerProfile
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -39,24 +40,38 @@ data class PrisonerProfileDto(
   val modified: LocalDateTime?,
 ) {
   companion object {
-    fun from(profile: PrisonerProfile, currentUsername: String? = null): PrisonerProfileDto = PrisonerProfileDto(
-      id = profile.id,
-      prisonerNumber = profile.prisonerNumber,
-      prisonerName = profile.prisonerName,
-      prisonerDob = null,
-      creditCount = profile.credits.size,
-      creditTotal = profile.credits.sumOf { it.amount },
-      senderCount = 0,
-      recipientCount = 0,
-      disbursementCount = 0,
-      disbursementTotal = 0,
-      prisons = profile.credits.mapNotNull { it.prison }.distinct(),
-      currentPrison = null,
-      providedNames = profile.credits.mapNotNull { it.prisonerName }.distinct(),
-      monitoringUsers = profile.monitoringUsers.toList(),
-      monitoring = if (currentUsername != null) profile.monitoringUsers.contains(currentUsername) else null,
-      created = profile.created,
-      modified = profile.modified,
-    )
+    fun from(
+      profile: PrisonerProfile,
+      currentUsername: String? = null,
+      disbursements: List<Disbursement> = emptyList(),
+      senderCount: Int? = null,
+      recipientCount: Int? = null,
+    ): PrisonerProfileDto {
+      val credits = profile.credits
+      val mostCommonDob = credits.mapNotNull { it.prisonerDob }
+        .groupingBy { it }.eachCount()
+        .maxByOrNull { it.value }?.key
+      val latestPrison = credits.filter { it.prison != null && it.created != null }
+        .maxByOrNull { it.created!! }?.prison
+      return PrisonerProfileDto(
+        id = profile.id,
+        prisonerNumber = profile.prisonerNumber,
+        prisonerName = profile.prisonerName,
+        prisonerDob = mostCommonDob,
+        creditCount = credits.size,
+        creditTotal = credits.sumOf { it.amount },
+        senderCount = senderCount ?: 0,
+        recipientCount = recipientCount ?: 0,
+        disbursementCount = disbursements.size,
+        disbursementTotal = disbursements.sumOf { it.amount },
+        prisons = credits.mapNotNull { it.prison }.distinct(),
+        currentPrison = latestPrison,
+        providedNames = credits.mapNotNull { it.prisonerName }.distinct(),
+        monitoringUsers = profile.monitoringUsers.toList(),
+        monitoring = if (currentUsername != null) profile.monitoringUsers.contains(currentUsername) else null,
+        created = profile.created,
+        modified = profile.modified,
+      )
+    }
   }
 }

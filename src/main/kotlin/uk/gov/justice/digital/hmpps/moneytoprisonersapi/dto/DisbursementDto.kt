@@ -119,7 +119,12 @@ data class DisbursementDto(
   val comments: List<DisbursementCommentDto>,
 ) {
   companion object {
-    fun from(disbursement: Disbursement, prisonNameMap: Map<String, String> = emptyMap()): DisbursementDto = DisbursementDto(
+    fun from(
+      disbursement: Disbursement,
+      prisonNameMap: Map<String, String> = emptyMap(),
+      prisonerProfileMap: Map<String, Long> = emptyMap(),
+      recipientProfileMap: Map<String, Long> = emptyMap(),
+    ): DisbursementDto = DisbursementDto(
       id = disbursement.id,
       amount = disbursement.amount,
       method = disbursement.method,
@@ -145,8 +150,10 @@ data class DisbursementDto(
       created = disbursement.created,
       modified = disbursement.modified,
       remittanceDescription = "",
-      prisonerProfile = null,
-      recipientProfile = null,
+      prisonerProfile = disbursement.prisonerNumber?.let { prisonerProfileMap[it] },
+      recipientProfile = disbursement.sortCode?.let { sc ->
+        disbursement.accountNumber?.let { an -> recipientProfileMap["$sc-$an"] }
+      },
       prisonName = disbursement.prison?.let { prisonNameMap[it] },
       logSet = disbursement.logs.map {
         mapOf("action" to it.action.value, "created" to it.created, "user" to it.userId)
