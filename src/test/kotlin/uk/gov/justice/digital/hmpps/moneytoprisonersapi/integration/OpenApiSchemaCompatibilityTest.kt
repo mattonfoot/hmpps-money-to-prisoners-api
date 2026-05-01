@@ -105,6 +105,38 @@ class OpenApiSchemaCompatibilityTest : IntegrationTestBase() {
       .isEmpty()
   }
 
+  @Test
+  @DisplayName("private-estate-batches URLs use {ref} / {batch_ref} matching Python")
+  fun `private estate batches URLs match Python`() {
+    val paths = fetchPaths()
+    assertThat(paths)
+      .describedAs("/private-estate-batches/{ref}/ should appear in spec")
+      .contains("/private-estate-batches/{ref}/")
+    assertThat(paths)
+      .describedAs("/private-estate-batches/{batch_ref}/credits/ should appear in spec")
+      .contains("/private-estate-batches/{batch_ref}/credits/")
+    val twoSegmentPaths = paths.filter {
+      it.startsWith("/private-estate-batches/{prison}/{date}")
+    }
+    assertThat(twoSegmentPaths)
+      .describedAs("/private-estate-batches should not expose {prison}/{date} two-segment paths")
+      .isEmpty()
+  }
+
+  private fun fetchPaths(): Set<String> {
+    val body = webTestClient.get()
+      .uri("/v3/api-docs")
+      .accept(MediaType.APPLICATION_JSON)
+      .exchange()
+      .expectStatus().isOk
+      .expectBody(Map::class.java)
+      .returnResult()
+      .responseBody
+    @Suppress("UNCHECKED_CAST")
+    val paths = (body?.get("paths") as? Map<String, Any>) ?: emptyMap()
+    return paths.keys
+  }
+
   private fun fetchSchemaNames(): Set<String> {
     val body = webTestClient.get()
       .uri("/v3/api-docs")

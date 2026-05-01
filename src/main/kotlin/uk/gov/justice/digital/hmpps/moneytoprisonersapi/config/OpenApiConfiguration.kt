@@ -289,6 +289,43 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
   }
 
   /**
+   * Rewrites the `/private-estate-batches/{prison}/{date}/...` paths into
+   * `/private-estate-batches/{ref}/` and `/private-estate-batches/{batch_ref}/credits/`
+   * to match Python's URL path templates exactly. The Spring routing keeps using
+   * two path variables (`prison` and `date`) because Spring path variables can't
+   * span `/` separators, but the OpenAPI spec presents the Python-style URLs so
+   * generated client SDKs match.
+   */
+  @Bean
+  fun rewritePrivateEstateBatchPaths(): OpenApiCustomizer = OpenApiCustomizer { openApi ->
+    val paths = openApi.paths ?: return@OpenApiCustomizer
+    val pathRewrites = mapOf(
+      "/private-estate-batches/{prison}/{date}/" to ("/private-estate-batches/{ref}/" to "ref"),
+      "/private-estate-batches/{prison}/{date}/credits/" to ("/private-estate-batches/{batch_ref}/credits/" to "batch_ref"),
+    )
+    pathRewrites.forEach { (oldPath, newPathAndVarName) ->
+      val (newPath, newVarName) = newPathAndVarName
+      val pathItem = paths.remove(oldPath) ?: return@forEach
+      // Rewrite each operation's parameters: collapse {prison} + {date} into single {ref}
+      pathItem.readOperations().forEach { op ->
+        val params = op.parameters ?: return@forEach
+        val prisonParam = params.find { it.name == "prison" && it.`in` == "path" }
+        val dateParam = params.find { it.name == "date" && it.`in` == "path" }
+        if (prisonParam != null && dateParam != null) {
+          // Replace prison+date with single ref param
+          val refParam = prisonParam.apply {
+            name = newVarName
+            description = "Batch reference in the form `prison/yyyy-mm-dd`"
+            schema = io.swagger.v3.oas.models.media.StringSchema()
+          }
+          op.parameters = params.filter { it !== dateParam && it !== prisonParam } + refParam
+        }
+      }
+      paths.addPathItem(newPath, pathItem)
+    }
+  }
+
+  /**
    * Forcibly registers Python-aligned nested-type schemas into the OpenAPI spec.
    * These classes exist as Kotlin DTOs for client-SDK parity but aren't directly
    * referenced from any endpoint — Python's serialiser exposes them, ours doesn't.
