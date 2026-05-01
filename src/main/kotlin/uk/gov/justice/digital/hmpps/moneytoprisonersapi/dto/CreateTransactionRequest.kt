@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Transaction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.TransactionSource
 import java.time.LocalDateTime
 
-@Schema(description = "Request body for creating a bank transfer transaction")
+@Schema(name = "CreateTransaction", description = "Request body for creating a bank transfer transaction")
 data class CreateTransactionRequest(
   @Schema(description = "Amount in pence", example = "5000", required = true)
   @field:NotNull

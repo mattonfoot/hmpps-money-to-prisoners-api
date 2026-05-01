@@ -3,13 +3,13 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 
-@Schema(description = "Request body for confirming disbursements")
+@Schema(hidden = true)
 data class DisbursementConfirmRequest(
   @Schema(description = "List of disbursements to confirm with optional NOMIS transaction IDs", required = true)
   val disbursements: List<DisbursementConfirmItem>,
 )
 
-@Schema(description = "Individual disbursement item in a confirm request")
+@Schema(name = "DisbursementConfirmation", description = "Individual disbursement item in a confirm request")
 data class DisbursementConfirmItem(
   @Schema(description = "Disbursement ID", example = "42", required = true)
   val id: Long,

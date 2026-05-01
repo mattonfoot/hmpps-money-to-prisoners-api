@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 
-@Schema(description = "Request body for creating a new payment")
+@Schema(hidden = true)
 data class CreatePaymentRequest(
   @Schema(description = "Prisoner number (NOMIS ID)", example = "A1234BC")
   @JsonProperty("prisoner_number")

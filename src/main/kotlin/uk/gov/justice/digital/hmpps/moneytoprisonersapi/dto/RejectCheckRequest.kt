@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 
-@Schema(description = "Request body for rejecting a security check")
+@Schema(hidden = true)
 data class RejectCheckRequest(
   @Schema(description = "Reason for the reject decision", example = "Suspicious activity detected")
   @JsonProperty("decision_reason")

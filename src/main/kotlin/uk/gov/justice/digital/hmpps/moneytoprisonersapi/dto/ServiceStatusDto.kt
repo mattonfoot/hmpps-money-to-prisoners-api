@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema
  * SVC-004: Includes downtime_end and message_to_users when a downtime is active and those fields are set.
  * SVC-005: downtime_end is absent when the downtime has no scheduled end (ongoing).
  */
-@Schema(name = "ServiceStatus", description = "Availability status for a single service")
+@Schema(hidden = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ServiceStatusDto(
   @Schema(description = "True if the service is available, false if it is down", example = "true")

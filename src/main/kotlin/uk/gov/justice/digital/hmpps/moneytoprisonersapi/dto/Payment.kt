@@ -8,7 +8,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
-@Schema(name = "PaymentSecurityCheck", description = "Security check summary attached to a payment's credit")
+@Schema(hidden = true)
 data class PaymentSecurityCheckDto(
   @Schema(description = "Check status", example = "PENDING")
   val status: CheckStatus,

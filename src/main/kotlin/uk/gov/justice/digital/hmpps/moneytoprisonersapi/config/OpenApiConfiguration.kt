@@ -9,12 +9,22 @@ import io.swagger.v3.oas.models.security.OAuthFlows
 import io.swagger.v3.oas.models.security.Scopes
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
+import io.swagger.v3.core.converter.AnnotatedType
+import io.swagger.v3.core.converter.ModelConverters
 import io.swagger.v3.oas.models.servers.Server
 import io.swagger.v3.oas.models.tags.Tag
 import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.BasicUser
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ChangePassword
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CheckCredit
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateNewPassword
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DebitCardSenderDetailsCardholderNames
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.NomisPrison
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.Null
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PrivateEstateBatchCredit
 
 // Tag name constants matching the Python API's tag names exactly.
 // Order follows the Python API's alphabetical convention.
@@ -162,5 +172,159 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
 
     // Now remove the PaginatedResponse* schemas
     paginatedSchemas.keys.forEach { schemas.remove(it) }
+  }
+
+  /**
+   * Removes any schemas whose names end with `Dto` from the OpenAPI spec.
+   *
+   * These are Kotlin internal types annotated with `@Schema(hidden = true)` that should
+   * not appear in the generated OpenAPI document, but springdoc still emits them when
+   * they are referenced (directly or transitively) from non-hidden response or property
+   * types. We strip them and inline their bodies wherever `$ref` to them appears in
+   * other component schemas, request bodies, and response bodies.
+   */
+  @Bean
+  fun hideDtoSuffixedSchemas(): OpenApiCustomizer = OpenApiCustomizer { openApi ->
+    val components = openApi.components ?: return@OpenApiCustomizer
+    val schemas = components.schemas ?: return@OpenApiCustomizer
+    val dtoSchemas = schemas.filterKeys { it.endsWith("Dto") }
+    if (dtoSchemas.isEmpty()) return@OpenApiCustomizer
+
+    val refToInline = dtoSchemas.mapKeys { (name, _) -> "#/components/schemas/$name" }
+
+    fun inline(target: io.swagger.v3.oas.models.media.Schema<*>?) {
+      if (target == null) return
+      val ref = target.`$ref`
+      if (ref != null && refToInline.containsKey(ref)) {
+        val src = refToInline[ref]!!
+        target.`$ref` = null
+        target.type = src.type
+        target.properties = src.properties
+        target.required = src.required
+        target.description = target.description ?: src.description
+      }
+      // Recurse into nested schemas
+      target.properties?.values?.forEach { inline(it) }
+      target.items?.let { inline(it) }
+      target.additionalProperties?.let { if (it is io.swagger.v3.oas.models.media.Schema<*>) inline(it) }
+    }
+
+    // Inline references inside other component schemas
+    schemas.values.forEach { inline(it) }
+
+    // Inline references inside operation request/response bodies
+    openApi.paths?.values?.forEach { pathItem ->
+      pathItem.readOperations().forEach { op ->
+        op.requestBody?.content?.values?.forEach { mediaType -> inline(mediaType.schema) }
+        op.responses?.values?.forEach { response ->
+          response.content?.values?.forEach { mediaType -> inline(mediaType.schema) }
+        }
+      }
+    }
+
+    // Now remove the *Dto schemas from components
+    dtoSchemas.keys.forEach { schemas.remove(it) }
+  }
+
+  /**
+   * Removes Kotlin-only request and response wrapper schemas from the OpenAPI spec.
+   * Python's DRF inlines request bodies anonymously rather than naming them, and our
+   * client SDKs are easier to maintain when the two schemas align. This customizer
+   * removes schemas matching well-known suffix patterns and inlines references where
+   * needed so dangling `$ref`s don't break the spec.
+   */
+  @Bean
+  fun hideRequestBodySchemas(): OpenApiCustomizer = OpenApiCustomizer { openApi ->
+    val components = openApi.components ?: return@OpenApiCustomizer
+    val schemas = components.schemas ?: return@OpenApiCustomizer
+    // Preserve names that are valid Python-aligned schemas even though they happen
+    // to end in "Request" or "Response".
+    val preserve = setOf(
+      "AccountRequest",
+      "ChangePasswordWithCode",
+      "ChangePassword",
+      "CreateNewPassword",
+      "CreateTransaction",
+      "ReconcileTransaction",
+      "ResetPassword",
+      "UpdateRefundedTransaction",
+    )
+    val toRemove = schemas.filterKeys { name ->
+      name !in preserve && (
+        name.endsWith("Request") ||
+          name.endsWith("Response") ||
+          name == "Rule" // Internal rule schema, replaced by CheckAutoAcceptRule
+        )
+    }
+    if (toRemove.isEmpty()) return@OpenApiCustomizer
+
+    val refToInline = toRemove.mapKeys { (name, _) -> "#/components/schemas/$name" }
+
+    fun inline(target: io.swagger.v3.oas.models.media.Schema<*>?) {
+      if (target == null) return
+      val ref = target.`$ref`
+      if (ref != null && refToInline.containsKey(ref)) {
+        val src = refToInline[ref]!!
+        target.`$ref` = null
+        target.type = src.type
+        target.properties = src.properties
+        target.required = src.required
+        target.description = target.description ?: src.description
+      }
+      target.properties?.values?.forEach { inline(it) }
+      target.items?.let { inline(it) }
+      target.additionalProperties?.let { if (it is io.swagger.v3.oas.models.media.Schema<*>) inline(it) }
+    }
+
+    schemas.values.forEach { inline(it) }
+    openApi.paths?.values?.forEach { pathItem ->
+      pathItem.readOperations().forEach { op ->
+        op.requestBody?.content?.values?.forEach { mediaType -> inline(mediaType.schema) }
+        op.responses?.values?.forEach { response ->
+          response.content?.values?.forEach { mediaType -> inline(mediaType.schema) }
+        }
+      }
+    }
+    toRemove.keys.forEach { schemas.remove(it) }
+  }
+
+  /**
+   * Forcibly registers Python-aligned nested-type schemas into the OpenAPI spec.
+   * These classes exist as Kotlin DTOs for client-SDK parity but aren't directly
+   * referenced from any endpoint — Python's serialiser exposes them, ours doesn't.
+   *
+   * Run AFTER `hideRequestBodySchemas` so we don't get accidentally stripped.
+   */
+  @Bean
+  fun registerNestedPythonSchemas(): OpenApiCustomizer = OpenApiCustomizer { openApi ->
+    val components = openApi.components ?: return@OpenApiCustomizer
+    if (components.schemas == null) components.schemas = mutableMapOf()
+
+    val classesToRegister = listOf(
+      "Basic User" to BasicUser::class.java,
+      "ChangePassword" to ChangePassword::class.java,
+      "CheckCredit" to CheckCredit::class.java,
+      "CreateNewPassword" to CreateNewPassword::class.java,
+      "DebitCardSenderDetailsCardholderNames" to DebitCardSenderDetailsCardholderNames::class.java,
+      "NOMIS Prison" to NomisPrison::class.java,
+      "Null" to Null::class.java,
+      "PrivateEstateBatchCredit" to PrivateEstateBatchCredit::class.java,
+    )
+
+    val converters = ModelConverters.getInstance()
+    classesToRegister.forEach { (name, cls) ->
+      if (!components.schemas.containsKey(name)) {
+        val resolved = converters.resolveAsResolvedSchema(AnnotatedType(cls))
+        if (resolved.schema != null) {
+          components.schemas[name] = resolved.schema
+          // Also register any sub-schemas the resolver discovered (avoid duplicates with custom names)
+          resolved.referencedSchemas?.forEach { (subName, subSchema) ->
+            if (subName !in components.schemas && subName !in classesToRegister.map { it.first }) {
+              components.schemas[subName] = subSchema
+            }
+          }
+        }
+      }
+    }
   }
 }

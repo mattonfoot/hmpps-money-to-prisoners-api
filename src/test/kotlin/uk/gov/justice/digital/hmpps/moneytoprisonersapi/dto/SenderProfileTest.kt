@@ -28,10 +28,10 @@ class SenderProfileTest {
     val dto = SenderProfile.from(profile)
 
     assertThat(dto.bankTransferDetails).hasSize(1)
-    assertThat(dto.bankTransferDetails[0]["sender_name"]).isEqualTo("John Smith")
-    assertThat(dto.bankTransferDetails[0]["sender_sort_code"]).isEqualTo("112233")
-    assertThat(dto.bankTransferDetails[0]["sender_account_number"]).isEqualTo("12345678")
-    assertThat(dto.bankTransferDetails[0]["sender_roll_number"]).isEqualTo("ROLL1")
+    assertThat(dto.bankTransferDetails[0].senderName).isEqualTo("John Smith")
+    assertThat(dto.bankTransferDetails[0].senderSortCode).isEqualTo("112233")
+    assertThat(dto.bankTransferDetails[0].senderAccountNumber).isEqualTo("12345678")
+    assertThat(dto.bankTransferDetails[0].senderRollNumber).isEqualTo("ROLL1")
   }
 
   @Test
@@ -49,8 +49,8 @@ class SenderProfileTest {
     val dto = SenderProfile.from(profile)
 
     assertThat(dto.debitCardDetails).hasSize(1)
-    assertThat(dto.debitCardDetails[0]["card_number_last_digits"]).isEqualTo("4321")
-    assertThat(dto.debitCardDetails[0]["card_expiry_date"]).isEqualTo("12/25")
+    assertThat(dto.debitCardDetails[0].cardNumberLastDigits).isEqualTo("4321")
+    assertThat(dto.debitCardDetails[0].cardExpiryDate).isEqualTo("12/25")
   }
 
   @Test

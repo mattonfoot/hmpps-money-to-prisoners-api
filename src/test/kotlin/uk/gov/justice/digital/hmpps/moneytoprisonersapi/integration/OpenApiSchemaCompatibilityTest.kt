@@ -14,6 +14,7 @@ class OpenApiSchemaCompatibilityTest : IntegrationTestBase() {
 
   /** Schema names that MUST appear in the Kotlin OpenAPI spec (matching Python). */
   private val expectedSchemaNames = setOf(
+    // Core entity DTOs
     "AccountRequest",
     "Balance",
     "Batch",
@@ -49,6 +50,31 @@ class OpenApiSchemaCompatibilityTest : IntegrationTestBase() {
     "SecurityCredit",
     "SenderProfile",
     "Transaction",
+    // Strategy A: Direct request DTO renames matching Python
+    "ChangePasswordWithCode",
+    "ResetPassword",
+    "CreateTransaction",
+    "ReconcileTransaction",
+    "DisbursementIds",
+    "DisbursementConfirmation",
+    "CreditedOnlyCredit",
+    "IdsCredit",
+    "UpdateRefundedTransaction",
+    // Strategy B: Nested type extractions
+    "BankTransferSenderDetails",
+    "BankTransferRecipientDetails",
+    "DebitCardSenderDetails",
+    "SearchFilter",
+    "Log",
+    // Final gap closures — match every Python schema name
+    "Basic User",
+    "CheckCredit",
+    "CreateNewPassword",
+    "DebitCardSenderDetailsCardholderNames",
+    "NOMIS Prison",
+    "Null",
+    "PrivateEstateBatchCredit",
+    "ChangePassword",
   )
 
   @Test

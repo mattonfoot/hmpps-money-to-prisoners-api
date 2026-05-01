@@ -32,7 +32,7 @@ data class FileDownload(
   }
 }
 
-@Schema(description = "Request body for creating a file download record")
+@Schema(hidden = true)
 data class CreateFileDownloadRequest(
   @Schema(description = "Label identifying the type of file download")
   val label: String?,

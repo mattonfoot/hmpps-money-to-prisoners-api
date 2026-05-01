@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.math.BigInteger
 import java.time.LocalDate
 
-@Schema(description = "Request to create a new daily closing balance record")
+@Schema(hidden = true)
 data class CreateBalanceRequest(
   @Schema(description = "Closing balance in pence", example = "12345", required = true)
   val closingBalance: BigInteger,

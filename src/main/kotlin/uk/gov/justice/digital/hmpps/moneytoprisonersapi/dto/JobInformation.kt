@@ -39,7 +39,7 @@ data class JobInformation(
   }
 }
 
-@Schema(description = "Request body for creating job information")
+@Schema(hidden = true)
 data class CreateJobInformationRequest(
   @Schema(description = "Job title")
   val title: String?,

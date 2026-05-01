@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateTransactionReq
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ReconcileTransactionRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.Transaction
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdateRefundedTransaction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.TransactionService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.TransactionStatus
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -163,12 +164,9 @@ class TransactionsResource(
   @PreAuthorize("hasRole('BANK_ADMIN')")
   @PatchMapping("/")
   fun refundTransactions(
-    @RequestBody items: List<Map<String, Any>>,
+    @RequestBody items: List<UpdateRefundedTransaction>,
   ): ResponseEntity<Any> {
-    // Python sends [{id: 1, refunded: true}, ...] — extract IDs where refunded=true
-    val transactionIds = items
-      .filter { it["refunded"] == true }
-      .mapNotNull { (it["id"] as? Number)?.toLong() }
+    val transactionIds = items.filter { it.refunded }.map { it.id }
     if (items.isNotEmpty() && transactionIds.isEmpty()) {
       return ResponseEntity.ok(items) // No refunds requested, return as-is
     }

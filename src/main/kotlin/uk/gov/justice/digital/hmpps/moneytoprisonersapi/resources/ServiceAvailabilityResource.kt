@@ -48,7 +48,7 @@ class ServiceAvailabilityResource(
   fun getServiceAvailability(): Map<String, ServiceStatusDto> = serviceAvailabilityService.getServiceAvailability()
 }
 
-@Schema(name = "ServiceAvailabilityResponse", description = "Map of service name to status. Keys are service identifiers and '*'.")
+@Schema(hidden = true)
 private class ServiceAvailabilityResponse(
   @Schema(description = "Status for GOV.UK Pay")
   val gov_uk_pay: ServiceStatusDto,

@@ -16,7 +16,7 @@ data class UserFlagDto(
   }
 }
 
-@Schema(description = "Request body for creating a user flag")
+@Schema(hidden = true)
 data class CreateUserFlagRequest(
   @Schema(description = "Flag name to set", required = true)
   val flagName: String?,

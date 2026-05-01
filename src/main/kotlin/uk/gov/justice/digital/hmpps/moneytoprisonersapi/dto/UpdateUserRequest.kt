@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 
-@Schema(description = "Request body for partial update of an MTP user")
+@Schema(hidden = true)
 data class UpdateUserRequest(
   @Schema(description = "New email address")
   val email: String? = null,

@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Size
 
-@Schema(description = "Request body for creating a comment on a credit")
+@Schema(hidden = true)
 data class CreateCommentRequest(
   @Schema(description = "Credit ID to attach comment to", example = "42", required = true)
   val credit: Long,

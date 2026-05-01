@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
-@Schema(description = "Request body for partially updating a payment (PATCH)")
+@Schema(hidden = true)
 data class UpdatePaymentRequest(
   @Schema(description = "New status: taken, failed, rejected, or expired", example = "taken")
   val status: String? = null,

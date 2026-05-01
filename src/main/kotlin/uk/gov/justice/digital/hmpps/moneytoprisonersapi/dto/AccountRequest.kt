@@ -55,7 +55,7 @@ data class AccountRequest(
   }
 }
 
-@Schema(description = "Request body for creating an account request")
+@Schema(hidden = true)
 data class CreateAccountRequestRequest(
   @Schema(description = "Requested username")
   val username: String?,

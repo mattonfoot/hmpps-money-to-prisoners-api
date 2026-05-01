@@ -31,13 +31,13 @@ data class CheckAutoAcceptRule(
   }
 }
 
-@Schema(description = "Request to create or patch an auto-accept rule state")
+@Schema(hidden = true)
 data class AutoAcceptRuleStateRequest(
   val active: Boolean,
   val reason: String? = null,
 )
 
-@Schema(description = "Request body for creating an auto-accept rule")
+@Schema(hidden = true)
 data class CreateAutoAcceptRuleRequest(
   @JsonProperty("sender_profile")
   val senderProfile: Long,
@@ -46,7 +46,7 @@ data class CreateAutoAcceptRuleRequest(
   val states: List<AutoAcceptRuleStateRequest>,
 )
 
-@Schema(description = "Request body for patching an auto-accept rule (append state)")
+@Schema(hidden = true)
 data class PatchAutoAcceptRuleRequest(
   val states: List<AutoAcceptRuleStateRequest>,
 )

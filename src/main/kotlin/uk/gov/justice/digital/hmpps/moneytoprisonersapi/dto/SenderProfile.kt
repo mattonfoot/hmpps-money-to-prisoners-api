@@ -4,6 +4,31 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
+@Schema(name = "BankTransferSenderDetails", description = "Bank transfer details for a sender")
+data class BankTransferSenderDetails(
+  @JsonProperty("sender_name")
+  val senderName: String?,
+  @JsonProperty("sender_sort_code")
+  val senderSortCode: String?,
+  @JsonProperty("sender_account_number")
+  val senderAccountNumber: String?,
+  @JsonProperty("sender_roll_number")
+  val senderRollNumber: String?,
+)
+
+@Schema(name = "DebitCardSenderDetails", description = "Debit card details for a sender")
+data class DebitCardSenderDetails(
+  @JsonProperty("card_number_last_digits")
+  val cardNumberLastDigits: String?,
+  @JsonProperty("card_expiry_date")
+  val cardExpiryDate: String?,
+  @JsonProperty("cardholder_names")
+  val cardholderNames: List<String>,
+  @JsonProperty("sender_emails")
+  val senderEmails: List<String>,
+  val postcode: String? = null,
+)
+
 @Schema(description = "A sender profile aggregating credits from one sender")
 data class SenderProfile(
   val id: Long?,
@@ -17,9 +42,9 @@ data class SenderProfile(
   val prisonCount: Int,
   val prisons: List<String>,
   @JsonProperty("bank_transfer_details")
-  val bankTransferDetails: List<Map<String, Any?>>,
+  val bankTransferDetails: List<BankTransferSenderDetails>,
   @JsonProperty("debit_card_details")
-  val debitCardDetails: List<Map<String, Any?>>,
+  val debitCardDetails: List<DebitCardSenderDetails>,
   @JsonProperty("monitoring_users")
   val monitoringUsers: List<String>,
   val monitoring: Boolean?,
@@ -31,24 +56,24 @@ data class SenderProfile(
       val credits = profile.credits
       val bankDetails = credits.mapNotNull { it.transaction }
         .map { tx ->
-          mapOf<String, Any?>(
-            "sender_name" to tx.senderName,
-            "sender_sort_code" to tx.senderSortCode,
-            "sender_account_number" to tx.senderAccountNumber,
-            "sender_roll_number" to tx.senderRollNumber,
+          BankTransferSenderDetails(
+            senderName = tx.senderName,
+            senderSortCode = tx.senderSortCode,
+            senderAccountNumber = tx.senderAccountNumber,
+            senderRollNumber = tx.senderRollNumber,
           )
         }
-        .distinctBy { "${it["sender_sort_code"]}-${it["sender_account_number"]}" }
+        .distinctBy { "${it.senderSortCode}-${it.senderAccountNumber}" }
       val cardDetails = credits.mapNotNull { it.payment }
         .map { pay ->
-          mapOf<String, Any?>(
-            "card_number_last_digits" to pay.cardNumberLastDigits,
-            "card_expiry_date" to pay.cardExpiryDate,
-            "cardholder_names" to listOfNotNull(pay.cardholderName),
-            "sender_emails" to listOfNotNull(pay.email),
+          DebitCardSenderDetails(
+            cardNumberLastDigits = pay.cardNumberLastDigits,
+            cardExpiryDate = pay.cardExpiryDate,
+            cardholderNames = listOfNotNull(pay.cardholderName),
+            senderEmails = listOfNotNull(pay.email),
           )
         }
-        .distinctBy { "${it["card_number_last_digits"]}-${it["card_expiry_date"]}" }
+        .distinctBy { "${it.cardNumberLastDigits}-${it.cardExpiryDate}" }
       return SenderProfile(
         id = profile.id,
         creditCount = credits.size,

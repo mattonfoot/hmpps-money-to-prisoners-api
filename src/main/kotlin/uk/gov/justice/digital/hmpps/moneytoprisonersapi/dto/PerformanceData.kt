@@ -39,7 +39,7 @@ data class PerformanceData(
   val rated5: Int? = null,
 )
 
-@Schema(description = "Performance data response with field headers and weekly results")
+@Schema(hidden = true)
 data class PerformanceDataResponse(
   @Schema(description = "Map of field name to verbose label, suitable for CSV column headers")
   val headers: Map<String, String>,

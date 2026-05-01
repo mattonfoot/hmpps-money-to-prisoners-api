@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 
-@Schema(name = "BillingAddressUpdate", description = "Billing address for update requests")
+@Schema(hidden = true)
 data class BillingAddressUpdateDto(
   @Schema(description = "Address line 1", example = "10 Downing Street")
   val line1: String? = null,

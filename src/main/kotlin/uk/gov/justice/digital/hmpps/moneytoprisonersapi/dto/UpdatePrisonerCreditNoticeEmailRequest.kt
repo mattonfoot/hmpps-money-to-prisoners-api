@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Email
 
-@Schema(description = "Request to update a prisoner credit notice email configuration")
+@Schema(hidden = true)
 data class UpdatePrisonerCreditNoticeEmailRequest(
   @JsonProperty("email")
   @Schema(description = "New email address for credit notices", example = "newclerk@prison.gov.uk")

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementMethod
 
-@Schema(description = "Request body for partially updating a disbursement")
+@Schema(hidden = true)
 data class UpdateDisbursementRequest(
   @Schema(description = "Amount in pence", example = "5000")
   val amount: Long? = null,

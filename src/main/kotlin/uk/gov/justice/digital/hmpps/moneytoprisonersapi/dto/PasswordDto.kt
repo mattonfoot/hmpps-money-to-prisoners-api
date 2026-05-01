@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 
-@Schema(description = "Request body for changing password")
+@Schema(name = "ChangePassword", description = "Request body for changing password")
 data class ChangePasswordRequest(
   @Schema(description = "Current password", required = true)
   val oldPassword: String?,
@@ -14,7 +14,7 @@ data class ChangePasswordRequest(
   val application: String? = null,
 )
 
-@Schema(description = "Request body for initiating a password reset")
+@Schema(name = "ResetPassword", description = "Request body for initiating a password reset")
 data class ResetPasswordRequest(
   @Schema(description = "Username to reset (provide username OR email)", example = "jsmith")
   val username: String? = null,
@@ -26,7 +26,7 @@ data class ResetPasswordRequest(
   val application: String? = null,
 )
 
-@Schema(description = "Request body for completing a password reset via token")
+@Schema(name = "ChangePasswordWithCode", description = "Request body for completing a password reset via token")
 data class ChangePasswordByTokenRequest(
   @Schema(description = "Password reset token (UUID)", required = true)
   val token: String?,

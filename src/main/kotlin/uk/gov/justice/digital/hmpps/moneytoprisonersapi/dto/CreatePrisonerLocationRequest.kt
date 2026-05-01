@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 
-@Schema(description = "Request to create a prisoner location")
+@Schema(hidden = true)
 data class CreatePrisonerLocationRequest(
   @JsonProperty("prisoner_number")
   @Schema(description = "Prisoner number", example = "A1234BC")

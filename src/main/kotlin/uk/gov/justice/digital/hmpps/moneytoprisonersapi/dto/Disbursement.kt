@@ -112,7 +112,7 @@ data class Disbursement(
 
   @Schema(description = "Audit log entries for this disbursement")
   @JsonProperty("log_set")
-  val logSet: List<Map<String, Any?>>,
+  val logSet: List<Log>,
 
   @Schema(description = "Comments on this disbursement")
   val comments: List<DisbursementCommentDto>,
@@ -155,7 +155,7 @@ data class Disbursement(
       },
       prisonName = disbursement.prison?.let { prisonNameMap[it] },
       logSet = disbursement.logs.map {
-        mapOf("action" to it.action.value, "created" to it.created, "user" to it.userId)
+        Log(action = it.action.value, created = it.created, user = it.userId)
       },
       comments = disbursement.comments.map { DisbursementCommentDto.from(it) },
     )

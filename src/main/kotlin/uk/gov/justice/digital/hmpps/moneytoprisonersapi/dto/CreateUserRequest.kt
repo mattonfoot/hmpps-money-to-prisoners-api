@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 
-@Schema(description = "Request body for creating a new MTP user")
+@Schema(hidden = true)
 data class CreateUserRequest(
   @Schema(description = "Username (unique, case-insensitive)", required = true)
   val username: String?,
