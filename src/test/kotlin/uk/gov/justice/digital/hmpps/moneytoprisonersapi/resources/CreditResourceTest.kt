@@ -16,11 +16,8 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SetManualRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.AttachProfilesService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ReconcileService
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.UpdatePrisonService
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -34,15 +31,7 @@ class CreditResourceTest {
 
   @Suppress("unused")
   @Mock
-  private lateinit var reconcileService: ReconcileService
-
-  @Suppress("unused")
-  @Mock
-  private lateinit var attachProfilesService: AttachProfilesService
-
-  @Suppress("unused")
-  @Mock
-  private lateinit var updatePrisonService: UpdatePrisonService
+  private lateinit var mtpUserRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserRepository
 
   @InjectMocks
   private lateinit var creditResource: CreditResource

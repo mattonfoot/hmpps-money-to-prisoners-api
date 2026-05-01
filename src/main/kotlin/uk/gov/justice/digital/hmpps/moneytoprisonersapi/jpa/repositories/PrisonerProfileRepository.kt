@@ -12,4 +12,16 @@ interface PrisonerProfileRepository : JpaRepository<PrisonerProfile, Long> {
   fun findCreditIdsWithMonitoredPrisonerProfiles(): Set<Long>
 
   fun findByPrisonerNumber(prisonerNumber: String): List<PrisonerProfile>
+
+  @Query(
+    """
+    SELECT COUNT(DISTINCT spc.sender_profile_id)
+    FROM prisoner_profile_credits ppc
+    JOIN sender_profile_credits spc ON spc.credit_id = ppc.credit_id
+    WHERE ppc.prisoner_profile_id = :profileId
+    """,
+    nativeQuery = true,
+  )
+  fun countSendersForProfile(profileId: Long): Int
+
 }

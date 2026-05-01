@@ -26,6 +26,7 @@ class PrisonerProfileResource(
   private val prisonerProfileService: PrisonerProfileService,
   private val disbursementRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository,
   private val prisonRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository,
+  private val prisonerProfileRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository,
 ) {
 
   private fun prisonNameMap(): Map<String, String> = prisonRepository.findAll().associate { it.nomisId to it.name }
@@ -64,10 +65,18 @@ class PrisonerProfileResource(
 
   private fun buildDto(profile: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerProfile, username: String): PrisonerProfileDto {
     val disbursements = disbursementRepository.findByPrisonerNumber(profile.prisonerNumber ?: "")
+    val senderCount = profile.id?.let { prisonerProfileRepository.countSendersForProfile(it) } ?: 0
+    // recipientCount = distinct recipients this prisoner has sent disbursements to
+    val recipientCount = disbursements.mapNotNull {
+      val sc = it.sortCode; val an = it.accountNumber
+      if (sc != null && an != null) "$sc-$an" else null
+    }.distinct().size
     return PrisonerProfileDto.from(
       profile = profile,
       currentUsername = username,
       disbursements = disbursements,
+      senderCount = senderCount,
+      recipientCount = recipientCount,
     )
   }
 

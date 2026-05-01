@@ -149,7 +149,7 @@ data class DisbursementDto(
       invoiceNumber = disbursement.invoiceNumber,
       created = disbursement.created,
       modified = disbursement.modified,
-      remittanceDescription = "",
+      remittanceDescription = disbursement.remittanceDescription,
       prisonerProfile = disbursement.prisonerNumber?.let { prisonerProfileMap[it] },
       recipientProfile = disbursement.sortCode?.let { sc ->
         disbursement.accountNumber?.let { an -> recipientProfileMap["$sc-$an"] }

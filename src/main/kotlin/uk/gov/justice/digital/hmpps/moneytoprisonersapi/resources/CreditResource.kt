@@ -39,7 +39,12 @@ import java.time.LocalDateTime
 @Tag(name = TAG_CREDITS)
 class CreditResource(
   private val creditService: CreditService,
+  private val mtpUserRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserRepository,
 ) {
+
+  private fun ownerNameMap(): Map<String, String> =
+    mtpUserRepository.findAll().associate { it.username to "${it.firstName} ${it.lastName}".trim() }
+
 
   @Operation(
     summary = "List credits",
@@ -294,7 +299,8 @@ class CreditResource(
       monitored = monitored,
       pk = pk,
     )
-    val results = credits.map { CreditDto.from(it) }
+    val nameMap = ownerNameMap()
+    val results = credits.map { CreditDto.from(it, nameMap) }
     return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 

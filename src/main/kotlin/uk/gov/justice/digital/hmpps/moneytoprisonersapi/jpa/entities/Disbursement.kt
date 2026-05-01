@@ -90,6 +90,9 @@ class Disbursement(
   @Column(name = "invoice_number", length = 50)
   var invoiceNumber: String? = null,
 
+  @Column(name = "remittance_description", nullable = false, length = 250)
+  var remittanceDescription: String = "",
+
   @Column(nullable = false, updatable = false)
   var created: LocalDateTime? = null,
 
