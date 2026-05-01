@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 
-@Schema(description = "A prison record")
+@Schema(name = "Prison Prison", description = "A prison record")
 data class PrisonDto(
   @Schema(description = "NOMIS prison ID", example = "LEI")
   val nomisId: String,

@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.CreditNotFoundException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ProcessedCreditGroupDto
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditsGroupedByCredited
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
@@ -645,7 +645,7 @@ class CreditService(
     excludeCreditIn: List<Long>? = null,
     monitored: Boolean? = null,
     pk: List<Long>? = null,
-  ): List<ProcessedCreditGroupDto> {
+  ): List<CreditsGroupedByCredited> {
     val credits = listCredits(
       search = search,
       simpleSearch = simpleSearch,
@@ -715,7 +715,7 @@ class CreditService(
 
     return groups.entries
       .map { (key, groupCredits) ->
-        ProcessedCreditGroupDto(
+        CreditsGroupedByCredited(
           loggedAt = key.date,
           owner = key.owner,
           ownerName = "Unknown",

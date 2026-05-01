@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 
-@Schema(description = "User email notification frequency preference")
+@Schema(name = "EmailPreferences", description = "User email notification frequency preference")
 data class EmailPreferencesDto(
   @Schema(description = "Email notification frequency", example = "never", allowableValues = ["daily", "never"])
   val frequency: String,

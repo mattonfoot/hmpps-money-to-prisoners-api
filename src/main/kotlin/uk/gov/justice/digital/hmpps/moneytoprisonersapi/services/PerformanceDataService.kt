@@ -1,12 +1,12 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PerformanceDataDto
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PerformanceData
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PerformanceDataResponse
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PerformanceData
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PerformanceDataRepository
 import java.time.LocalDate
 import kotlin.math.roundToInt
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PerformanceData as PerformanceDataEntity
 
 @Service
 class PerformanceDataService(
@@ -29,12 +29,12 @@ class PerformanceDataService(
       .map { it.toDto() }
 
     return PerformanceDataResponse(
-      headers = PerformanceData.HEADERS,
+      headers = PerformanceDataEntity.HEADERS,
       results = results,
     )
   }
 
-  private fun PerformanceData.toDto() = PerformanceDataDto(
+  private fun PerformanceDataEntity.toDto() = PerformanceData(
     week = week,
     creditsTotal = creditsTotal,
     creditsByMtp = creditsByMtp,

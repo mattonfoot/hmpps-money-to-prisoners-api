@@ -5,11 +5,11 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CheckStatus
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit as CreditEntity
 
 @DisplayName("SecurityCheckCreditDto")
 class SecurityCheckCreditDtoTest {
@@ -21,8 +21,8 @@ class SecurityCheckCreditDtoTest {
     resolution: CreditResolution = CreditResolution.PENDING,
     blocked: Boolean = false,
     source: CreditSource = CreditSource.BANK_TRANSFER,
-  ): Credit {
-    val credit = Credit(
+  ): CreditEntity {
+    val credit = CreditEntity(
       id = id,
       amount = amount,
       prison = prison,

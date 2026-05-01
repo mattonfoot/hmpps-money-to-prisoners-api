@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementComment
 import java.time.LocalDateTime
 
-@Schema(description = "A comment on a disbursement")
+@Schema(name = "Disbursement Comment", description = "A comment on a disbursement")
 data class DisbursementCommentDto(
   @Schema(description = "Unique identifier", example = "1")
   val id: Long?,

@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ServiceNotificationDto
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.Notification
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.ServiceNotificationRepository
 import java.time.LocalDateTime
 
@@ -18,7 +18,7 @@ class ServiceNotificationService(
    * SVC-013: Level is mapped to a string label in the DTO.
    */
   @Transactional(readOnly = true)
-  fun listNotifications(authenticated: Boolean, targetPrefix: String?): List<ServiceNotificationDto> {
+  fun listNotifications(authenticated: Boolean, targetPrefix: String?): List<Notification> {
     val now = LocalDateTime.now()
     var notifications = serviceNotificationRepository.findActive(now)
 
@@ -30,6 +30,6 @@ class ServiceNotificationService(
       notifications = notifications.filter { it.target.startsWith(targetPrefix) }
     }
 
-    return notifications.map { ServiceNotificationDto.from(it) }
+    return notifications.map { Notification.from(it) }
   }
 }

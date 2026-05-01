@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Comment
 import java.time.LocalDateTime
 
-@Schema(description = "A comment on a credit record")
+@Schema(name = "Credit Comment", description = "A comment on a credit record")
 data class CommentDto(
   @Schema(description = "Unique identifier", example = "1")
   val id: Long?,

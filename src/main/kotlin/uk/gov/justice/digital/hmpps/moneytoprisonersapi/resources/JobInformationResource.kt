@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_JOB_INFORMATION
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateJobInformationRequest
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.JobInformationDto
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.JobInformation
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.JobInformationService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.UserService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -45,7 +45,7 @@ class JobInformationResource(
       ApiResponse(
         responseCode = "201",
         description = "Job information created",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = JobInformationDto::class))],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = JobInformation::class))],
       ),
       ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
@@ -65,6 +65,6 @@ class JobInformationResource(
       prisonEstate = request.prisonEstate ?: "",
       tasks = request.tasks ?: "",
     )
-    return ResponseEntity.status(HttpStatus.CREATED).body(JobInformationDto.from(info))
+    return ResponseEntity.status(HttpStatus.CREATED).body(JobInformation.from(info))
   }
 }

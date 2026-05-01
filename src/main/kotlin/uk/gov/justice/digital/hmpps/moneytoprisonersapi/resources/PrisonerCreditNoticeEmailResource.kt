@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_PRISONER_CREDIT_NOTICE_EMAIL
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreatePrisonerCreditNoticeEmailRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PrisonerCreditNoticeEmailDto
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PrisonerCreditNoticeEmail
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdatePrisonerCreditNoticeEmailRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PrisonService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -64,9 +64,9 @@ class PrisonerCreditNoticeEmailResource(
   fun listCreditNoticeEmails(
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
-  ): PaginatedResponse<PrisonerCreditNoticeEmailDto> {
+  ): PaginatedResponse<PrisonerCreditNoticeEmail> {
     val emails = prisonService.listCreditNoticeEmails()
-    val results = emails.map { PrisonerCreditNoticeEmailDto.from(it) }
+    val results = emails.map { PrisonerCreditNoticeEmail.from(it) }
     return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
@@ -79,7 +79,7 @@ class PrisonerCreditNoticeEmailResource(
       ApiResponse(
         responseCode = "201",
         description = "Email configuration created successfully",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = PrisonerCreditNoticeEmailDto::class))],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = PrisonerCreditNoticeEmail::class))],
       ),
       ApiResponse(
         responseCode = "400",
@@ -102,9 +102,9 @@ class PrisonerCreditNoticeEmailResource(
   @PostMapping("/")
   fun createCreditNoticeEmail(
     @Valid @RequestBody request: CreatePrisonerCreditNoticeEmailRequest,
-  ): ResponseEntity<PrisonerCreditNoticeEmailDto> {
+  ): ResponseEntity<PrisonerCreditNoticeEmail> {
     val email = prisonService.createCreditNoticeEmail(request.prison, request.email)
-    return ResponseEntity.status(HttpStatus.CREATED).body(PrisonerCreditNoticeEmailDto.from(email))
+    return ResponseEntity.status(HttpStatus.CREATED).body(PrisonerCreditNoticeEmail.from(email))
   }
 
   @Operation(
@@ -116,7 +116,7 @@ class PrisonerCreditNoticeEmailResource(
       ApiResponse(
         responseCode = "200",
         description = "Email configuration updated successfully",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = PrisonerCreditNoticeEmailDto::class))],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = PrisonerCreditNoticeEmail::class))],
       ),
       ApiResponse(
         responseCode = "400",
@@ -145,16 +145,16 @@ class PrisonerCreditNoticeEmailResource(
   fun updateCreditNoticeEmail(
     @PathVariable("prison") prisonId: String,
     @Valid @RequestBody request: UpdatePrisonerCreditNoticeEmailRequest,
-  ): PrisonerCreditNoticeEmailDto {
+  ): PrisonerCreditNoticeEmail {
     val email = prisonService.updateCreditNoticeEmail(prisonId, request.email)
-    return PrisonerCreditNoticeEmailDto.from(email)
+    return PrisonerCreditNoticeEmail.from(email)
   }
 }
 
-@Schema(name = "PaginatedResponsePrisonerCreditNoticeEmailDto", description = "Paginated response containing prisoner credit notice email records")
+@Schema(name = "PaginatedResponsePrisonerCreditNoticeEmail", description = "Paginated response containing prisoner credit notice email records")
 private class CreditNoticeEmailPaginatedResponse(
   val count: Int,
   val next: String?,
   val previous: String?,
-  val results: List<PrisonerCreditNoticeEmailDto>,
+  val results: List<PrisonerCreditNoticeEmail>,
 )

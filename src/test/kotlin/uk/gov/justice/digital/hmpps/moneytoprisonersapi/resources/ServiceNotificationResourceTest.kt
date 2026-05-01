@@ -13,19 +13,23 @@ import org.mockito.kotlin.whenever
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ServiceNotificationDto
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.Notification
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.NotificationService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ServiceNotificationService
 import java.time.LocalDateTime
 
 @ExtendWith(MockitoExtension::class)
-@DisplayName("ServiceNotificationResource")
+@DisplayName("NotificationsResource - Service Notifications")
 class ServiceNotificationResourceTest {
+
+  @Mock
+  private lateinit var notificationService: NotificationService
 
   @Mock
   private lateinit var serviceNotificationService: ServiceNotificationService
 
   @InjectMocks
-  private lateinit var resource: ServiceNotificationResource
+  private lateinit var resource: NotificationsResource
 
   private val now = LocalDateTime.now()
 
@@ -34,7 +38,7 @@ class ServiceNotificationResourceTest {
     level: String = "info",
     public: Boolean = false,
     headline: String = "Test notification",
-  ) = ServiceNotificationDto(
+  ) = Notification(
     target = target,
     level = level,
     start = now.minusHours(1),

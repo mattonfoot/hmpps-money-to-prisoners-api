@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.UserFla
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.UserService
 
 @ExtendWith(MockitoExtension::class)
-@DisplayName("UserFlagResource")
+@DisplayName("UsersResource")
 class UserFlagResourceTest {
 
   @Mock
@@ -30,7 +30,7 @@ class UserFlagResourceTest {
   private lateinit var userService: UserService
 
   @InjectMocks
-  private lateinit var userFlagResource: UserFlagResource
+  private lateinit var usersResource: UsersResource
 
   private fun makeUser(id: Long = 1L) = MtpUser(id = id, username = "testuser")
   private fun makeFlag(user: MtpUser, name: String) = UserFlag(id = 10L, user = user, flagName = name)
@@ -47,7 +47,7 @@ class UserFlagResourceTest {
         listOf(makeFlag(user, "flag_a"), makeFlag(user, "flag_b")),
       )
 
-      val response = userFlagResource.listFlags("testuser")
+      val response = usersResource.listFlags("testuser")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
       assertThat(response.body?.count).isEqualTo(2)
@@ -58,7 +58,7 @@ class UserFlagResourceTest {
     fun `returns 404 when user not found`() {
       whenever(userService.findByUsername("nonexistent")).thenReturn(null)
 
-      val response = userFlagResource.listFlags("nonexistent")
+      val response = usersResource.listFlags("nonexistent")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -77,7 +77,7 @@ class UserFlagResourceTest {
       whenever(userFlagRepository.save(any())).thenReturn(flag)
 
       val request = CreateUserFlagRequest(flagName = "new_flag")
-      val response = userFlagResource.createFlag("testuser", request)
+      val response = usersResource.createFlag("testuser", request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.CREATED)
       assertThat(response.body).isEqualTo("new_flag")
@@ -90,7 +90,7 @@ class UserFlagResourceTest {
       whenever(userFlagRepository.existsByUserAndFlagName(user, "existing_flag")).thenReturn(true)
 
       val request = CreateUserFlagRequest(flagName = "existing_flag")
-      val response = userFlagResource.createFlag("testuser", request)
+      val response = usersResource.createFlag("testuser", request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
@@ -101,7 +101,7 @@ class UserFlagResourceTest {
       whenever(userService.findByUsername("testuser")).thenReturn(user)
 
       val request = CreateUserFlagRequest(flagName = null)
-      val response = userFlagResource.createFlag("testuser", request)
+      val response = usersResource.createFlag("testuser", request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
@@ -111,7 +111,7 @@ class UserFlagResourceTest {
       whenever(userService.findByUsername("nonexistent")).thenReturn(null)
 
       val request = CreateUserFlagRequest(flagName = "test")
-      val response = userFlagResource.createFlag("nonexistent", request)
+      val response = usersResource.createFlag("nonexistent", request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -124,7 +124,7 @@ class UserFlagResourceTest {
       whenever(userFlagRepository.save(any())).thenAnswer { it.arguments[0] }
 
       val captor = argumentCaptor<UserFlag>()
-      userFlagResource.createFlag("testuser", CreateUserFlagRequest(flagName = "test_flag"))
+      usersResource.createFlag("testuser", CreateUserFlagRequest(flagName = "test_flag"))
       verify(userFlagRepository).save(captor.capture())
 
       assertThat(captor.firstValue.user).isEqualTo(user)
@@ -143,7 +143,7 @@ class UserFlagResourceTest {
       whenever(userService.findByUsername("testuser")).thenReturn(user)
       whenever(userFlagRepository.findByUserAndFlagName(user, "to_delete")).thenReturn(flag)
 
-      val response = userFlagResource.deleteFlag("testuser", "to_delete")
+      val response = usersResource.deleteFlag("testuser", "to_delete")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
       verify(userFlagRepository).delete(flag)
@@ -153,7 +153,7 @@ class UserFlagResourceTest {
     fun `returns 404 when user not found`() {
       whenever(userService.findByUsername("nonexistent")).thenReturn(null)
 
-      val response = userFlagResource.deleteFlag("nonexistent", "test")
+      val response = usersResource.deleteFlag("nonexistent", "test")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -164,7 +164,7 @@ class UserFlagResourceTest {
       whenever(userService.findByUsername("testuser")).thenReturn(user)
       whenever(userFlagRepository.findByUserAndFlagName(user, "missing")).thenReturn(null)
 
-      val response = userFlagResource.deleteFlag("testuser", "missing")
+      val response = usersResource.deleteFlag("testuser", "missing")
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }

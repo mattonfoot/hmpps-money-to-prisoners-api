@@ -27,7 +27,10 @@ class PasswordResourceTest {
   private lateinit var passwordService: PasswordService
 
   @InjectMocks
-  private lateinit var passwordResource: PasswordResource
+  private lateinit var resetPasswordResource: ResetPasswordResource
+
+  @InjectMocks
+  private lateinit var changePasswordResource: ChangePasswordResource
 
   private fun makeUser() = MtpUser(id = 1L, username = "testuser", email = "test@example.com")
   private fun makeToken(user: MtpUser) = PasswordResetToken(id = 1L, user = user, application = "cashbook")
@@ -43,7 +46,7 @@ class PasswordResourceTest {
         .thenReturn(PasswordResetResult.TokenCreated(makeToken(user)))
 
       val request = ResetPasswordRequest(username = "testuser", application = "cashbook")
-      val response = passwordResource.resetPassword(request)
+      val response = resetPasswordResource.resetPassword(request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
     }
@@ -54,7 +57,7 @@ class PasswordResourceTest {
         .thenReturn(PasswordResetResult.UserNotFound)
 
       val request = ResetPasswordRequest(username = "unknown", application = "cashbook")
-      val response = passwordResource.resetPassword(request)
+      val response = resetPasswordResource.resetPassword(request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -65,7 +68,7 @@ class PasswordResourceTest {
         .thenReturn(PasswordResetResult.AccountLocked)
 
       val request = ResetPasswordRequest(username = "testuser", application = "cashbook")
-      val response = passwordResource.resetPassword(request)
+      val response = resetPasswordResource.resetPassword(request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
@@ -76,7 +79,7 @@ class PasswordResourceTest {
         .thenReturn(PasswordResetResult.NoEmail)
 
       val request = ResetPasswordRequest(username = "testuser", application = "cashbook")
-      val response = passwordResource.resetPassword(request)
+      val response = resetPasswordResource.resetPassword(request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
@@ -87,7 +90,7 @@ class PasswordResourceTest {
         .thenReturn(PasswordResetResult.MultipleUsers)
 
       val request = ResetPasswordRequest(email = "shared@example.com", application = "cashbook")
-      val response = passwordResource.resetPassword(request)
+      val response = resetPasswordResource.resetPassword(request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
@@ -95,7 +98,7 @@ class PasswordResourceTest {
     @Test
     fun `returns 400 when neither username nor email provided`() {
       val request = ResetPasswordRequest(application = "cashbook")
-      val response = passwordResource.resetPassword(request)
+      val response = resetPasswordResource.resetPassword(request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
@@ -113,7 +116,7 @@ class PasswordResourceTest {
         .thenReturn(PasswordChangeResult.Success(user))
 
       val request = ChangePasswordByTokenRequest(token = token.toString(), newPassword = "newpass123")
-      val response = passwordResource.changePasswordByToken(request)
+      val response = changePasswordResource.changePasswordByToken(request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
     }
@@ -125,7 +128,7 @@ class PasswordResourceTest {
         .thenReturn(PasswordChangeResult.InvalidToken)
 
       val request = ChangePasswordByTokenRequest(token = token.toString(), newPassword = "newpass")
-      val response = passwordResource.changePasswordByToken(request)
+      val response = changePasswordResource.changePasswordByToken(request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
@@ -133,7 +136,7 @@ class PasswordResourceTest {
     @Test
     fun `returns 400 when token is missing`() {
       val request = ChangePasswordByTokenRequest(token = null, newPassword = "newpass")
-      val response = passwordResource.changePasswordByToken(request)
+      val response = changePasswordResource.changePasswordByToken(request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
@@ -141,7 +144,7 @@ class PasswordResourceTest {
     @Test
     fun `returns 400 when newPassword is missing`() {
       val request = ChangePasswordByTokenRequest(token = UUID.randomUUID().toString(), newPassword = null)
-      val response = passwordResource.changePasswordByToken(request)
+      val response = changePasswordResource.changePasswordByToken(request)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }

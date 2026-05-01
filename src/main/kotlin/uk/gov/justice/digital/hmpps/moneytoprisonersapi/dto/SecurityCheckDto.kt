@@ -6,7 +6,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CheckStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import java.time.LocalDateTime
 
-@Schema(description = "A security check performed on a credit")
+@Schema(name = "SimpleCheck", description = "A security check performed on a credit")
 data class SecurityCheckDto(
   @Schema(description = "Unique identifier", example = "10")
   val id: Long?,

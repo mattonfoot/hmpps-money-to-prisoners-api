@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.config
 
+import io.swagger.v3.oas.models.OpenAPI
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -8,7 +9,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.ContainersConfig
-import io.swagger.v3.oas.models.OpenAPI
 
 @SpringBootTest
 @ActiveProfiles("test")

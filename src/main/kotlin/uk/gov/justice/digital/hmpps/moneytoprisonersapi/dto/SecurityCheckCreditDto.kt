@@ -105,7 +105,7 @@ data class SecurityCheckCreditDto(
   val senderIpAddress: String?,
   @Schema(description = "Billing address associated with the payment")
   @JsonProperty("billing_address")
-  val billingAddress: BillingAddressDto?,
+  val billingAddress: BillingAddress?,
 
   // Profile PKs (CRD-107)
   @Schema(description = "Sender profile ID", example = "42")
@@ -160,7 +160,7 @@ data class SecurityCheckCreditDto(
       cardNumberLastDigits = credit.payment?.cardNumberLastDigits,
       cardExpiryDate = credit.payment?.cardExpiryDate,
       senderIpAddress = credit.payment?.ipAddress,
-      billingAddress = credit.payment?.billingAddress?.let { BillingAddressDto.from(it) },
+      billingAddress = credit.payment?.billingAddress?.let { BillingAddress.from(it) },
       senderProfile = senderProfileId,
       prisonerProfile = prisonerProfileId,
       securityCheck = credit.securityCheck?.let { SecurityCheckDto.from(it) },

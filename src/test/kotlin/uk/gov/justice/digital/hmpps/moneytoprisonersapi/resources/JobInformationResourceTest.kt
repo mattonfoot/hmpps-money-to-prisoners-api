@@ -13,11 +13,11 @@ import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateJobInformationRequest
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.JobInformationDto
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.JobInformation
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.JobInformation
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.JobInformationService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.UserService
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.JobInformation as JobInformationEntity
 
 @ExtendWith(MockitoExtension::class)
 @DisplayName("JobInformationResource")
@@ -34,7 +34,7 @@ class JobInformationResourceTest {
 
   private fun makeUser(username: String = "testuser") = MtpUser(id = 1L, username = username)
 
-  private fun makeJobInfo(user: MtpUser) = JobInformation(
+  private fun makeJobInfo(user: MtpUser) = JobInformationEntity(
     id = 1L,
     user = user,
     title = "Finance Officer",
@@ -64,7 +64,7 @@ class JobInformationResourceTest {
       val response = resource.createJobInformation(body, makePrincipal())
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.CREATED)
-      val dto = response.body as? JobInformationDto
+      val dto = response.body as? JobInformation
       assertThat(dto?.title).isEqualTo("Finance Officer")
       assertThat(dto?.user).isEqualTo(1L)
     }
@@ -89,7 +89,7 @@ class JobInformationResourceTest {
       val body = CreateJobInformationRequest(title = "T", prisonEstate = "P", tasks = "T")
       val response = resource.createJobInformation(body, makePrincipal("testuser"))
 
-      val dto = response.body as? JobInformationDto
+      val dto = response.body as? JobInformation
       assertThat(dto?.user).isEqualTo(user.id)
     }
   }

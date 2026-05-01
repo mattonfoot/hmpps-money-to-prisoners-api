@@ -63,7 +63,7 @@ object EventSpecifications {
 
   /**
    * Eagerly fetches credit, disbursement, senderProfile, and prisonerProfile
-   * to avoid LazyInitializationException when mapping to EventDto.
+   * to avoid LazyInitializationException when mapping to Event.
    */
   fun fetchAssociations(): Specification<Event> = Specification { root, query, _ ->
     // Skip fetch joins on count queries (JPA Specifications run on both data and count queries)

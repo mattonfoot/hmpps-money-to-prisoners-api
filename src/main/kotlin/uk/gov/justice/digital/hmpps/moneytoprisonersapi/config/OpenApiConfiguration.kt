@@ -11,6 +11,7 @@ import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
 import io.swagger.v3.oas.models.servers.Server
 import io.swagger.v3.oas.models.tags.Tag
+import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -123,4 +124,43 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     .addSecurityItem(
       SecurityRequirement().addList("oauth2_provider"),
     )
+
+  /**
+   * Removes the auto-generated `PaginatedResponse*` schemas from the OpenAPI spec
+   * and replaces all `$ref` references to them with the inline schema definition.
+   * The Python API does not expose these as named types — pagination uses inline objects.
+   */
+  @Bean
+  fun hidePaginatedResponseSchemas(): OpenApiCustomizer = OpenApiCustomizer { openApi ->
+    val components = openApi.components ?: return@OpenApiCustomizer
+    val schemas = components.schemas ?: return@OpenApiCustomizer
+    val paginatedSchemas = schemas.filterKeys { it.startsWith("PaginatedResponse") }
+    if (paginatedSchemas.isEmpty()) return@OpenApiCustomizer
+
+    // Build inline replacements (deep copies of the schema bodies) keyed by ref path
+    val replacements = paginatedSchemas.mapKeys { (name, _) -> "#/components/schemas/$name" }
+
+    // Walk all operations and replace $ref to PaginatedResponse* with the inline schema
+    openApi.paths?.values?.forEach { pathItem ->
+      pathItem.readOperations().forEach { op ->
+        op.responses?.values?.forEach { response ->
+          response.content?.values?.forEach { mediaType ->
+            mediaType.schema?.let { schema ->
+              val ref = schema.`$ref`
+              if (ref != null && replacements.containsKey(ref)) {
+                val inline = replacements[ref]!!
+                schema.`$ref` = null
+                schema.type = inline.type
+                schema.properties = inline.properties
+                schema.required = inline.required
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Now remove the PaginatedResponse* schemas
+    paginatedSchemas.keys.forEach { schemas.remove(it) }
+  }
 }

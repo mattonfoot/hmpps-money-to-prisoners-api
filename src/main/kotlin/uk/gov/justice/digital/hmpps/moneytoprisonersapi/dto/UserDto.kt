@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
 
-@Schema(description = "MTP user details")
+@Schema(name = "Detailed User", description = "MTP user details")
 data class UserDto(
   @Schema(description = "User ID")
   val pk: Long?,

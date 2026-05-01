@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.UserFlag
 
-@Schema(description = "A flag set on an MTP user account")
+@Schema(name = "Flag", description = "A flag set on an MTP user account")
 data class UserFlagDto(
   @Schema(description = "Flag identifier")
   val id: Long?,
