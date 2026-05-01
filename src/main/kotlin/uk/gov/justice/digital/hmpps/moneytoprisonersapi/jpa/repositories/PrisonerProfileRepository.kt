@@ -23,5 +23,4 @@ interface PrisonerProfileRepository : JpaRepository<PrisonerProfile, Long> {
     nativeQuery = true,
   )
   fun countSendersForProfile(profileId: Long): Int
-
 }

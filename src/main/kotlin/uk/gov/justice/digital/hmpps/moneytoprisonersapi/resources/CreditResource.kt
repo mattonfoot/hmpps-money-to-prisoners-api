@@ -42,9 +42,7 @@ class CreditResource(
   private val mtpUserRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserRepository,
 ) {
 
-  private fun ownerNameMap(): Map<String, String> =
-    mtpUserRepository.findAll().associate { it.username to "${it.firstName} ${it.lastName}".trim() }
-
+  private fun ownerNameMap(): Map<String, String> = mtpUserRepository.findAll().associate { it.username to "${it.firstName} ${it.lastName}".trim() }
 
   @Operation(
     summary = "List credits",

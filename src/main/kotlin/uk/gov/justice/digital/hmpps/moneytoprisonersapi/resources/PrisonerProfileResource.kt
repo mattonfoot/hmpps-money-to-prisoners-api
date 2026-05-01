@@ -68,7 +68,8 @@ class PrisonerProfileResource(
     val senderCount = profile.id?.let { prisonerProfileRepository.countSendersForProfile(it) } ?: 0
     // recipientCount = distinct recipients this prisoner has sent disbursements to
     val recipientCount = disbursements.mapNotNull {
-      val sc = it.sortCode; val an = it.accountNumber
+      val sc = it.sortCode
+      val an = it.accountNumber
       if (sc != null && an != null) "$sc-$an" else null
     }.distinct().size
     return PrisonerProfileDto.from(
