@@ -26,7 +26,7 @@ import java.security.Principal
 
 @RestController
 @RequestMapping("/credits/comments", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_CREDITS)
 class CommentResource(
   private val commentRepository: CommentRepository,

@@ -22,7 +22,7 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping(produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_PERFORMANCE)
 class PerformanceDataResource(
   private val performanceDataService: PerformanceDataService,

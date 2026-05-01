@@ -23,7 +23,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Monitor
 
 @RestController
 @RequestMapping("/security/monitored-email-addresses", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_MONITORED)
 class MonitoredEmailResource(
   private val repository: MonitoredPartialEmailAddressRepository,

@@ -34,7 +34,7 @@ import java.time.LocalDateTime
 
 @RestController
 @RequestMapping(produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_NOTIFICATIONS)
 class NotificationResource(
   private val notificationService: NotificationService,

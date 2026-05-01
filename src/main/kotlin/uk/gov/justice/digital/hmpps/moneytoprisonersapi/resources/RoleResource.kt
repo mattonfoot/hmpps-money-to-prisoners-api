@@ -20,7 +20,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestController
 @RequestMapping(produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_ROLES)
 class RoleResource(
   private val mtpRoleRepository: MtpRoleRepository,

@@ -25,7 +25,7 @@ import java.security.Principal
 
 @RestController
 @RequestMapping("/security/checks/auto-accept", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_RULES)
 class SecurityAutoAcceptResource(
   private val securityCheckService: SecurityCheckService,

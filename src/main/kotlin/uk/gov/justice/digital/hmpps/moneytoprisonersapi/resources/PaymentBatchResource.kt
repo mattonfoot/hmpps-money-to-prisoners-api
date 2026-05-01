@@ -21,7 +21,7 @@ import java.time.LocalDate
  */
 @RestController
 @RequestMapping("/batches", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_BATCHES)
 class PaymentBatchResource(
   private val paymentService: PaymentService,

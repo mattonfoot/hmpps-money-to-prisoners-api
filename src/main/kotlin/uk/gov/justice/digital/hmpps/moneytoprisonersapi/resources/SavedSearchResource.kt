@@ -27,7 +27,7 @@ import java.security.Principal
 
 @RestController
 @RequestMapping("/searches", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_SEARCHES)
 class SavedSearchResource(
   private val repository: SavedSearchRepository,

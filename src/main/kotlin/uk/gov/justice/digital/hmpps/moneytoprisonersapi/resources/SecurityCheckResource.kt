@@ -28,7 +28,7 @@ import java.time.LocalDateTime
 
 @RestController
 @RequestMapping("/security/checks", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_SECURITY)
 class SecurityCheckResource(
   private val securityCheckService: SecurityCheckService,

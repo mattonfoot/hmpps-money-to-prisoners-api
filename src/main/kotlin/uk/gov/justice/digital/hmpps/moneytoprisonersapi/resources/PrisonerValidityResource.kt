@@ -22,7 +22,7 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping("/prisoner_validity", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_PRISONER_VALIDITY)
 class PrisonerValidityResource(
   private val prisonService: PrisonService,

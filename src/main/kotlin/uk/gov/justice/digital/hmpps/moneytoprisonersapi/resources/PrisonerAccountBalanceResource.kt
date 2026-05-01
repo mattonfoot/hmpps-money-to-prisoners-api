@@ -19,7 +19,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestController
 @RequestMapping("/prisoner_account_balances", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_PRISONER_ACCOUNT_BALANCES)
 class PrisonerAccountBalanceResource(
   private val prisonService: PrisonService,

@@ -29,7 +29,7 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping("/balances", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_BALANCES)
 class BalanceResource(
   private val balanceService: BalanceService,

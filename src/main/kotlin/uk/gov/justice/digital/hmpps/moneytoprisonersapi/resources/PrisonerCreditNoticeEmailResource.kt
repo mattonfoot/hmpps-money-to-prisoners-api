@@ -29,7 +29,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestController
 @RequestMapping("/prisoner_credit_notice_email", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_PRISONER_CREDIT_NOTICE_EMAIL)
 class PrisonerCreditNoticeEmailResource(
   private val prisonService: PrisonService,

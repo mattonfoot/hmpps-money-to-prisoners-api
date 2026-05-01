@@ -15,7 +15,7 @@ import java.security.Principal
 
 @RestController
 @RequestMapping("/monitored", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_MONITORED)
 class MonitoredCountResource(
   private val senderProfileService: SenderProfileService,

@@ -35,7 +35,7 @@ import java.time.LocalDateTime
 
 @RestController
 @RequestMapping("/credits", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_CREDITS)
 class CreditResource(
   private val creditService: CreditService,

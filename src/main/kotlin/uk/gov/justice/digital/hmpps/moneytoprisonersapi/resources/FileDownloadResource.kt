@@ -52,7 +52,7 @@ class FileDownloadResource(
       ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt")
+  @SecurityRequirement(name = "oauth2_provider")
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/file-downloads/")
   fun listFileDownloads(
@@ -82,7 +82,7 @@ class FileDownloadResource(
       ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt")
+  @SecurityRequirement(name = "oauth2_provider")
   @PreAuthorize("isAuthenticated()")
   @PostMapping("/file-downloads/")
   fun createFileDownload(
@@ -123,7 +123,7 @@ class FileDownloadResource(
       ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt")
+  @SecurityRequirement(name = "oauth2_provider")
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/file-downloads/missing/")
   fun getMissingFileDownloads(

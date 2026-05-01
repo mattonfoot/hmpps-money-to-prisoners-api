@@ -20,7 +20,7 @@ import java.security.Principal
 
 @RestController
 @RequestMapping("/prisoners", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_PRISONERS)
 class PrisonerProfileResource(
   private val prisonerProfileService: PrisonerProfileService,

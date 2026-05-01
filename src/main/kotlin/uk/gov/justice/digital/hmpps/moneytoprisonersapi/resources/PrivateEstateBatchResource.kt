@@ -35,7 +35,7 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping("/private-estate-batches", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_PRIVATE_ESTATE_BATCHES)
 class PrivateEstateBatchResource(
   private val privateEstateBatchRepository: PrivateEstateBatchRepository,

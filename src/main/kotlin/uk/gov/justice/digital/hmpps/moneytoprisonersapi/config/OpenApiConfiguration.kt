@@ -4,6 +4,9 @@ import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.security.OAuthFlow
+import io.swagger.v3.oas.models.security.OAuthFlows
+import io.swagger.v3.oas.models.security.Scopes
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
 import io.swagger.v3.oas.models.servers.Server
@@ -103,19 +106,21 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     )
     .components(
       Components().addSecuritySchemes(
-        "bearer-jwt",
+        "oauth2_provider",
         SecurityScheme()
-          .addBearerJwtRequirement("ROLE_TEMPLATE_KOTLIN__UI"),
+          .type(SecurityScheme.Type.OAUTH2)
+          .description("test")
+          .flows(
+            OAuthFlows().password(
+              OAuthFlow()
+                .tokenUrl("/oauth2/token/")
+                .authorizationUrl("/oauth2/authorize/")
+                .scopes(Scopes().addString("read", "Read scope").addString("write", "Write scope")),
+            ),
+          ),
       ),
     )
     .addSecurityItem(
-      SecurityRequirement().addList("bearer-jwt", listOf("read", "write")),
+      SecurityRequirement().addList("oauth2_provider"),
     )
 }
-
-private fun SecurityScheme.addBearerJwtRequirement(role: String): SecurityScheme = type(SecurityScheme.Type.HTTP)
-  .scheme("bearer")
-  .bearerFormat("JWT")
-  .`in`(SecurityScheme.In.HEADER)
-  .name("Authorization")
-  .description("A HMPPS Auth access token with the `$role` role.")

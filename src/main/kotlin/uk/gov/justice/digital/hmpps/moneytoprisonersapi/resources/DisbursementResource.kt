@@ -45,7 +45,7 @@ import java.security.Principal
 
 @RestController
 @RequestMapping("/disbursements", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_DISBURSEMENTS)
 class DisbursementResource(
   private val disbursementService: DisbursementService,

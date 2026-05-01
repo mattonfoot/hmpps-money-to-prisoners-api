@@ -32,7 +32,7 @@ import java.time.LocalDateTime
 
 @RestController
 @RequestMapping("/transactions", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_TRANSACTIONS)
 class TransactionResource(
   private val transactionService: TransactionService,

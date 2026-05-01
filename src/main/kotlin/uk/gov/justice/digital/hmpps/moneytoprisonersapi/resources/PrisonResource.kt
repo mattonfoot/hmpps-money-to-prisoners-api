@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PrisonService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestController
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_PRISONS)
 class PrisonResource(
   private val prisonService: PrisonService,
@@ -41,7 +41,7 @@ class PrisonResource(
       ),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt")
+  @SecurityRequirement(name = "oauth2_provider")
   @PreAuthorize("permitAll()")
   @GetMapping("/prisons/", produces = ["application/json"])
   fun listPrisons(

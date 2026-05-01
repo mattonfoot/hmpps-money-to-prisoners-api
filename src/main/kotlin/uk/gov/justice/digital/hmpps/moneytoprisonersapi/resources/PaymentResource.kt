@@ -32,7 +32,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/payments", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_PAYMENTS)
 class PaymentResource(
   private val paymentService: PaymentService,

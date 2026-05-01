@@ -29,7 +29,7 @@ import java.security.Principal
 
 @RestController
 @RequestMapping("/prisoner_locations", produces = ["application/json"])
-@SecurityRequirement(name = "bearer-jwt")
+@SecurityRequirement(name = "oauth2_provider")
 @Tag(name = TAG_PRISONER_LOCATIONS)
 class PrisonerLocationResource(
   private val prisonService: PrisonService,

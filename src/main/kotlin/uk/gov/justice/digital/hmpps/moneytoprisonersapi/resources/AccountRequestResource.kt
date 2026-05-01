@@ -54,7 +54,7 @@ class AccountRequestResource(
       ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt")
+  @SecurityRequirement(name = "oauth2_provider")
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/requests/")
   fun listRequests(
@@ -128,7 +128,7 @@ class AccountRequestResource(
       ApiResponse(responseCode = "404", description = "Request not found", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt")
+  @SecurityRequirement(name = "oauth2_provider")
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/requests/{id}/")
   fun getRequest(
@@ -138,7 +138,7 @@ class AccountRequestResource(
     return ResponseEntity.ok(AccountRequestDto.from(request))
   }
 
-  @SecurityRequirement(name = "bearer-jwt")
+  @SecurityRequirement(name = "oauth2_provider")
   @PreAuthorize("isAuthenticated()")
   @RequestMapping(value = ["/requests/{id}/"], method = [RequestMethod.PATCH, RequestMethod.PUT])
   fun acceptRequest(
@@ -163,7 +163,7 @@ class AccountRequestResource(
       ApiResponse(responseCode = "404", description = "Request not found", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt")
+  @SecurityRequirement(name = "oauth2_provider")
   @PreAuthorize("isAuthenticated()")
   @DeleteMapping("/requests/{id}/")
   fun rejectRequest(
