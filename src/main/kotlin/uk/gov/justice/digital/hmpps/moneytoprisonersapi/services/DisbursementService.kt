@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.transitionR
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementMethod
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementLogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
@@ -28,6 +29,7 @@ class DisbursementService(
   private val disbursementLogRepository: DisbursementLogRepository,
   private val prisonerProfileRepository: PrisonerProfileRepository,
   private val prisonRepository: PrisonRepository,
+  private val userRepository: AuthUserRepository,
 ) {
 
   fun getDisbursement(id: Long): Disbursement? = disbursementRepository.findById(id).orElse(null)
@@ -71,23 +73,24 @@ class DisbursementService(
     var disbursements = disbursementRepository.findAll()
 
     if (amount != null) {
-      disbursements = disbursements.filter { it.amount == amount }
+      disbursements = disbursements.filter { it.amount.toLong() == amount }
     }
 
     if (amountGte != null) {
-      disbursements = disbursements.filter { it.amount >= amountGte }
+      disbursements = disbursements.filter { it.amount.toLong() >= amountGte }
     }
 
     if (amountLte != null) {
-      disbursements = disbursements.filter { it.amount <= amountLte }
+      disbursements = disbursements.filter { it.amount.toLong() <= amountLte }
     }
 
     if (!resolution.isNullOrEmpty()) {
-      disbursements = disbursements.filter { it.resolution in resolution }
+      val resolutionValues = resolution.map { it.value }.toSet()
+      disbursements = disbursements.filter { it.resolution in resolutionValues }
     }
 
     if (method != null) {
-      disbursements = disbursements.filter { it.method == method }
+      disbursements = disbursements.filter { it.method == method.value }
     }
 
     if (prisonerNumber != null) {
@@ -99,12 +102,14 @@ class DisbursementService(
     }
 
     if (recipientName != null) {
-      disbursements = disbursements.filter { it.recipientName?.contains(recipientName, ignoreCase = true) == true }
+      disbursements = disbursements.filter {
+        "${it.recipientFirstName} ${it.recipientLastName}".contains(recipientName, ignoreCase = true)
+      }
     }
 
     if (!prisons.isNullOrEmpty()) {
       val prisonSet = prisons.toSet()
-      disbursements = disbursements.filter { it.prison in prisonSet }
+      disbursements = disbursements.filter { it.prison?.nomisId in prisonSet }
     }
 
     if (sortCode != null) {
@@ -153,50 +158,51 @@ class DisbursementService(
     }
 
     if (createdGte != null) {
-      disbursements = disbursements.filter { it.created != null && !it.created!!.isBefore(createdGte) }
+      val createdGteOffset = createdGte.atOffset(java.time.ZoneOffset.UTC)
+      disbursements = disbursements.filter { !it.created.isBefore(createdGteOffset) }
     }
 
     if (createdLt != null) {
-      disbursements = disbursements.filter { it.created != null && it.created!!.isBefore(createdLt) }
+      val createdLtOffset = createdLt.atOffset(java.time.ZoneOffset.UTC)
+      disbursements = disbursements.filter { it.created.isBefore(createdLtOffset) }
     }
 
     if (loggedAtGte != null) {
       val gteDate = loggedAtGte.toLocalDate()
       disbursements = disbursements.filter { d ->
-        d.logs.any { log -> log.created != null && !log.created!!.toLocalDate().isBefore(gteDate) }
+        d.logs.any { log -> !log.created.toLocalDate().isBefore(gteDate) }
       }
     }
 
     if (loggedAtLt != null) {
       val ltDate = loggedAtLt.toLocalDate()
       disbursements = disbursements.filter { d ->
-        d.logs.any { log -> log.created != null && log.created!!.toLocalDate().isBefore(ltDate) }
+        d.logs.any { log -> log.created.toLocalDate().isBefore(ltDate) }
       }
     }
 
     if (logAction != null) {
-      val action = LogAction.fromValue(logAction)
       disbursements = disbursements.filter { d ->
-        d.logs.any { log -> log.action == action }
+        d.logs.any { log -> log.action == logAction }
       }
     }
 
     if (prisonRegion != null) {
       val matchingPrisonIds = prisonRepository.findByRegionContainingIgnoreCase(prisonRegion)
         .map { it.nomisId }.toSet()
-      disbursements = disbursements.filter { it.prison in matchingPrisonIds }
+      disbursements = disbursements.filter { it.prison?.nomisId in matchingPrisonIds }
     }
 
     if (prisonCategory != null) {
       val matchingPrisonIds = prisonRepository.findByCategoryName(prisonCategory)
         .map { it.nomisId }.toSet()
-      disbursements = disbursements.filter { it.prison in matchingPrisonIds }
+      disbursements = disbursements.filter { it.prison?.nomisId in matchingPrisonIds }
     }
 
     if (prisonPopulation != null) {
       val matchingPrisonIds = prisonRepository.findByPopulationName(prisonPopulation)
         .map { it.nomisId }.toSet()
-      disbursements = disbursements.filter { it.prison in matchingPrisonIds }
+      disbursements = disbursements.filter { it.prison?.nomisId in matchingPrisonIds }
     }
 
     if (amountEndswith != null) {
@@ -220,17 +226,24 @@ class DisbursementService(
     if (!simpleSearch.isNullOrBlank()) {
       val term = simpleSearch.trim()
       disbursements = disbursements.filter { d ->
-        d.prisonerName?.contains(term, ignoreCase = true) == true ||
-          d.prisonerNumber?.contains(term, ignoreCase = true) == true ||
-          d.recipientName?.contains(term, ignoreCase = true) == true
+        d.prisonerName.contains(term, ignoreCase = true) ||
+          d.prisonerNumber.contains(term, ignoreCase = true) ||
+          "${d.recipientFirstName} ${d.recipientLastName}".contains(term, ignoreCase = true)
       }
     }
 
     if (monitoredByUsername != null) {
-      val monitoredPrisonerNumbers = prisonerProfileRepository.findAll()
-        .filter { it.monitoringUsers.contains(monitoredByUsername) }
-        .mapNotNull { it.prisonerNumber }
-        .toSet()
+      // Django stores monitoring user IDs as integers (FK to auth_user). Resolve
+      // the username to its user id, then filter prisoner profiles by that id.
+      val monitoringUserId = userRepository.findByUsername(monitoredByUsername)?.id
+      val monitoredPrisonerNumbers = if (monitoringUserId == null) {
+        emptySet()
+      } else {
+        prisonerProfileRepository.findAll()
+          .filter { it.monitoringUsers.contains(monitoringUserId.toInt()) }
+          .mapNotNull { it.prisonerNumber }
+          .toSet()
+      }
       disbursements = disbursements.filter { it.prisonerNumber in monitoredPrisonerNumbers }
     }
 
@@ -251,10 +264,10 @@ class DisbursementService(
     val comparator: Comparator<Disbursement> = when (field) {
       "created" -> nullsLastComparator(descending) { it.created }
       "amount" -> if (descending) compareByDescending { it.amount } else compareBy { it.amount }
-      "resolution" -> if (descending) compareByDescending { it.resolution.name } else compareBy { it.resolution.name }
-      "method" -> if (descending) compareByDescending { it.method.name } else compareBy { it.method.name }
+      "resolution" -> if (descending) compareByDescending { it.resolution } else compareBy { it.resolution }
+      "method" -> if (descending) compareByDescending { it.method } else compareBy { it.method }
       "prisoner_name" -> nullsLastComparator(descending) { it.prisonerName }
-      "recipient_name" -> nullsLastComparator(descending) { it.recipientName }
+      "recipient_name" -> nullsLastComparator(descending) { "${it.recipientFirstName} ${it.recipientLastName}" }
       else -> return disbursements
     }
 
@@ -278,116 +291,91 @@ class DisbursementService(
 
   @Transactional
   fun createDisbursement(request: CreateDisbursementRequest, userId: String): Disbursement {
-    val disbursement = Disbursement(
-      amount = request.amount,
-      method = request.method,
-      prison = request.prison,
-      prisonerNumber = request.prisonerNumber,
-      prisonerName = request.prisonerName,
-      recipientFirstName = request.recipientFirstName,
-      recipientLastName = request.recipientLastName,
-      recipientEmail = request.recipientEmail,
-      addressLine1 = request.addressLine1,
-      addressLine2 = request.addressLine2,
-      city = request.city,
-      postcode = request.postcode,
-      country = request.country,
-      sortCode = request.sortCode,
-      accountNumber = request.accountNumber,
-      rollNumber = request.rollNumber,
-      recipientIsCompany = request.recipientIsCompany,
-      resolution = DisbursementResolution.PENDING,
-    )
+    // Mirrors mtp_api/apps/disbursement/serializers.py DisbursementSerializer.create:
+    // resolves prison FK, applies prisoner_name lookup elsewhere (via PrisonerLocation
+    // when called from controller), sets resolution to PENDING, then logs CREATED.
+    val prisonEntity = request.prison?.let { prisonRepository.findById(it).orElse(null) }
+    val disbursement = Disbursement().apply {
+      amount = request.amount.toInt()
+      method = request.method.value
+      prison = prisonEntity
+      prisonerNumber = request.prisonerNumber.orEmpty()
+      prisonerName = request.prisonerName.orEmpty()
+      recipientFirstName = request.recipientFirstName.orEmpty()
+      recipientLastName = request.recipientLastName.orEmpty()
+      recipientEmail = request.recipientEmail
+      addressLine1 = request.addressLine1
+      addressLine2 = request.addressLine2
+      city = request.city
+      postcode = request.postcode
+      country = request.country
+      sortCode = request.sortCode
+      accountNumber = request.accountNumber
+      rollNumber = request.rollNumber
+      recipientIsCompany = request.recipientIsCompany
+      resolution = DisbursementResolution.PENDING.value
+    }
 
     val saved = disbursementRepository.save(disbursement)
-    disbursementLogRepository.save(DisbursementLog(action = LogAction.CREATED, disbursement = saved, userId = userId))
+    val log = DisbursementLog()
+    log.action = LogAction.CREATED.value
+    log.disbursement = saved
+    log.userId = userId
+    disbursementLogRepository.save(log)
     return saved
   }
 
   @Transactional
   fun updateDisbursement(id: Long, request: UpdateDisbursementRequest, userId: String): Disbursement {
+    // Mirrors mtp_api/apps/disbursement/views.py DisbursementView.update — only
+    // pending disbursements are editable; emit EDITED log if any field changed.
     val disbursement = disbursementRepository.findById(id)
       .orElseThrow { DisbursementNotFoundException(id) }
 
-    if (disbursement.resolution != DisbursementResolution.PENDING) {
-      throw DisbursementNotPendingException(id, disbursement.resolution)
+    val currentResolution = DisbursementResolution.fromValue(disbursement.resolution)
+    if (currentResolution != DisbursementResolution.PENDING) {
+      throw DisbursementNotPendingException(id, currentResolution)
     }
 
     var changed = false
+    fun <T : Any> setIfChanged(newVal: T?, getter: () -> T?, setter: (T) -> Unit) {
+      if (newVal != null && newVal != getter()) {
+        setter(newVal)
+        changed = true
+      }
+    }
 
-    if (request.amount != null && request.amount != disbursement.amount) {
-      disbursement.amount = request.amount
-      changed = true
+    setIfChanged(request.amount?.toInt(), { disbursement.amount }) { disbursement.amount = it }
+    setIfChanged(request.method?.value, { disbursement.method }) { disbursement.method = it }
+    request.prison?.let { newNomisId ->
+      if (newNomisId != disbursement.prison?.nomisId) {
+        disbursement.prison = prisonRepository.findById(newNomisId).orElse(null)
+        changed = true
+      }
     }
-    if (request.method != null && request.method != disbursement.method) {
-      disbursement.method = request.method
-      changed = true
-    }
-    if (request.prison != null && request.prison != disbursement.prison) {
-      disbursement.prison = request.prison
-      changed = true
-    }
-    if (request.prisonerNumber != null && request.prisonerNumber != disbursement.prisonerNumber) {
-      disbursement.prisonerNumber = request.prisonerNumber
-      changed = true
-    }
-    if (request.prisonerName != null && request.prisonerName != disbursement.prisonerName) {
-      disbursement.prisonerName = request.prisonerName
-      changed = true
-    }
-    if (request.recipientFirstName != null && request.recipientFirstName != disbursement.recipientFirstName) {
-      disbursement.recipientFirstName = request.recipientFirstName
-      changed = true
-    }
-    if (request.recipientLastName != null && request.recipientLastName != disbursement.recipientLastName) {
-      disbursement.recipientLastName = request.recipientLastName
-      changed = true
-    }
-    if (request.recipientEmail != null && request.recipientEmail != disbursement.recipientEmail) {
-      disbursement.recipientEmail = request.recipientEmail
-      changed = true
-    }
-    if (request.addressLine1 != null && request.addressLine1 != disbursement.addressLine1) {
-      disbursement.addressLine1 = request.addressLine1
-      changed = true
-    }
-    if (request.addressLine2 != null && request.addressLine2 != disbursement.addressLine2) {
-      disbursement.addressLine2 = request.addressLine2
-      changed = true
-    }
-    if (request.city != null && request.city != disbursement.city) {
-      disbursement.city = request.city
-      changed = true
-    }
-    if (request.postcode != null && request.postcode != disbursement.postcode) {
-      disbursement.postcode = request.postcode
-      changed = true
-    }
-    if (request.country != null && request.country != disbursement.country) {
-      disbursement.country = request.country
-      changed = true
-    }
-    if (request.sortCode != null && request.sortCode != disbursement.sortCode) {
-      disbursement.sortCode = request.sortCode
-      changed = true
-    }
-    if (request.accountNumber != null && request.accountNumber != disbursement.accountNumber) {
-      disbursement.accountNumber = request.accountNumber
-      changed = true
-    }
-    if (request.rollNumber != null && request.rollNumber != disbursement.rollNumber) {
-      disbursement.rollNumber = request.rollNumber
-      changed = true
-    }
-    if (request.recipientIsCompany != null && request.recipientIsCompany != disbursement.recipientIsCompany) {
-      disbursement.recipientIsCompany = request.recipientIsCompany
-      changed = true
-    }
+    setIfChanged(request.prisonerNumber, { disbursement.prisonerNumber }) { disbursement.prisonerNumber = it }
+    setIfChanged(request.prisonerName, { disbursement.prisonerName }) { disbursement.prisonerName = it }
+    setIfChanged(request.recipientFirstName, { disbursement.recipientFirstName }) { disbursement.recipientFirstName = it }
+    setIfChanged(request.recipientLastName, { disbursement.recipientLastName }) { disbursement.recipientLastName = it }
+    setIfChanged(request.recipientEmail, { disbursement.recipientEmail }) { disbursement.recipientEmail = it }
+    setIfChanged(request.addressLine1, { disbursement.addressLine1 }) { disbursement.addressLine1 = it }
+    setIfChanged(request.addressLine2, { disbursement.addressLine2 }) { disbursement.addressLine2 = it }
+    setIfChanged(request.city, { disbursement.city }) { disbursement.city = it }
+    setIfChanged(request.postcode, { disbursement.postcode }) { disbursement.postcode = it }
+    setIfChanged(request.country, { disbursement.country }) { disbursement.country = it }
+    setIfChanged(request.sortCode, { disbursement.sortCode }) { disbursement.sortCode = it }
+    setIfChanged(request.accountNumber, { disbursement.accountNumber }) { disbursement.accountNumber = it }
+    setIfChanged(request.rollNumber, { disbursement.rollNumber }) { disbursement.rollNumber = it }
+    setIfChanged(request.recipientIsCompany, { disbursement.recipientIsCompany }) { disbursement.recipientIsCompany = it }
 
     val saved = disbursementRepository.save(disbursement)
 
     if (changed) {
-      disbursementLogRepository.save(DisbursementLog(action = LogAction.EDITED, disbursement = saved, userId = userId))
+      val log = DisbursementLog()
+      log.action = LogAction.EDITED.value
+      log.disbursement = saved
+      log.userId = userId
+      disbursementLogRepository.save(log)
     }
 
     return saved
@@ -402,7 +390,7 @@ class DisbursementService(
       val disbursement = disbursementMap[id] ?: throw DisbursementNotFoundException(id)
       disbursement.transitionResolution(DisbursementResolution.REJECTED)
       disbursementRepository.save(disbursement)
-      disbursementLogRepository.save(DisbursementLog(action = LogAction.REJECTED, disbursement = disbursement, userId = userId))
+      DisbursementLog().also { it.action = LogAction.REJECTED.value; it.disbursement = disbursement; it.userId = userId }.let(disbursementLogRepository::save)
     }
   }
 
@@ -415,7 +403,7 @@ class DisbursementService(
       val disbursement = disbursementMap[id] ?: throw DisbursementNotFoundException(id)
       disbursement.transitionResolution(DisbursementResolution.PRECONFIRMED)
       disbursementRepository.save(disbursement)
-      disbursementLogRepository.save(DisbursementLog(action = LogAction.PRECONFIRMED, disbursement = disbursement, userId = userId))
+      DisbursementLog().also { it.action = LogAction.PRECONFIRMED.value; it.disbursement = disbursement; it.userId = userId }.let(disbursementLogRepository::save)
     }
   }
 
@@ -428,7 +416,7 @@ class DisbursementService(
       val disbursement = disbursementMap[id] ?: throw DisbursementNotFoundException(id)
       disbursement.transitionResolution(DisbursementResolution.PENDING)
       disbursementRepository.save(disbursement)
-      disbursementLogRepository.save(DisbursementLog(action = LogAction.CREATED, disbursement = disbursement, userId = userId))
+      DisbursementLog().also { it.action = LogAction.CREATED.value; it.disbursement = disbursement; it.userId = userId }.let(disbursementLogRepository::save)
     }
   }
 
@@ -448,7 +436,7 @@ class DisbursementService(
         disbursement.nomisTransactionId = item.nomisTransactionId
       }
       disbursementRepository.save(disbursement)
-      disbursementLogRepository.save(DisbursementLog(action = LogAction.CONFIRMED, disbursement = disbursement, userId = userId))
+      DisbursementLog().also { it.action = LogAction.CONFIRMED.value; it.disbursement = disbursement; it.userId = userId }.let(disbursementLogRepository::save)
     }
   }
 
@@ -461,7 +449,7 @@ class DisbursementService(
       val disbursement = disbursementMap[id] ?: throw DisbursementNotFoundException(id)
       disbursement.transitionResolution(DisbursementResolution.SENT)
       disbursementRepository.save(disbursement)
-      disbursementLogRepository.save(DisbursementLog(action = LogAction.SENT, disbursement = disbursement, userId = userId))
+      DisbursementLog().also { it.action = LogAction.SENT.value; it.disbursement = disbursement; it.userId = userId }.let(disbursementLogRepository::save)
     }
   }
 

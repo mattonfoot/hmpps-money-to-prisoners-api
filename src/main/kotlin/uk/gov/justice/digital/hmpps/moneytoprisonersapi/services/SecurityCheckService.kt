@@ -10,11 +10,13 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AutoAcceptR
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AutoAcceptRuleState
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CheckStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AutoAcceptRuleRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Service
 class SecurityCheckService(
@@ -22,6 +24,7 @@ class SecurityCheckService(
   private val senderProfileRepository: SenderProfileRepository,
   private val prisonerProfileRepository: PrisonerProfileRepository,
   private val autoAcceptRuleRepository: AutoAcceptRuleRepository,
+  private val userRepository: AuthUserRepository,
 ) {
 
   @Transactional
@@ -29,17 +32,17 @@ class SecurityCheckService(
     val check = securityCheckRepository.findById(id)
       .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "SecurityCheck $id not found") }
 
-    when (check.status) {
+    when (CheckStatus.fromValue(check.status)) {
       CheckStatus.ACCEPTED -> return
 
       // idempotent
       CheckStatus.REJECTED -> throw SecurityCheckConflictException("Cannot accept a check that is already rejected")
 
       CheckStatus.PENDING -> {
-        check.status = CheckStatus.ACCEPTED
+        check.status = CheckStatus.ACCEPTED.value
         check.decisionReason = decisionReason
-        check.actionedBy = username
-        check.actionedAt = LocalDateTime.now()
+        check.actionedBy = userRepository.findByUsername(username)
+        check.actionedAt = OffsetDateTime.now()
         securityCheckRepository.save(check)
       }
     }
@@ -50,18 +53,18 @@ class SecurityCheckService(
     val check = securityCheckRepository.findById(id)
       .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "SecurityCheck $id not found") }
 
-    when (check.status) {
+    when (CheckStatus.fromValue(check.status)) {
       CheckStatus.REJECTED -> return
 
       // idempotent
       CheckStatus.ACCEPTED -> throw SecurityCheckConflictException("Cannot reject a check that is already accepted")
 
       CheckStatus.PENDING -> {
-        check.status = CheckStatus.REJECTED
+        check.status = CheckStatus.REJECTED.value
         check.decisionReason = decisionReason
         check.rejectionReasons = rejectionReasons.joinToString(",")
-        check.actionedBy = username
-        check.actionedAt = LocalDateTime.now()
+        check.actionedBy = userRepository.findByUsername(username)
+        check.actionedAt = OffsetDateTime.now()
         securityCheckRepository.save(check)
       }
     }

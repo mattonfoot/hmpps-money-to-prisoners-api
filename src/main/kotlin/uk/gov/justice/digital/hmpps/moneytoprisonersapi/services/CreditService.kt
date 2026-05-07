@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.transitionR
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
@@ -27,6 +28,7 @@ class CreditService(
   private val senderProfileRepository: SenderProfileRepository,
   private val prisonerProfileRepository: PrisonerProfileRepository,
   private val logRepository: LogRepository,
+  private val userRepository: AuthUserRepository,
 ) {
 
   fun listCompletedCredits(): List<Credit> = creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED))
@@ -104,7 +106,7 @@ class CreditService(
 
     if (!prisons.isNullOrEmpty()) {
       val prisonSet = prisons.toSet()
-      credits = credits.filter { it.prison in prisonSet }
+      credits = credits.filter { it.prison?.nomisId in prisonSet }
     }
 
     if (prisonIsNull == true) {
@@ -115,21 +117,21 @@ class CreditService(
       val matchingPrisonIds = prisonRepository.findByRegionContainingIgnoreCase(prisonRegion)
         .map { it.nomisId }
         .toSet()
-      credits = credits.filter { it.prison in matchingPrisonIds }
+      credits = credits.filter { it.prison?.nomisId in matchingPrisonIds }
     }
 
     if (prisonCategory != null) {
       val matchingPrisonIds = prisonRepository.findByCategoryName(prisonCategory)
         .map { it.nomisId }
         .toSet()
-      credits = credits.filter { it.prison in matchingPrisonIds }
+      credits = credits.filter { it.prison?.nomisId in matchingPrisonIds }
     }
 
     if (prisonPopulation != null) {
       val matchingPrisonIds = prisonRepository.findByPopulationName(prisonPopulation)
         .map { it.nomisId }
         .toSet()
-      credits = credits.filter { it.prison in matchingPrisonIds }
+      credits = credits.filter { it.prison?.nomisId in matchingPrisonIds }
     }
 
     if (amount != null) {
@@ -171,11 +173,11 @@ class CreditService(
     }
 
     if (user != null) {
-      credits = credits.filter { it.owner == user }
+      credits = credits.filter { it.owner?.username == user }
     }
 
     if (resolution != null) {
-      credits = credits.filter { it.resolution == resolution }
+      credits = credits.filter { it.resolution == resolution.value }
     }
 
     if (reviewed != null) {
@@ -183,11 +185,13 @@ class CreditService(
     }
 
     if (receivedAtGte != null) {
-      credits = credits.filter { it.receivedAt != null && !it.receivedAt!!.isBefore(receivedAtGte) }
+      val receivedAtGteOffset = receivedAtGte.atOffset(java.time.ZoneOffset.UTC)
+      credits = credits.filter { it.receivedAt != null && !it.receivedAt!!.isBefore(receivedAtGteOffset) }
     }
 
     if (receivedAtLt != null) {
-      credits = credits.filter { it.receivedAt != null && it.receivedAt!!.isBefore(receivedAtLt) }
+      val receivedAtLtOffset = receivedAtLt.atOffset(java.time.ZoneOffset.UTC)
+      credits = credits.filter { it.receivedAt != null && it.receivedAt!!.isBefore(receivedAtLtOffset) }
     }
 
     if (senderName != null) {
@@ -240,7 +244,7 @@ class CreditService(
     }
 
     if (senderIpAddress != null) {
-      credits = credits.filter { it.payment?.ipAddress == senderIpAddress }
+      credits = credits.filter { it.payment?.ipAddress?.hostAddress == senderIpAddress }
     }
 
     if (cardNumberFirstDigits != null) {
@@ -292,9 +296,8 @@ class CreditService(
     }
 
     if (logAction != null) {
-      val action = LogAction.fromValue(logAction)
       credits = credits.filter { credit ->
-        credit.logs.any { log -> log.action == action }
+        credit.logs.any { log -> log.action == logAction }
       }
     }
 
@@ -432,15 +435,16 @@ class CreditService(
     receivedAt: LocalDateTime?,
     source: CreditSource,
   ): Credit {
-    val credit = Credit(
-      amount = amount,
-      prisonerNumber = prisonerNumber,
-      prisonerName = prisonerName,
-      prisonerDob = prisonerDob,
-      receivedAt = receivedAt,
-      resolution = CreditResolution.INITIAL,
-    )
-    credit.source = source
+    // Django's credit_credit has no `source` column — that concept exists only
+    // in the Kotlin domain model. Track on a transient field if needed by callers.
+    val credit = Credit().apply {
+      this.amount = amount
+      this.prisonerNumber = prisonerNumber
+      this.prisonerName = prisonerName
+      this.prisonerDob = prisonerDob
+      this.receivedAt = receivedAt?.atOffset(java.time.ZoneOffset.UTC)
+      this.resolution = CreditResolution.INITIAL.value
+    }
     return creditRepository.save(credit)
   }
 
@@ -471,7 +475,7 @@ class CreditService(
     for (credit in credits) {
       credit.reviewed = true
       creditRepository.save(credit)
-      logRepository.save(Log(action = LogAction.REVIEWED, credit = credit, userId = userId))
+      logRepository.save(Log().let { _l -> _l.action = LogAction.REVIEWED.value; _l.credit = credit; _l.user = userRepository.findByUsername(userId); _l })
     }
   }
 
@@ -504,14 +508,14 @@ class CreditService(
         continue
       }
 
-      credit.resolution = CreditResolution.CREDITED
-      credit.owner = userId
+      credit.resolution = CreditResolution.CREDITED.value
+      credit.owner = userRepository.findByUsername(userId)
       if (item.nomisTransactionId != null) {
         credit.nomisTransactionId = item.nomisTransactionId
       }
       creditRepository.save(credit)
 
-      logRepository.save(Log(action = LogAction.CREDITED, credit = credit, userId = userId))
+      logRepository.save(Log().let { _l -> _l.action = LogAction.CREDITED.value; _l.credit = credit; _l.user = userRepository.findByUsername(userId); _l })
     }
 
     return conflictIds
@@ -539,16 +543,16 @@ class CreditService(
 
     for (id in creditIds) {
       val credit = creditMap[id]
-      if (credit == null || credit.resolution != CreditResolution.PENDING) {
+      if (credit == null || credit.resolution != CreditResolution.PENDING.value) {
         conflictIds.add(id)
         continue
       }
 
-      credit.resolution = CreditResolution.MANUAL
-      credit.owner = userId
+      credit.resolution = CreditResolution.MANUAL.value
+      credit.owner = userRepository.findByUsername(userId)
       creditRepository.save(credit)
 
-      logRepository.save(Log(action = LogAction.MANUAL, credit = credit, userId = userId))
+      logRepository.save(Log().let { _l -> _l.action = LogAction.MANUAL.value; _l.credit = credit; _l.user = userRepository.findByUsername(userId); _l })
     }
 
     return conflictIds
@@ -578,15 +582,15 @@ class CreditService(
       val credit = creditMap[id]
       if (credit == null || CreditStatus.computeFrom(credit) != CreditStatus.REFUND_PENDING) {
         throw InvalidCreditStateException(
-          credit?.resolution ?: CreditResolution.INITIAL,
+          credit?.resolution?.let { CreditResolution.fromValue(it) } ?: CreditResolution.INITIAL,
           CreditResolution.REFUNDED,
         )
       }
 
-      credit.resolution = CreditResolution.REFUNDED
+      credit.resolution = CreditResolution.REFUNDED.value
       creditRepository.save(credit)
 
-      logRepository.save(Log(action = LogAction.REFUNDED, credit = credit, userId = userId))
+      logRepository.save(Log().let { _l -> _l.action = LogAction.REFUNDED.value; _l.credit = credit; _l.user = userRepository.findByUsername(userId); _l })
     }
   }
 
@@ -700,7 +704,7 @@ class CreditService(
 
     // Only include credits that have a CREDITED log entry
     val creditsWithCreditedLog = credits.filter { credit ->
-      credit.logs.any { it.action == LogAction.CREDITED && it.created != null }
+      credit.logs.any { it.action == LogAction.CREDITED.value }
     }
 
     // Group by (date of CREDITED log, owner of that log)
@@ -708,9 +712,9 @@ class CreditService(
 
     val groups = mutableMapOf<GroupKey, MutableList<Credit>>()
     for (credit in creditsWithCreditedLog) {
-      val creditedLog = credit.logs.first { it.action == LogAction.CREDITED && it.created != null }
-      val date = creditedLog.created!!.toLocalDate()
-      val owner = creditedLog.userId ?: "unknown"
+      val creditedLog = credit.logs.first { it.action == LogAction.CREDITED.value }
+      val date = creditedLog.created.toLocalDate()
+      val owner = creditedLog.user?.username ?: "unknown"
       groups.getOrPut(GroupKey(date, owner)) { mutableListOf() }.add(credit)
     }
 
