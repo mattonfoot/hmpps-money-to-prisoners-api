@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AutoAcceptRule
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(description = "An auto-accept rule for a sender/prisoner pair")
 data class CheckAutoAcceptRule(
@@ -15,8 +15,8 @@ data class CheckAutoAcceptRule(
   val states: List<CheckAutoAcceptRuleState>,
   @JsonProperty("is_active")
   val isActive: Boolean,
-  val created: LocalDateTime?,
-  val modified: LocalDateTime?,
+  val created: OffsetDateTime?,
+  val modified: OffsetDateTime?,
 ) {
   companion object {
     fun from(rule: AutoAcceptRule): CheckAutoAcceptRule = CheckAutoAcceptRule(

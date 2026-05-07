@@ -5,9 +5,6 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
@@ -35,12 +32,6 @@ class CrossCuttingErrorResponseTest : IntegrationTestBase() {
     logRepository.deleteAll()
     creditRepository.deleteAll()
     prisonRepository.deleteAll()
-  }
-
-  private fun saveCredit(resolution: CreditResolution = CreditResolution.PENDING, prison: String? = null): Credit {
-    val credit = Credit(amount = 1000L, resolution = resolution, prison = prison)
-    credit.source = CreditSource.BANK_TRANSFER
-    return creditRepository.save(credit)
   }
 
   @Nested

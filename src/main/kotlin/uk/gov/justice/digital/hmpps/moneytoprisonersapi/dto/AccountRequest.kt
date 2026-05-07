@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(description = "Account request details")
 data class AccountRequest(
@@ -30,10 +30,10 @@ data class AccountRequest(
   val status: String,
 
   @Schema(description = "Timestamp when the request was created")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
 
   @Schema(description = "Timestamp when the request was last modified")
-  val modified: LocalDateTime?,
+  val modified: OffsetDateTime?,
 
   @Schema(description = "Existing user with this username, if one already exists (AUTH-062)")
   val existingUser: UserDto? = null,

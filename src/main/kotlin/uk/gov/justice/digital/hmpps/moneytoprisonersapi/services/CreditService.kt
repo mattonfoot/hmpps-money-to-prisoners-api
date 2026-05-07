@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditsGroupedByCredited
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.transitionResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
@@ -499,7 +500,7 @@ class CreditService(
     for (item in creditedItems) {
       val credit = creditMap[item.id!!]
       if (credit == null || CreditStatus.computeFrom(credit) != CreditStatus.CREDIT_PENDING) {
-        conflictIds.add(item.id)
+        conflictIds.add(item.id!!)
         continue
       }
 

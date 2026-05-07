@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(description = "Job information submitted alongside an account request")
 data class JobInformation(
@@ -21,10 +21,10 @@ data class JobInformation(
   val tasks: String,
 
   @Schema(description = "Timestamp when the record was created")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
 
   @Schema(description = "Timestamp when the record was last modified")
-  val modified: LocalDateTime?,
+  val modified: OffsetDateTime?,
 ) {
   companion object {
     fun from(info: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.JobInformation) = JobInformation(

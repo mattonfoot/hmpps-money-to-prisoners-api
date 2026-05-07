@@ -7,41 +7,50 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.JoinTable
-import jakarta.persistence.ManyToMany
-import jakarta.persistence.PrePersist
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Entity
-@Table(name = "payment_batches")
-class PaymentBatch(
+@Table(
+  name = "payment_batch",
+  schema = "public",
+  uniqueConstraints = [
+    UniqueConstraint(
+      name = "payment_batch_settlement_transaction_id_key",
+      columnNames = ["settlement_transaction_id"],
+    ),
+  ],
+)
+open class PaymentBatch {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "payment_batch_id", columnDefinition = "serial")
-  val id: Long? = null,
+  @Column(name = "id", nullable = false)
+  open var id: Long? = null
 
-  @Column(name = "ref_code", nullable = false)
-  var refCode: Int = 1,
+  @NotNull
+  @Column(name = "created", nullable = false)
+  open var created: OffsetDateTime = OffsetDateTime.now()
 
-  @Column(name = "settlement_date")
-  var settlementDate: LocalDate? = null,
+  @NotNull
+  @Column(name = "modified", nullable = false)
+  open var modified: OffsetDateTime = OffsetDateTime.now()
 
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-    name = "payment_batch_credits",
-    joinColumns = [JoinColumn(name = "payment_batch_id")],
-    inverseJoinColumns = [JoinColumn(name = "credit_id")],
-  )
-  var credits: MutableList<Credit> = mutableListOf(),
+  @NotNull
+  @Column(name = "date", nullable = false)
+  open var date: LocalDate = LocalDate.now()
 
-  @Column(nullable = false, updatable = false)
-  var created: LocalDateTime? = null,
-) {
+  @Size(max = 12)
+  @NotNull
+  @Column(name = "ref_code", nullable = false, length = 12)
+  open var refCode: String = ""
 
-  @PrePersist
-  fun onCreate() {
-    created = LocalDateTime.now()
-  }
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "settlement_transaction_id")
+  open var settlementTransaction: TransactionTransaction? =
+    null
 }

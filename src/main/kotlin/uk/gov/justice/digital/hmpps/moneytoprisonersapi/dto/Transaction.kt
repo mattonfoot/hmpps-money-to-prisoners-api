@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.TransactionCategory
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.TransactionSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.TransactionStatus
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(description = "A bank transfer transaction record")
 data class Transaction(
@@ -35,7 +35,7 @@ data class Transaction(
   val reference: String?,
   @Schema(description = "Timestamp when the payment was received", example = "2024-01-15T10:30:00")
   @JsonProperty("received_at")
-  val receivedAt: LocalDateTime?,
+  val receivedAt: OffsetDateTime?,
   @Schema(description = "6-digit reconciliation reference code", example = "REF001")
   @JsonProperty("ref_code")
   val refCode: String?,
@@ -52,9 +52,9 @@ data class Transaction(
   @JsonProperty("credit")
   val creditId: Long?,
   @Schema(description = "Timestamp when the record was created", example = "2024-01-15T10:30:00")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
   @Schema(description = "Timestamp when the record was last modified", example = "2024-01-15T10:30:00")
-  val modified: LocalDateTime?,
+  val modified: OffsetDateTime?,
 ) {
   companion object {
     fun from(transaction: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Transaction): Transaction = Transaction(

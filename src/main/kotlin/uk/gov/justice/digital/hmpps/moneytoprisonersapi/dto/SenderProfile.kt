@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(name = "BankTransferSenderDetails", description = "Bank transfer details for a sender")
 data class BankTransferSenderDetails(
@@ -48,8 +48,8 @@ data class SenderProfile(
   @JsonProperty("monitoring_users")
   val monitoringUsers: List<String>,
   val monitoring: Boolean?,
-  val created: LocalDateTime?,
-  val modified: LocalDateTime?,
+  val created: OffsetDateTime?,
+  val modified: OffsetDateTime?,
 ) {
   companion object {
     fun from(profile: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SenderProfile, currentUsername: String? = null): SenderProfile {

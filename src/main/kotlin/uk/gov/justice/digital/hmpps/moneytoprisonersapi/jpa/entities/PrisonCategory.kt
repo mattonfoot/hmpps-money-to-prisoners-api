@@ -6,15 +6,24 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
 
 @Entity
-@Table(name = "prison_category")
-class PrisonCategory(
+@Table(name = "prison_category", schema = "public")
+open class PrisonCategory {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "category_id")
-  val id: Long? = null,
+  @Column(name = "id", nullable = false)
+  open var id: Long? = null
 
-  @Column(nullable = false, unique = true)
-  val name: String,
-)
+  @Size(max = 30)
+  @NotNull
+  @Column(name = "name", nullable = false, length = 30)
+  open var name: String = ""
+
+  @Size(max = 255)
+  @NotNull
+  @Column(name = "description", nullable = false)
+  open var description: String = ""
+}

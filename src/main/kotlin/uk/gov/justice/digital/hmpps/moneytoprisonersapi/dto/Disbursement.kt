@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementMethod
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(description = "A disbursement record representing money sent out from a prisoner account")
 data class Disbursement(
@@ -89,10 +89,10 @@ data class Disbursement(
   val invoiceNumber: String?,
 
   @Schema(description = "Timestamp when record was created", example = "2024-03-15T10:30:00")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
 
   @Schema(description = "Timestamp when record was last modified", example = "2024-03-15T10:30:00")
-  val modified: LocalDateTime?,
+  val modified: OffsetDateTime?,
 
   @Schema(description = "Remittance description", example = "Payment for services")
   @JsonProperty("remittance_description")

@@ -23,10 +23,11 @@ import java.time.LocalDateTime
 class ServiceNotificationResourceTest {
 
   @Mock
-  private lateinit var notificationService: NotificationService
-
-  @Mock
   private lateinit var serviceNotificationService: ServiceNotificationService
+
+  @Suppress("unused")
+  @Mock
+  private lateinit var notificationService: NotificationService
 
   @InjectMocks
   private lateinit var resource: NotificationsResource

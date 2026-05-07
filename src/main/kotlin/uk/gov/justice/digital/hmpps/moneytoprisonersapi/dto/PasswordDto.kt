@@ -2,18 +2,6 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 
-@Schema(name = "ChangePassword", description = "Request body for changing password")
-data class ChangePasswordRequest(
-  @Schema(description = "Current password", required = true)
-  val oldPassword: String?,
-
-  @Schema(description = "New password", required = true)
-  val newPassword: String?,
-
-  @Schema(description = "Application identifier", example = "cashbook")
-  val application: String? = null,
-)
-
 @Schema(name = "ResetPassword", description = "Request body for initiating a password reset")
 data class ResetPasswordRequest(
   @Schema(description = "Username to reset (provide username OR email)", example = "jsmith")

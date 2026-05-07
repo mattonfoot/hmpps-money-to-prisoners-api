@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementConfirmR
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdateDisbursementRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursement
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementLog
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.transitionResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementMethod
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction

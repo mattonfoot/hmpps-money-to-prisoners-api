@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PaymentBatch
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(description = "A payment reconciliation batch")
 data class Batch(
@@ -24,7 +24,7 @@ data class Batch(
   val paymentAmount: Long,
 
   @Schema(description = "Timestamp when the batch was created", example = "2024-01-31T12:00:00")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
 ) {
   companion object {
     fun from(batch: PaymentBatch): Batch {

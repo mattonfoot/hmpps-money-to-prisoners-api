@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus.Companion.computeFrom
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(description = "A credit record with security details and security check information")
 data class SecurityCheckCreditDto(
@@ -47,23 +47,23 @@ data class SecurityCheckCreditDto(
   val reconciled: Boolean,
   @Schema(description = "Timestamp when the credit was received", example = "2024-03-15T10:30:00")
   @JsonProperty("received_at")
-  val receivedAt: LocalDateTime?,
+  val receivedAt: OffsetDateTime?,
   @Schema(description = "Timestamp when the credit was started (created)", example = "2024-03-15T10:30:00")
   @JsonProperty("started_at")
-  val startedAt: LocalDateTime?,
+  val startedAt: OffsetDateTime?,
   @Schema(description = "Timestamp when the credit was credited (from log)", example = "2024-03-16T14:00:00")
   @JsonProperty("credited_at")
-  val creditedAt: LocalDateTime?,
+  val creditedAt: OffsetDateTime?,
   @Schema(description = "Timestamp when the credit was refunded (from log)", example = "2024-03-17T09:00:00")
   @JsonProperty("refunded_at")
-  val refundedAt: LocalDateTime?,
+  val refundedAt: OffsetDateTime?,
   @Schema(description = "Timestamp when the credit was set to manual (from log)", example = "2024-03-18T11:00:00")
   @JsonProperty("set_manual_at")
-  val setManualAt: LocalDateTime?,
+  val setManualAt: OffsetDateTime?,
   @Schema(description = "Timestamp when the record was created", example = "2024-03-15T10:30:00")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
   @Schema(description = "Timestamp when the record was last modified", example = "2024-03-15T10:30:00")
-  val modified: LocalDateTime?,
+  val modified: OffsetDateTime?,
   @Schema(description = "Name of the sender (from transaction)", example = "Alice Sender")
   @JsonProperty("sender_name")
   val senderName: String?,

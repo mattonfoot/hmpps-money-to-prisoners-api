@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CheckStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Schema(hidden = true)
@@ -89,7 +89,7 @@ data class Payment(
 
   @Schema(description = "When the credit was received")
   @JsonProperty("received_at")
-  val receivedAt: LocalDateTime?,
+  val receivedAt: OffsetDateTime?,
 
   @Schema(description = "Billing address", nullable = true)
   @JsonProperty("billing_address")
@@ -100,10 +100,10 @@ data class Payment(
   val securityCheck: PaymentSecurityCheckDto?,
 
   @Schema(description = "Timestamp when the payment was created", example = "2024-03-15T10:30:00")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
 
   @Schema(description = "Timestamp when the payment was last modified", example = "2024-03-15T10:30:00")
-  val modified: LocalDateTime?,
+  val modified: OffsetDateTime?,
 ) {
   companion object {
     fun from(payment: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Payment): Payment = Payment(

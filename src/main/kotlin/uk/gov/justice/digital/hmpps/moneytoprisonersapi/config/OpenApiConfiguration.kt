@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.config
 
+import io.swagger.v3.core.converter.AnnotatedType
+import io.swagger.v3.core.converter.ModelConverters
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
@@ -9,8 +11,6 @@ import io.swagger.v3.oas.models.security.OAuthFlows
 import io.swagger.v3.oas.models.security.Scopes
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
-import io.swagger.v3.core.converter.AnnotatedType
-import io.swagger.v3.core.converter.ModelConverters
 import io.swagger.v3.oas.models.servers.Server
 import io.swagger.v3.oas.models.tags.Tag
 import org.springdoc.core.customizers.OpenApiCustomizer
@@ -250,11 +250,12 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
       "UpdateRefundedTransaction",
     )
     val toRemove = schemas.filterKeys { name ->
-      name !in preserve && (
-        name.endsWith("Request") ||
-          name.endsWith("Response") ||
-          name == "Rule" // Internal rule schema, replaced by CheckAutoAcceptRule
-        )
+      name !in preserve &&
+        (
+          name.endsWith("Request") ||
+            name.endsWith("Response") ||
+            name == "Rule" // Internal rule schema, replaced by CheckAutoAcceptRule
+          )
     }
     if (toRemove.isEmpty()) return@OpenApiCustomizer
 

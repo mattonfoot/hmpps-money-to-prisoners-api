@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 /**
  * Credit details as included in a private estate batch's credits list.
@@ -18,9 +18,9 @@ data class PrivateEstateBatchCredit(
   @Schema(description = "Amount in pence", required = true)
   val amount: Long,
   @JsonProperty("started_at")
-  val startedAt: LocalDateTime? = null,
+  val startedAt: OffsetDateTime? = null,
   @JsonProperty("received_at")
-  val receivedAt: LocalDateTime? = null,
+  val receivedAt: OffsetDateTime? = null,
   @JsonProperty("sender_name")
   val senderName: String? = null,
   @JsonProperty("sender_email")
@@ -31,11 +31,11 @@ data class PrivateEstateBatchCredit(
   val ownerName: String? = null,
   val resolution: String? = null,
   @JsonProperty("credited_at")
-  val creditedAt: LocalDateTime? = null,
+  val creditedAt: OffsetDateTime? = null,
   @JsonProperty("refunded_at")
-  val refundedAt: LocalDateTime? = null,
+  val refundedAt: OffsetDateTime? = null,
   @JsonProperty("set_manual_at")
-  val setManualAt: LocalDateTime? = null,
+  val setManualAt: OffsetDateTime? = null,
   val source: String? = null,
   @JsonProperty("intended_recipient")
   val intendedRecipient: String? = null,

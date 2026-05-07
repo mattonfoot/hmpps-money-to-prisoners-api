@@ -6,49 +6,44 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import java.time.LocalDateTime
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
+import java.time.OffsetDateTime
 
-/**
- * A banner/alert notification shown to users in one or more front-end applications.
- *
- * SVC-011: public=true makes the notification visible to unauthenticated users.
- * SVC-012: target matches one of the NotificationTarget values; filtered by prefix.
- * SVC-013: level is a Django message integer (20=info, 25=success, 30=warning, 40=error).
- * SVC-014: Active when now is between start and end (or end is null).
- */
 @Entity
-@Table(name = "service_notification")
-class ServiceNotification(
+@Table(name = "service_notification", schema = "public")
+open class ServiceNotification {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id", columnDefinition = "serial")
-  val id: Long? = null,
+  @Column(name = "id", nullable = false)
+  open var id: Long? = null
 
-  /** When true, visible to unauthenticated users. */
-  @Column(nullable = false)
-  val public: Boolean = false,
+  @Size(max = 30)
+  @NotNull
+  @Column(name = "target", nullable = false, length = 30)
+  open var target: String = ""
 
-  /** Target app/view identifier (e.g. "cashbook_login", "noms_ops_security_dashboard"). */
-  @Column(nullable = false, length = 30)
-  val target: String,
+  @NotNull
+  @Column(name = "level", nullable = false)
+  open var level: Short = 0
 
-  /**
-   * Django message level integer.
-   * 20 = info, 25 = success, 30 = warning, 40 = error.
-   */
-  @Column(nullable = false)
-  val level: Int,
+  @NotNull
+  @Column(name = "start", nullable = false)
+  open var start: OffsetDateTime = OffsetDateTime.now()
 
-  @Column(nullable = false)
-  val start: LocalDateTime,
-
-  /** Null means no scheduled end. */
   @Column(name = "\"end\"")
-  val end: LocalDateTime? = null,
+  open var end: OffsetDateTime? = null
 
-  @Column(nullable = false, length = 200)
-  val headline: String,
+  @Size(max = 200)
+  @NotNull
+  @Column(name = "headline", nullable = false, length = 200)
+  open var headline: String = ""
 
-  @Column(nullable = false, columnDefinition = "text")
-  val message: String = "",
-)
+  @NotNull
+  @Column(name = "message", nullable = false, length = Integer.MAX_VALUE)
+  open var message: String = ""
+
+  @NotNull
+  @Column(name = "public", nullable = false)
+  open var publicField: Boolean = false
+}

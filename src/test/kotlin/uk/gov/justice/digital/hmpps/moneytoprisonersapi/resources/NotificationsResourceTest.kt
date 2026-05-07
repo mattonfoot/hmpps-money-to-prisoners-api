@@ -26,6 +26,7 @@ class NotificationsResourceTest {
   @Mock
   private lateinit var notificationService: NotificationService
 
+  @Suppress("unused")
   @Mock
   private lateinit var serviceNotificationService: ServiceNotificationService
 

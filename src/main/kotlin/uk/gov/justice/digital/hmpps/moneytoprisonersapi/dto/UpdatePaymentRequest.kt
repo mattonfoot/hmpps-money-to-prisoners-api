@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(hidden = true)
 data class UpdatePaymentRequest(
@@ -35,7 +35,7 @@ data class UpdatePaymentRequest(
 
   @Schema(description = "When the payment was received (ISO datetime). Defaults to now when status=taken.", example = "2024-03-15T10:30:00")
   @JsonProperty("received_at")
-  val receivedAt: LocalDateTime? = null,
+  val receivedAt: OffsetDateTime? = null,
 
   @Schema(description = "Billing address details")
   @JsonProperty("billing_address")

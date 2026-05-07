@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 /**
  * A log entry attached to a credit, disbursement, or other auditable record.
@@ -15,5 +15,5 @@ data class Log(
   @Schema(description = "The action performed", example = "credited")
   val action: String,
   @Schema(description = "Timestamp of the log entry")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
 )

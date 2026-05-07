@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementComment
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(name = "Disbursement Comment", description = "A comment on a disbursement")
 data class DisbursementCommentDto(
@@ -24,10 +24,10 @@ data class DisbursementCommentDto(
   val userId: String?,
 
   @Schema(description = "Timestamp when record was created", example = "2024-03-15T10:30:00")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
 
   @Schema(description = "Timestamp when record was last modified", example = "2024-03-15T10:30:00")
-  val modified: LocalDateTime?,
+  val modified: OffsetDateTime?,
 ) {
   companion object {
     fun from(comment: DisbursementComment): DisbursementCommentDto = DisbursementCommentDto(

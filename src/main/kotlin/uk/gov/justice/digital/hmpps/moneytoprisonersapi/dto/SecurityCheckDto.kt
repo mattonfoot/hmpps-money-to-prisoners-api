@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CheckStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(name = "SimpleCheck", description = "A security check performed on a credit")
 data class SecurityCheckDto(
@@ -22,7 +22,7 @@ data class SecurityCheckDto(
   val actionedBy: String?,
   @Schema(description = "Timestamp when the check was actioned", example = "2024-03-16T14:00:00")
   @JsonProperty("actioned_at")
-  val actionedAt: LocalDateTime?,
+  val actionedAt: OffsetDateTime?,
   @Schema(description = "JSON array of rule codes that triggered this check", example = "[\"FIUMONP\"]")
   @JsonProperty("rule_codes")
   val ruleCodes: String?,
@@ -31,14 +31,14 @@ data class SecurityCheckDto(
   val rejectionReasons: String?,
   @Schema(description = "Timestamp when the check was started", example = "2024-03-15T10:30:00")
   @JsonProperty("started_at")
-  val startedAt: LocalDateTime?,
+  val startedAt: OffsetDateTime?,
   @Schema(description = "User the check is assigned to", example = "security_user")
   @JsonProperty("assigned_to")
   val assignedTo: String?,
   @Schema(description = "Timestamp when the check was created", example = "2024-03-15T10:30:00")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
   @Schema(description = "Timestamp when the check was last modified", example = "2024-03-15T10:30:00")
-  val modified: LocalDateTime?,
+  val modified: OffsetDateTime?,
 ) {
   companion object {
     fun from(securityCheck: SecurityCheck): SecurityCheckDto = SecurityCheckDto(

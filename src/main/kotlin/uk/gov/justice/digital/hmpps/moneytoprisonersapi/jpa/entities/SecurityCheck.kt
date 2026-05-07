@@ -1,101 +1,108 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
-import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Column
-import jakarta.persistence.Converter
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
-import jakarta.persistence.PrePersist
-import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
-import java.time.LocalDateTime
-
-enum class CheckStatus(@JsonValue val value: String) {
-  PENDING("pending"),
-  ACCEPTED("accepted"),
-  REJECTED("rejected"),
-  ;
-
-  companion object {
-    private val BY_VALUE = entries.associateBy { it.value }
-    private val BY_NAME = entries.associateBy { it.name }
-
-    @JvmStatic
-    @JsonCreator
-    fun fromValue(value: String): CheckStatus = BY_VALUE[value] ?: BY_NAME[value] ?: throw IllegalArgumentException("Unknown CheckStatus: $value")
-  }
-}
-
-@Converter(autoApply = true)
-class CheckStatusConverter : AttributeConverter<CheckStatus, String> {
-  override fun convertToDatabaseColumn(attribute: CheckStatus?): String? = attribute?.value
-  override fun convertToEntityAttribute(dbData: String?): CheckStatus? = dbData?.let { CheckStatus.fromValue(it) }
-}
+import jakarta.persistence.UniqueConstraint
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
+import java.time.OffsetDateTime
 
 @Entity
-@Table(name = "security_check")
-class SecurityCheck(
+@Table(
+  name = "security_check",
+  schema = "public",
+  indexes = [
+    Index(
+      name = "security_check_status_65d97f63",
+      columnList = "status",
+    ),
+    Index(
+      name = "security_check_status_65d97f63_like",
+      columnList = "status",
+    ),
+    Index(
+      name = "security_check_actioned_by_id_4cf02638",
+      columnList = "actioned_by_id",
+    ),
+    Index(
+      name = "security_check_assigned_to_id_2eedaae6",
+      columnList = "assigned_to_id",
+    ),
+    Index(
+      name = "security_check_auto_accept_rule_state_id_0cb96cd1",
+      columnList = "auto_accept_rule_state_id",
+    ),
+  ],
+  uniqueConstraints = [
+    UniqueConstraint(
+      name = "security_check_credit_id_key",
+      columnNames = ["credit_id"],
+    ),
+  ],
+)
+open class SecurityCheck {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "check_id", columnDefinition = "serial")
-  val id: Long? = null,
+  @Column(name = "id", nullable = false)
+  open var id: Long? = null
 
-  @Column(nullable = false, length = 50)
-  var status: CheckStatus = CheckStatus.PENDING,
+  @NotNull
+  @Column(name = "created", nullable = false)
+  open var created: OffsetDateTime = OffsetDateTime.now()
 
-  @Column(columnDefinition = "text")
-  var description: String? = null,
+  @NotNull
+  @Column(name = "modified", nullable = false)
+  open var modified: OffsetDateTime = OffsetDateTime.now()
 
-  @Column(name = "decision_reason", columnDefinition = "text")
-  var decisionReason: String? = null,
+  @Size(max = 50)
+  @NotNull
+  @Column(name = "status", nullable = false, length = 50)
+  open var status: String = ""
 
-  @Column(name = "actioned_by")
-  var actionedBy: String? = null,
+  @Column(name = "rules", columnDefinition = "varchar [](50)")
+  open var rules: Any? = null
 
   @Column(name = "actioned_at")
-  var actionedAt: LocalDateTime? = null,
+  open var actionedAt: OffsetDateTime? = null
 
-  /** JSON array of rule codes that triggered this check, e.g. ["FIUMONP","CSFREQ"] */
-  @Column(name = "rule_codes", columnDefinition = "text")
-  var ruleCodes: String? = null,
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "actioned_by_id")
+  open var actionedBy: AuthUser? = null
 
-  /** JSON array of rejection reason codes, populated on reject */
-  @Column(name = "rejection_reasons", columnDefinition = "text")
-  var rejectionReasons: String? = null,
+  @NotNull
+  @OneToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "credit_id", nullable = false)
+  open var credit: CreditCredit? = null
 
-  @Column(name = "started_at")
-  var startedAt: LocalDateTime? = null,
+  @NotNull
+  @Column(name = "decision_reason", nullable = false, length = Integer.MAX_VALUE)
+  open var decisionReason: String = ""
 
-  @Column(name = "assigned_to")
-  var assignedTo: String? = null,
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "assigned_to_id")
+  open var assignedTo: AuthUser? = null
 
-  @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "credit_id", nullable = false, unique = true)
-  var credit: Credit? = null,
+  @Column(name = "description", columnDefinition = "varchar [](200)")
+  open var description: Any? = null
 
-  @Column(nullable = false, updatable = false)
-  var created: LocalDateTime? = null,
+  @NotNull
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "rejection_reasons", nullable = false)
+  open var rejectionReasons: Map<String, Any>? = null
 
-  @Column(nullable = false)
-  var modified: LocalDateTime? = null,
-) {
-
-  @PrePersist
-  fun onCreate() {
-    val now = LocalDateTime.now()
-    created = now
-    modified = now
-  }
-
-  @PreUpdate
-  fun onUpdate() {
-    modified = LocalDateTime.now()
-  }
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "auto_accept_rule_state_id")
+  open var autoAcceptRuleState: SecurityCheckautoacceptrulestate? =
+    null
 }

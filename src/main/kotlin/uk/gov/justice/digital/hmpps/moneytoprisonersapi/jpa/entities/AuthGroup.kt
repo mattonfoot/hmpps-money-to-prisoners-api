@@ -5,15 +5,37 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.Index
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
 
 @Entity
-@Table(name = "auth_group")
-class AuthGroup(
+@Table(
+  name = "auth_group",
+  schema = "public",
+  indexes = [
+    Index(
+      name = "auth_group_name_a6ea08ec_like",
+      columnList = "name",
+    ),
+  ],
+  uniqueConstraints = [
+    UniqueConstraint(
+      name = "auth_group_name_key",
+      columnNames = ["name"],
+    ),
+  ],
+)
+open class AuthGroup {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val id: Long? = null,
+  @Column(name = "id", nullable = false)
+  open var id: Long? = null
 
-  @Column(nullable = false, unique = true, length = 150)
-  val name: String = "",
-)
+  @Size(max = 150)
+  @NotNull
+  @Column(name = "name", nullable = false, length = 150)
+  open var name: String = ""
+}

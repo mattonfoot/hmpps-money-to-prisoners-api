@@ -67,7 +67,7 @@ object EventSpecifications {
    */
   fun fetchAssociations(): Specification<Event> = Specification { root, query, _ ->
     // Skip fetch joins on count queries (JPA Specifications run on both data and count queries)
-    if (query?.resultType != Long::class.java && query?.resultType != Long::class.javaPrimitiveType) {
+    if (query.resultType != Long::class.java && query.resultType != Long::class.javaPrimitiveType) {
       root.fetch<Any, Any>("credit", JoinType.LEFT)
       root.fetch<Any, Any>("disbursement", JoinType.LEFT)
       root.fetch<Any, Any>("senderProfile", JoinType.LEFT)

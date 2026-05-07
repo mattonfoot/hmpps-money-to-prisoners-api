@@ -6,50 +6,58 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.PrePersist
-import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
-import java.time.LocalDateTime
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
+import java.time.OffsetDateTime
 
 @Entity
-@Table(name = "disbursement_comment")
-class DisbursementComment(
+@Table(
+  name = "disbursement_comment",
+  schema = "public",
+  indexes = [
+    Index(
+      name = "disbursement_comment_disbursement_id_25a38013",
+      columnList = "disbursement_id",
+    ),
+    Index(
+      name = "disbursement_comment_user_id_398a7e2b",
+      columnList = "user_id",
+    ),
+  ],
+)
+open class DisbursementComment {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "disbursement_comment_id", columnDefinition = "serial")
-  val id: Long? = null,
+  @Column(name = "id", nullable = false)
+  open var id: Long? = null
 
-  @Column(nullable = false, columnDefinition = "text")
-  val comment: String,
+  @NotNull
+  @Column(name = "created", nullable = false)
+  open var created: OffsetDateTime = OffsetDateTime.now()
 
-  @Column(length = 100)
-  val category: String? = null,
+  @NotNull
+  @Column(name = "modified", nullable = false)
+  open var modified: OffsetDateTime = OffsetDateTime.now()
+
+  @NotNull
+  @Column(name = "comment", nullable = false, length = Integer.MAX_VALUE)
+  open var comment: String = ""
+
+  @NotNull
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "disbursement_id", nullable = false)
+  open var disbursement: DisbursementDisbursement? = null
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "disbursement_id")
-  var disbursement: Disbursement? = null,
+  @JoinColumn(name = "user_id")
+  open var user: AuthUser? = null
 
-  @Column(name = "user_id")
-  var userId: String? = null,
-
-  @Column(nullable = false, updatable = false)
-  var created: LocalDateTime? = null,
-
-  @Column(nullable = false)
-  var modified: LocalDateTime? = null,
-) {
-
-  @PrePersist
-  fun onCreate() {
-    val now = LocalDateTime.now()
-    created = now
-    modified = now
-  }
-
-  @PreUpdate
-  fun onUpdate() {
-    modified = LocalDateTime.now()
-  }
+  @Size(max = 100)
+  @NotNull
+  @Column(name = "category", nullable = false, length = 100)
+  open var category: String = ""
 }

@@ -6,7 +6,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursemen
 import java.time.LocalDate
 import java.util.UUID
 
-open class CustomException constructor(message: String, val status: HttpStatus) : RuntimeException(message)
+open class CustomException(message: String, val status: HttpStatus) : RuntimeException(message)
 
 // ── account ─────────────────────────────────────────────────────────────────
 

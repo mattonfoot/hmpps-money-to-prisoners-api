@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Comment
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(name = "Credit Comment", description = "A comment on a credit record")
 data class CommentDto(
@@ -15,9 +15,9 @@ data class CommentDto(
   @Schema(description = "User who created the comment", example = "user1")
   val userId: String?,
   @Schema(description = "Timestamp when the comment was created", example = "2024-03-15T10:30:00")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
   @Schema(description = "Timestamp when the comment was last modified", example = "2024-03-15T10:30:00")
-  val modified: LocalDateTime?,
+  val modified: OffsetDateTime?,
 ) {
   companion object {
     fun from(comment: Comment): CommentDto = CommentDto(

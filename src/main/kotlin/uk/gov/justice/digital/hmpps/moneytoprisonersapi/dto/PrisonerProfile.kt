@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursement
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(description = "A prisoner profile aggregating credits for one prisoner")
 data class PrisonerProfile(
@@ -35,8 +35,8 @@ data class PrisonerProfile(
   @JsonProperty("monitoring_users")
   val monitoringUsers: List<String>,
   val monitoring: Boolean?,
-  val created: LocalDateTime?,
-  val modified: LocalDateTime?,
+  val created: OffsetDateTime?,
+  val modified: OffsetDateTime?,
 ) {
   companion object {
     fun from(

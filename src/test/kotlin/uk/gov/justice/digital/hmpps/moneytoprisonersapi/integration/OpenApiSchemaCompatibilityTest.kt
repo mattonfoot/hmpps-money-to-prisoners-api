@@ -132,6 +132,7 @@ class OpenApiSchemaCompatibilityTest : IntegrationTestBase() {
       .expectBody(Map::class.java)
       .returnResult()
       .responseBody
+
     @Suppress("UNCHECKED_CAST")
     val paths = (body?.get("paths") as? Map<String, Any>) ?: emptyMap()
     return paths.keys

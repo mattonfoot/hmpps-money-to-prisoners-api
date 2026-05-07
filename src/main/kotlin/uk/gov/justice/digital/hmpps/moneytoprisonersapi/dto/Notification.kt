@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.ServiceNotification
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 /** Django message level integers mapped to their string labels. */
 private val LEVEL_LABELS = mapOf(
@@ -30,7 +30,7 @@ data class Notification(
   val start: LocalDateTime,
 
   @Schema(description = "When the notification expires; null means no scheduled end", nullable = true)
-  val end: LocalDateTime?,
+  val end: OffsetDateTime?,
 
   @Schema(description = "Short headline displayed to users", example = "Planned maintenance tonight")
   val headline: String,

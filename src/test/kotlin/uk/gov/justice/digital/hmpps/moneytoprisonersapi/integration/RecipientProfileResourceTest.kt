@@ -93,7 +93,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         val p = RecipientProfile(sortCode = "112233", accountNumber = "11111111")
         p.monitoringUsers.add("test-security")
         recipientProfileRepository.save(p)
-      }!!
+      }
       createRecipientProfile("445566", "22222222")
 
       webTestClient.get()
@@ -148,7 +148,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         val p = RecipientProfile(sortCode = "112233", accountNumber = "12345678")
         p.monitoringUsers.add("test-security")
         recipientProfileRepository.save(p)
-      }!!
+      }
 
       webTestClient.get()
         .uri("/recipients/${profile.id}/")
@@ -265,7 +265,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
       val monitoringUsers = transactionTemplate.execute {
         val p = recipientProfileRepository.findById(profile.id!!).get()
         p.monitoringUsers.toSet()
-      }!!
+      }
       assertThat(monitoringUsers).contains("test-security")
     }
 
@@ -276,7 +276,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         val p = RecipientProfile(sortCode = "112233", accountNumber = "12345678")
         p.monitoringUsers.add("test-security")
         recipientProfileRepository.save(p)
-      }!!
+      }
 
       webTestClient.post()
         .uri("/recipients/${saved.id}/unmonitor/")
@@ -287,7 +287,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
       val monitoringUsers = transactionTemplate.execute {
         val p = recipientProfileRepository.findById(saved.id!!).get()
         p.monitoringUsers.toSet()
-      }!!
+      }
       assertThat(monitoringUsers).doesNotContain("test-security")
     }
   }

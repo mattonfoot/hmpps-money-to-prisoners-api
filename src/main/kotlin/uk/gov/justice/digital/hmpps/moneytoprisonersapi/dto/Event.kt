@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(description = "A notification event")
 data class Event(
@@ -27,7 +27,7 @@ data class Event(
 
   @JsonProperty("triggered_at")
   @Schema(description = "When the event was triggered", nullable = true)
-  val triggeredAt: LocalDateTime?,
+  val triggeredAt: OffsetDateTime?,
 
   @Schema(description = "Rule code that triggered this event", example = "MONP")
   val rule: String,

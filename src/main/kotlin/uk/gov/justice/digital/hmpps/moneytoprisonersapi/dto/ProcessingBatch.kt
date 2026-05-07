@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Batch
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(description = "A processing batch containing a set of credits")
 data class ProcessingBatch(
@@ -15,7 +15,7 @@ data class ProcessingBatch(
   @JsonProperty("credit_ids")
   val creditIds: List<Long>,
   @Schema(description = "Timestamp when the batch was created", example = "2024-03-15T10:30:00")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
 ) {
   companion object {
     fun from(batch: Batch): ProcessingBatch = ProcessingBatch(

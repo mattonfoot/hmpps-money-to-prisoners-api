@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrivateEsta
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Transaction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.TransactionCategory
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.TransactionSource
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.transitionResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository

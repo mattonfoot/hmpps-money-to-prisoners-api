@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 private val objectMapper = ObjectMapper()
 
@@ -18,8 +18,8 @@ data class SavedSearch(
   val lastResultCount: Int,
   @JsonProperty("site_url")
   val siteUrl: String?,
-  val created: LocalDateTime?,
-  val modified: LocalDateTime?,
+  val created: OffsetDateTime?,
+  val modified: OffsetDateTime?,
 ) {
   companion object {
     fun from(search: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SavedSearch): SavedSearch = SavedSearch(

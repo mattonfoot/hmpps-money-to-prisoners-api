@@ -8,11 +8,11 @@ import jakarta.validation.constraints.NotNull
 data class CreditActionItem(
   @Schema(description = "The ID of the credit to action", required = true)
   @field:NotNull
-  val id: Long?,
+  var id: Long?,
 
   @Schema(description = "Whether the credit was successfully posted to NOMIS", required = true)
   @field:NotNull
-  val credited: Boolean?,
+  var credited: Boolean?,
 
   @Schema(description = "The NOMIS transaction ID returned on successful posting", required = false)
   @JsonProperty("nomis_transaction_id")

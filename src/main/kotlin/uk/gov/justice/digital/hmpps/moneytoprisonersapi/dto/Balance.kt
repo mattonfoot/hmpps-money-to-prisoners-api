@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import java.math.BigInteger
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Schema(description = "A daily closing balance record")
 data class Balance(
@@ -14,9 +14,9 @@ data class Balance(
   @Schema(description = "Date of the balance record", example = "2024-01-15")
   val date: LocalDate,
   @Schema(description = "Timestamp when the record was created", example = "2024-01-15 10:30:00")
-  val created: LocalDateTime?,
+  val created: OffsetDateTime?,
   @Schema(description = "Timestamp when the record was last modified", example = "2024-01-15 10:30:00")
-  val modified: LocalDateTime?,
+  val modified: OffsetDateTime?,
 ) {
   companion object {
     fun from(balance: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Balance): Balance = Balance(
