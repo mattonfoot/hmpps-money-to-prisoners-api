@@ -16,7 +16,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Prisone
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerCreditNoticeEmailRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerLocationRepository
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Service
 class PrisonService(
@@ -68,7 +68,7 @@ class PrisonService(
   }
 
   fun canUpload(): Boolean {
-    val cutoff = LocalDateTime.now().minusMinutes(10)
+    val cutoff = OffsetDateTime.now().minusMinutes(10)
     return !prisonerLocationRepository.existsByActiveFalseAndModifiedAfter(cutoff)
   }
 
@@ -105,10 +105,14 @@ class PrisonService(
 
   @Transactional
   fun updateCreditNoticeEmail(prisonNomisId: String, email: String): PrisonerCreditNoticeEmail {
-    val noticeEmail = prisonerCreditNoticeEmailRepository.findById(prisonNomisId).orElseThrow {
-      ResponseStatusException(HttpStatus.NOT_FOUND, "No credit notice email found for prison $prisonNomisId")
-    }
+    val noticeEmail = prisonerCreditNoticeEmailRepository.findByPrisonNomisId(prisonNomisId)
+      ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "No credit notice email found for prison $prisonNomisId")
     noticeEmail.email = email
     return prisonerCreditNoticeEmailRepository.save(noticeEmail)
+  }
+
+  @Transactional
+  fun deleteCreditNoticeEmail(prisonNomisId: String) {
+    prisonerCreditNoticeEmailRepository.deleteByPrisonNomisId(prisonNomisId)
   }
 }

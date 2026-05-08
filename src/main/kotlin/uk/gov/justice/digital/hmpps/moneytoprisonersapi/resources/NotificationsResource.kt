@@ -35,7 +35,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.RULES
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.ServiceNotificationService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @RestController
 @RequestMapping(produces = ["application/json"])
@@ -79,11 +79,11 @@ class NotificationsResource(
     @Parameter(description = "Filter events triggered on or after this datetime (inclusive)", example = "2024-01-01T00:00:00")
     @RequestParam("triggered_at__gte")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    triggeredAtGte: LocalDateTime? = null,
+    triggeredAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter events triggered before this datetime (exclusive)", example = "2024-02-01T00:00:00")
     @RequestParam("triggered_at__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    triggeredAtLt: LocalDateTime? = null,
+    triggeredAtLt: OffsetDateTime? = null,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
     principal: Principal,

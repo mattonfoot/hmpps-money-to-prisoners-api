@@ -58,8 +58,10 @@ class MonitoredResource(
   @Operation(summary = "Create a monitored email keyword (SEC-110 to SEC-112)")
   @PreAuthorize("hasRole('FIU')")
   @PostMapping("/security/monitored-email-addresses/")
-  fun createKeyword(@RequestBody request: MonitoredEmailDto): ResponseEntity<MonitoredEmailDto> {
-    val keyword = request.keyword.lowercase().trim()
+  fun createKeyword(@RequestBody rawBody: String): ResponseEntity<String> {
+    // Python's view accepts the keyword as a bare JSON string body, so the
+    // payload looks like `"someKeyword"` (with the quotes). Strip them here.
+    val keyword = rawBody.trim().removeSurrounding("\"").lowercase()
     if (keyword.length < 3) {
       throw ResponseStatusException(HttpStatus.BAD_REQUEST, "keyword must be at least 3 characters")
     }
@@ -67,7 +69,7 @@ class MonitoredResource(
       throw ResponseStatusException(HttpStatus.BAD_REQUEST, "keyword already exists")
     }
     val saved = monitoredPartialEmailAddressRepository.save(MonitoredPartialEmailAddress().apply { this.keyword = keyword })
-    return ResponseEntity.status(HttpStatus.CREATED).body(MonitoredEmailDto(saved.keyword))
+    return ResponseEntity.status(HttpStatus.CREATED).body("\"${saved.keyword}\"")
   }
 
   @Operation(summary = "Delete a monitored email keyword (SEC-117)")

@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AutoAcc
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 @Service
@@ -87,8 +86,8 @@ class SecurityCheckService(
   fun listChecks(
     status: CheckStatus? = null,
     rules: String? = null,
-    startedAtGte: LocalDateTime? = null,
-    startedAtLt: LocalDateTime? = null,
+    startedAtGte: OffsetDateTime? = null,
+    startedAtLt: OffsetDateTime? = null,
     actionedByIsNull: Boolean? = null,
     creditResolution: String? = null,
   ): List<SecurityCheck> {
@@ -99,8 +98,8 @@ class SecurityCheckService(
   private fun buildSpecification(
     status: CheckStatus?,
     rules: String?,
-    startedAtGte: LocalDateTime?,
-    startedAtLt: LocalDateTime?,
+    startedAtGte: OffsetDateTime?,
+    startedAtLt: OffsetDateTime?,
     actionedByIsNull: Boolean?,
     creditResolution: String?,
   ): Specification<SecurityCheck> {

@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonR
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.TransactionRepository
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 /**
@@ -74,12 +73,12 @@ class TransactionService(
   @Transactional(readOnly = true)
   fun listTransactions(
     status: TransactionStatus? = null,
-    receivedAtGte: LocalDateTime? = null,
-    receivedAtLt: LocalDateTime? = null,
+    receivedAtGte: OffsetDateTime? = null,
+    receivedAtLt: OffsetDateTime? = null,
     ids: List<Long>? = null,
   ): List<Transaction> {
-    val gte = receivedAtGte?.atOffset(java.time.ZoneOffset.UTC)
-    val lt = receivedAtLt?.atOffset(java.time.ZoneOffset.UTC)
+    val gte = receivedAtGte
+    val lt = receivedAtLt
     val all = when {
       ids != null && ids.isNotEmpty() -> transactionRepository.findByIdIn(ids)
       gte != null && lt != null ->

@@ -19,7 +19,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Disburs
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 private const val INVOICE_NUMBER_BASE = 1000000L
 
@@ -60,11 +60,11 @@ class DisbursementService(
     city: String? = null,
     invoiceNumber: String? = null,
     nomisTransactionId: String? = null,
-    created: LocalDateTime? = null,
-    createdGte: LocalDateTime? = null,
-    createdLt: LocalDateTime? = null,
-    loggedAtGte: LocalDateTime? = null,
-    loggedAtLt: LocalDateTime? = null,
+    created: OffsetDateTime? = null,
+    createdGte: OffsetDateTime? = null,
+    createdLt: OffsetDateTime? = null,
+    loggedAtGte: OffsetDateTime? = null,
+    loggedAtLt: OffsetDateTime? = null,
     logAction: String? = null,
     simpleSearch: String? = null,
     ordering: String? = null,
@@ -158,12 +158,12 @@ class DisbursementService(
     }
 
     if (createdGte != null) {
-      val createdGteOffset = createdGte.atOffset(java.time.ZoneOffset.UTC)
+      val createdGteOffset = createdGte
       disbursements = disbursements.filter { !it.created.isBefore(createdGteOffset) }
     }
 
     if (createdLt != null) {
-      val createdLtOffset = createdLt.atOffset(java.time.ZoneOffset.UTC)
+      val createdLtOffset = createdLt
       disbursements = disbursements.filter { it.created.isBefore(createdLtOffset) }
     }
 

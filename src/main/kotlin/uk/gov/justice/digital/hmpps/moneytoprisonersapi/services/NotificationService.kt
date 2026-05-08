@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.EmailNotificationPreferencesRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.EventRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.EventSpecifications
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Service
 class NotificationService(
@@ -30,8 +30,8 @@ class NotificationService(
   fun listEvents(
     username: String,
     rules: List<String>?,
-    triggeredAtGte: LocalDateTime?,
-    triggeredAtLt: LocalDateTime?,
+    triggeredAtGte: OffsetDateTime?,
+    triggeredAtLt: OffsetDateTime?,
   ): List<Event> {
     var spec: Specification<Event> = EventSpecifications.visibleToUser(username)
       .and(EventSpecifications.fetchAssociations())

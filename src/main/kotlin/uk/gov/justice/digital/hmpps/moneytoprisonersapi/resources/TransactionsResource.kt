@@ -29,7 +29,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdateRefundedTransa
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.TransactionService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.TransactionStatus
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @RestController
 @RequestMapping("/transactions", produces = ["application/json"])
@@ -106,11 +106,11 @@ class TransactionsResource(
     @Parameter(description = "Filter transactions received on or after this datetime (inclusive, ISO format)", example = "2024-01-01T00:00:00")
     @RequestParam("received_at__gte")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    receivedAtGte: LocalDateTime? = null,
+    receivedAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter transactions received before this datetime (exclusive, ISO format)", example = "2024-02-01T00:00:00")
     @RequestParam("received_at__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    receivedAtLt: LocalDateTime? = null,
+    receivedAtLt: OffsetDateTime? = null,
     @Parameter(description = "Filter by specific transaction IDs. Pass multiple values (e.g. pk=1&pk=3)")
     @RequestParam("pk")
     pk: List<Long>? = null,
@@ -175,7 +175,8 @@ class TransactionsResource(
     }
     val conflictIds = transactionService.refundTransactions(transactionIds)
     return if (conflictIds.isEmpty()) {
-      ResponseEntity.noContent().build()
+      // Mirror Python: respond 200 with the payload echoed back, not 204.
+      ResponseEntity.ok(items)
     } else {
       ResponseEntity.status(HttpStatus.CONFLICT)
         .body(mapOf("errors" to listOf("Cannot refund transactions: $conflictIds"), "conflict_ids" to conflictIds))

@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ServiceStatusDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DowntimeRepository
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 /** All known service identifiers (mirrors the Python Service TextChoices). */
 private val SERVICES = listOf("gov_uk_pay")
@@ -22,7 +22,7 @@ class ServiceAvailabilityService(
    */
   @Transactional(readOnly = true)
   fun getServiceAvailability(): Map<String, ServiceStatusDto> {
-    val now = LocalDateTime.now()
+    val now = OffsetDateTime.now()
     val result = linkedMapOf<String, ServiceStatusDto>()
 
     for (serviceName in SERVICES) {

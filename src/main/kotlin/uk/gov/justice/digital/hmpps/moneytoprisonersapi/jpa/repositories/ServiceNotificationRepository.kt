@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.ServiceNotification
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 interface ServiceNotificationRepository : JpaRepository<ServiceNotification, Long> {
 
@@ -20,5 +20,5 @@ interface ServiceNotificationRepository : JpaRepository<ServiceNotification, Lon
       AND (n.end IS NULL OR n.end >= :now)
     """,
   )
-  fun findActive(@Param("now") now: LocalDateTime): List<ServiceNotification>
+  fun findActive(@Param("now") now: OffsetDateTime): List<ServiceNotification>
 }

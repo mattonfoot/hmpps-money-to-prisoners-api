@@ -13,12 +13,15 @@ interface PrisonerProfileRepository : JpaRepository<PrisonerProfile, Long> {
 
   fun findByPrisonerNumber(prisonerNumber: String): List<PrisonerProfile>
 
+  // Django models the credits relation as `credit_credit.prisoner_profile_id`
+  // (FK on credit), not via a junction table. Count distinct senders on the
+  // credits assigned to this prisoner profile.
   @Query(
     """
-    SELECT COUNT(DISTINCT spc.sender_profile_id)
-    FROM prisoner_profile_credits ppc
-    JOIN sender_profile_credits spc ON spc.credit_id = ppc.credit_id
-    WHERE ppc.prisoner_profile_id = :profileId
+    SELECT COUNT(DISTINCT c.sender_profile_id)
+    FROM credit_credit c
+    WHERE c.prisoner_profile_id = :profileId
+      AND c.sender_profile_id IS NOT NULL
     """,
     nativeQuery = true,
   )

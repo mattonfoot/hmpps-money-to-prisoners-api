@@ -39,7 +39,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditService
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @RestController
 @RequestMapping("/credits", produces = ["application/json"])
@@ -169,11 +169,11 @@ class CreditsResource(
     @Parameter(description = "Filter credits received on or after this datetime (inclusive, ISO format)", example = "2024-01-01T00:00:00")
     @RequestParam("received_at__gte")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    receivedAtGte: LocalDateTime? = null,
+    receivedAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter credits received before this datetime (exclusive, ISO format)", example = "2024-02-01T00:00:00")
     @RequestParam("received_at__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    receivedAtLt: LocalDateTime? = null,
+    receivedAtLt: OffsetDateTime? = null,
     @Parameter(description = "Filter by validity: true = credit_pending or credited, false = all others")
     @RequestParam("valid")
     valid: Boolean? = null,
@@ -231,11 +231,11 @@ class CreditsResource(
     @Parameter(description = "Filter by log creation date on or after this datetime (truncated to UTC date, inclusive)", example = "2024-01-01T00:00:00")
     @RequestParam("logged_at__gte")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    loggedAtGte: LocalDateTime? = null,
+    loggedAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter by log creation date before this datetime (truncated to UTC date, exclusive)", example = "2024-02-01T00:00:00")
     @RequestParam("logged_at__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    loggedAtLt: LocalDateTime? = null,
+    loggedAtLt: OffsetDateTime? = null,
     @Parameter(description = "Filter by presence of security check: true = no check exists, false = check exists")
     @RequestParam("security_check__isnull")
     securityCheckIsnull: Boolean? = null,
@@ -514,10 +514,10 @@ class CreditsResource(
     @RequestParam("reviewed") reviewed: Boolean? = null,
     @RequestParam("received_at__gte")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    receivedAtGte: LocalDateTime? = null,
+    receivedAtGte: OffsetDateTime? = null,
     @RequestParam("received_at__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    receivedAtLt: LocalDateTime? = null,
+    receivedAtLt: OffsetDateTime? = null,
     @RequestParam("valid") valid: Boolean? = null,
     @RequestParam("sender_name") senderName: String? = null,
     @RequestParam("sender_sort_code") senderSortCode: String? = null,
@@ -535,10 +535,10 @@ class CreditsResource(
     @RequestParam("source") source: CreditSource? = null,
     @RequestParam("logged_at__gte")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    loggedAtGte: LocalDateTime? = null,
+    loggedAtGte: OffsetDateTime? = null,
     @RequestParam("logged_at__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    loggedAtLt: LocalDateTime? = null,
+    loggedAtLt: OffsetDateTime? = null,
     @RequestParam("log__action") logAction: String? = null,
     @RequestParam("security_check__isnull") securityCheckIsnull: Boolean? = null,
     @RequestParam("security_check__actioned_by__isnull") securityCheckActionedByIsnull: Boolean? = null,

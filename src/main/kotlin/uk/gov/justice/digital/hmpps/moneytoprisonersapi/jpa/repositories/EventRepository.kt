@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Event
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Repository
 interface EventRepository :
@@ -22,10 +22,11 @@ interface EventRepository :
    */
   @Query(
     value = """
-    SELECT DISTINCT CAST(triggered_at AS DATE) AS triggered_at_date
-    FROM notification_event
-    WHERE (username = :username OR username IS NULL)
-      AND (:rules IS NULL OR rule = ANY(STRING_TO_ARRAY(:rules, ',')))
+    SELECT DISTINCT CAST(e.triggered_at AS DATE) AS triggered_at_date
+    FROM notification_event e
+    LEFT JOIN auth_user u ON u.id = e.user_id
+    WHERE (u.username = :username OR e.user_id IS NULL)
+      AND (:rules IS NULL OR e.rule = ANY(STRING_TO_ARRAY(:rules, ',')))
     ORDER BY triggered_at_date DESC
     """,
     nativeQuery = true,
@@ -38,11 +39,12 @@ interface EventRepository :
 
 object EventSpecifications {
 
-  /** NOT-003: Visible to user = own events (username matches) + global events (username null). */
+  /** NOT-003: Visible to user = own events (user.username matches) + global events (user null). */
   fun visibleToUser(username: String): Specification<Event> = Specification { root, _, cb ->
+    val userPath = root.get<Any?>("user")
     cb.or(
-      cb.equal(root.get<String>("username"), username),
-      cb.isNull(root.get<String>("username")),
+      cb.equal(userPath.get<String>("username"), username),
+      cb.isNull(userPath),
     )
   }
 
@@ -52,26 +54,27 @@ object EventSpecifications {
   }
 
   /** NOT-005: triggered_at >= lower bound (inclusive). */
-  fun triggeredAtGte(from: LocalDateTime): Specification<Event> = Specification { root, _, cb ->
+  fun triggeredAtGte(from: OffsetDateTime): Specification<Event> = Specification { root, _, cb ->
     cb.greaterThanOrEqualTo(root.get("triggeredAt"), from)
   }
 
   /** NOT-005: triggered_at < upper bound (exclusive). */
-  fun triggeredAtLt(to: LocalDateTime): Specification<Event> = Specification { root, _, cb ->
+  fun triggeredAtLt(to: OffsetDateTime): Specification<Event> = Specification { root, _, cb ->
     cb.lessThan(root.get("triggeredAt"), to)
   }
 
   /**
-   * Eagerly fetches credit, disbursement, senderProfile, and prisonerProfile
-   * to avoid LazyInitializationException when mapping to Event.
+   * Eagerly fetches the per-kind subevent rows (creditEvent, disbursementEvent,
+   * senderProfileEvent, prisonerProfileEvent) and their nested entities, so the
+   * DTO mapper can read them outside the JPA session.
    */
   fun fetchAssociations(): Specification<Event> = Specification { root, query, _ ->
-    // Skip fetch joins on count queries (JPA Specifications run on both data and count queries)
     if (query.resultType != Long::class.java && query.resultType != Long::class.javaPrimitiveType) {
-      root.fetch<Any, Any>("credit", JoinType.LEFT)
-      root.fetch<Any, Any>("disbursement", JoinType.LEFT)
-      root.fetch<Any, Any>("senderProfile", JoinType.LEFT)
-      root.fetch<Any, Any>("prisonerProfile", JoinType.LEFT)
+      root.fetch<Any, Any>("creditEvent", JoinType.LEFT)
+      root.fetch<Any, Any>("disbursementEvent", JoinType.LEFT)
+      root.fetch<Any, Any>("senderProfileEvent", JoinType.LEFT)
+      root.fetch<Any, Any>("prisonerProfileEvent", JoinType.LEFT)
+      root.fetch<Any, Any>("user", JoinType.LEFT)
     }
     null
   }

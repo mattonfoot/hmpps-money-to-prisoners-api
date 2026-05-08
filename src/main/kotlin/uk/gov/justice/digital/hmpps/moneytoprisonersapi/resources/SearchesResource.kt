@@ -72,30 +72,19 @@ class SearchesResource(
     )
   }
 
-  private fun persistFilters(search: SavedSearchEntity, filtersJson: String?) {
-    if (filtersJson.isNullOrBlank()) return
-    val parsed = parseFiltersJson(filtersJson)
-    parsed.forEach { (field, value) ->
+  private fun persistFilters(
+    search: SavedSearchEntity,
+    filters: List<uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SearchFilter>?,
+  ) {
+    if (filters.isNullOrEmpty()) return
+    filters.forEach { f ->
       val sf = uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecuritySearchfilter().apply {
-        this.field = field
-        this.value = value
+        this.field = f.field
+        this.value = f.value
         this.savedSearch = search
       }
       searchFilterRepository.save(sf)
     }
-  }
-
-  private fun parseFiltersJson(json: String): List<Pair<String, String>> = try {
-    @Suppress("UNCHECKED_CAST")
-    val raw = com.fasterxml.jackson.databind.ObjectMapper().readValue(json, List::class.java)
-    raw.mapNotNull {
-      val m = it as? Map<*, *> ?: return@mapNotNull null
-      val field = m["field"]?.toString() ?: return@mapNotNull null
-      val value = m["value"]?.toString() ?: ""
-      field to value
-    }
-  } catch (_: Exception) {
-    emptyList()
   }
 
   @Operation(summary = "Update a saved search (SEC-123)")
@@ -113,9 +102,9 @@ class SearchesResource(
     request.lastResultCount?.let { search.lastResultCount = it }
     request.siteUrl?.let { search.siteUrl = it }
     // filters: replace child rows wholesale to mirror Django's update behaviour.
-    request.filters?.let { json ->
+    request.filters?.let { fs ->
       searchFilterRepository.deleteAllBySavedSearch(search)
-      persistFilters(search, json)
+      persistFilters(search, fs)
     }
     val saved = repository.save(search)
     return ResponseEntity.ok(SavedSearch.from(saved, searchFilterRepository.findBySavedSearch(saved)))

@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.Notification
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.ServiceNotificationRepository
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Service
 class ServiceNotificationService(
@@ -19,7 +19,7 @@ class ServiceNotificationService(
    */
   @Transactional(readOnly = true)
   fun listNotifications(authenticated: Boolean, targetPrefix: String?): List<Notification> {
-    val now = LocalDateTime.now()
+    val now = OffsetDateTime.now()
     var notifications = serviceNotificationRepository.findActive(now)
 
     if (!authenticated) {

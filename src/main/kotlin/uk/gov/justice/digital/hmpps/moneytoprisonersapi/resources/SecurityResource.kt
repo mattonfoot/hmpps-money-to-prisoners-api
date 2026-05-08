@@ -24,7 +24,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.SecurityCheckDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CheckStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.SecurityCheckService
 import java.security.Principal
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @RestController
 @RequestMapping("/security/checks", produces = ["application/json"])
@@ -42,10 +42,10 @@ class SecurityResource(
     @RequestParam("rules") rules: String? = null,
     @RequestParam("started_at__gte")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    startedAtGte: LocalDateTime? = null,
+    startedAtGte: OffsetDateTime? = null,
     @RequestParam("started_at__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    startedAtLt: LocalDateTime? = null,
+    startedAtLt: OffsetDateTime? = null,
     @RequestParam("actioned_by__isnull") actionedByIsNull: Boolean? = null,
     @RequestParam("credit_resolution") creditResolution: String? = null,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,

@@ -21,12 +21,13 @@ class JobInformationService(
     title: String,
     prisonEstate: String,
     tasks: String,
-  ): JobInformation = jobInformationRepository.save(
-    JobInformation().apply {
-      this.user = user
-      this.title = title
-      this.prisonEstate = prisonEstate
-      this.tasks = tasks
-    },
-  )
+  ): JobInformation {
+    // mtp_auth_jobinformation has UNIQUE(user_id) so a re-POST replaces the row.
+    val existing = user.id?.let { jobInformationRepository.findByUserId(it) }
+    val info = existing ?: JobInformation().apply { this.user = user }
+    info.title = title
+    info.prisonEstate = prisonEstate
+    info.tasks = tasks
+    return jobInformationRepository.save(info)
+  }
 }

@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 import org.springframework.http.HttpStatus
 import org.springframework.scheduling.support.CronExpression
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.CustomException
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
@@ -54,7 +53,7 @@ fun TransactionTransaction.transitionResolution(newResolution: CreditResolution)
 // CronExpression accepts six fields (with seconds), so prefix "0 ".
 fun CoreScheduledcommand.updateNextExecution() {
   val expr = CronExpression.parse("0 $cronEntry")
-  val next = expr.next(LocalDateTime.now()) ?: return
+  val next = expr.next(java.time.LocalDateTime.now()) ?: return
   nextExecution = next.atOffset(ZoneOffset.UTC)
 }
 

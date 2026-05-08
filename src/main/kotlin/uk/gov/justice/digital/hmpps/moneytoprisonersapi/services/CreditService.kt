@@ -19,7 +19,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonR
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Service
 class CreditService(
@@ -57,8 +57,8 @@ class CreditService(
     user: String? = null,
     resolution: CreditResolution? = null,
     reviewed: Boolean? = null,
-    receivedAtGte: LocalDateTime? = null,
-    receivedAtLt: LocalDateTime? = null,
+    receivedAtGte: OffsetDateTime? = null,
+    receivedAtLt: OffsetDateTime? = null,
     valid: Boolean? = null,
     senderName: String? = null,
     senderSortCode: String? = null,
@@ -76,8 +76,8 @@ class CreditService(
     senderPostcode: String? = null,
     paymentReference: String? = null,
     source: CreditSource? = null,
-    loggedAtGte: LocalDateTime? = null,
-    loggedAtLt: LocalDateTime? = null,
+    loggedAtGte: OffsetDateTime? = null,
+    loggedAtLt: OffsetDateTime? = null,
     logAction: String? = null,
     securityCheckIsnull: Boolean? = null,
     securityCheckActionedByIsnull: Boolean? = null,
@@ -185,12 +185,12 @@ class CreditService(
     }
 
     if (receivedAtGte != null) {
-      val receivedAtGteOffset = receivedAtGte.atOffset(java.time.ZoneOffset.UTC)
+      val receivedAtGteOffset = receivedAtGte
       credits = credits.filter { it.receivedAt != null && !it.receivedAt!!.isBefore(receivedAtGteOffset) }
     }
 
     if (receivedAtLt != null) {
-      val receivedAtLtOffset = receivedAtLt.atOffset(java.time.ZoneOffset.UTC)
+      val receivedAtLtOffset = receivedAtLt
       credits = credits.filter { it.receivedAt != null && it.receivedAt!!.isBefore(receivedAtLtOffset) }
     }
 
@@ -432,7 +432,7 @@ class CreditService(
     prisonerNumber: String?,
     prisonerName: String?,
     prisonerDob: LocalDate?,
-    receivedAt: LocalDateTime?,
+    receivedAt: OffsetDateTime?,
     source: CreditSource,
   ): Credit {
     // Django's credit_credit has no `source` column — that concept exists only
@@ -442,7 +442,7 @@ class CreditService(
       this.prisonerNumber = prisonerNumber
       this.prisonerName = prisonerName
       this.prisonerDob = prisonerDob
-      this.receivedAt = receivedAt?.atOffset(java.time.ZoneOffset.UTC)
+      this.receivedAt = receivedAt
       this.resolution = CreditResolution.INITIAL.value
     }
     return creditRepository.save(credit)
@@ -623,8 +623,8 @@ class CreditService(
     user: String? = null,
     resolution: CreditResolution? = null,
     reviewed: Boolean? = null,
-    receivedAtGte: LocalDateTime? = null,
-    receivedAtLt: LocalDateTime? = null,
+    receivedAtGte: OffsetDateTime? = null,
+    receivedAtLt: OffsetDateTime? = null,
     valid: Boolean? = null,
     senderName: String? = null,
     senderSortCode: String? = null,
@@ -642,8 +642,8 @@ class CreditService(
     senderPostcode: String? = null,
     paymentReference: String? = null,
     source: CreditSource? = null,
-    loggedAtGte: LocalDateTime? = null,
-    loggedAtLt: LocalDateTime? = null,
+    loggedAtGte: OffsetDateTime? = null,
+    loggedAtLt: OffsetDateTime? = null,
     logAction: String? = null,
     securityCheckIsnull: Boolean? = null,
     securityCheckActionedByIsnull: Boolean? = null,

@@ -27,7 +27,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.Payment
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdatePaymentRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @RestController
@@ -139,7 +139,7 @@ class PaymentsResource(
     @Parameter(description = "Return only payments modified before this datetime (exclusive)", example = "2024-01-01T00:00:00")
     @RequestParam("modified__lt")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    modifiedLt: LocalDateTime? = null,
+    modifiedLt: OffsetDateTime? = null,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<Payment> {

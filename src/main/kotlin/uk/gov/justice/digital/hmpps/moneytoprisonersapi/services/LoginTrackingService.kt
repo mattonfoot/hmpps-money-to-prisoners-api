@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUserLogi
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.FailedLoginAttemptRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserLoginRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.OAuthApplicationRepository
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 /** Usernames excluded from all login tracking (AUTH-006). */

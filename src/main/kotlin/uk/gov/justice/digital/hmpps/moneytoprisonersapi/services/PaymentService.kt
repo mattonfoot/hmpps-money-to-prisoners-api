@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Billing
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PaymentBatchRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PaymentRepository
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 private val VALID_PAYMENT_STATUSES = setOf("pending", "taken", "failed", "rejected", "expired")
@@ -53,6 +53,9 @@ class PaymentService(
     val savedCredit = creditRepository.save(credit)
 
     val payment = Payment().apply {
+      // Django's payment_payment.uuid is the PK and is application-assigned;
+      // generate a fresh UUID here.
+      uuid = UUID.randomUUID()
       amount = request.amount.toInt()
       status = "pending"
       this.credit = savedCredit
@@ -131,7 +134,7 @@ class PaymentService(
     return paymentRepository.save(payment)
   }
 
-  fun listPendingPayments(modifiedLt: LocalDateTime?): List<Payment> = if (modifiedLt != null) {
+  fun listPendingPayments(modifiedLt: OffsetDateTime?): List<Payment> = if (modifiedLt != null) {
     paymentRepository.findByStatusAndModifiedBefore("pending", modifiedLt)
   } else {
     paymentRepository.findByStatus("pending")

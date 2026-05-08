@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerLocation
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Repository
 interface PrisonerLocationRepository : JpaRepository<PrisonerLocation, Long> {
@@ -16,7 +16,7 @@ interface PrisonerLocationRepository : JpaRepository<PrisonerLocation, Long> {
 
   fun findByPrisonerNumberAndPrisonerDobAndActiveTrue(prisonerNumber: String, prisonerDob: java.time.LocalDate): List<PrisonerLocation>
 
-  fun existsByActiveFalseAndModifiedAfter(cutoff: LocalDateTime): Boolean
+  fun existsByActiveFalseAndModifiedAfter(cutoff: OffsetDateTime): Boolean
 
   @Modifying
   @Query("UPDATE PrisonPrisonerlocation pl SET pl.active = false, pl.modified = CURRENT_TIMESTAMP WHERE pl.active = true")

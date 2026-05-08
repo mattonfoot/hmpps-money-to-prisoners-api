@@ -42,7 +42,7 @@ data class SavedSearch(
 data class CreateSavedSearchRequest(
   val description: String,
   val endpoint: String,
-  val filters: String? = null,
+  val filters: List<SearchFilter>? = null,
   @JsonProperty("last_result_count")
   val lastResultCount: Int? = null,
   @JsonProperty("site_url")
@@ -53,7 +53,7 @@ data class CreateSavedSearchRequest(
 data class UpdateSavedSearchRequest(
   val description: String? = null,
   val endpoint: String? = null,
-  val filters: String? = null,
+  val filters: List<SearchFilter>? = null,
   @JsonProperty("last_result_count")
   val lastResultCount: Int? = null,
   @JsonProperty("site_url")

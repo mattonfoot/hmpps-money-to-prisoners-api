@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Downtime
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 interface DowntimeRepository : JpaRepository<Downtime, Long> {
 
@@ -23,6 +23,6 @@ interface DowntimeRepository : JpaRepository<Downtime, Long> {
   )
   fun findActiveDowntimes(
     @Param("service") service: String,
-    @Param("now") now: LocalDateTime,
+    @Param("now") now: OffsetDateTime,
   ): List<Downtime>
 }
