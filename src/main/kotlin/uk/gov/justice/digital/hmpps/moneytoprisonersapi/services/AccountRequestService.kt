@@ -48,14 +48,14 @@ class AccountRequestService(
     val existingMtpUser = mtpUserRepository.findByUsernameIgnoreCase(username)
 
     val request = accountRequestRepository.save(
-      AccountRequest(
-        username = username.lowercase(),
-        firstName = firstName,
-        lastName = lastName,
-        email = email,
-        role = role,
-        prison = prison,
-      ),
+      AccountRequest().apply {
+        this.username = username.lowercase()
+        this.firstName = firstName
+        this.lastName = lastName
+        this.email = email
+        this.role = role
+        this.prison = prison
+      },
     )
 
     val existingUser = existingMtpUser?.let { UserDto.from(it, false) }
@@ -70,38 +70,42 @@ class AccountRequestService(
 
   @Transactional
   fun acceptRequest(id: Long): AccountRequest? {
+    // Mirrors mtp_api/apps/mtp_auth/views.py AccountRequestViewSet.partial_update:
+    // accepting creates/updates the AuthUser then DELETES the account_request row
+    // (Django has no status column — presence-of-row IS the pending state).
     val request = accountRequestRepository.findById(id).orElse(null) ?: return null
 
     val existing = mtpUserRepository.findByUsernameIgnoreCase(request.username)
     if (existing != null) {
-      // AUTH-063: role change — update the existing user's role
-      request.role?.let { existing.role = it }
+      // role change isn't directly settable on AuthUser — Role->Group association
+      // applies via mtp_auth_role.other_groups. Stub the role-update path until we
+      // wire in the role-to-group mapping helpers.
+      // request.role?.let { /* TODO: update group memberships */ }
       mtpUserRepository.save(existing)
     } else {
-      // AUTH-063: new account — create user from request
-      val newUser = MtpUser(
-        username = request.username,
-        firstName = request.firstName,
-        lastName = request.lastName,
-        email = request.email,
-        role = request.role,
-      )
-      request.prison?.let { newUser.prisons = mutableSetOf(it) }
+      val newUser = MtpUser().apply {
+        this.username = request.username
+        this.firstName = request.firstName
+        this.lastName = request.lastName
+        this.email = request.email
+        this.isActive = true
+      }
       mtpUserRepository.save(newUser)
+      // request.prison/role assignment via PrisonUserMapping + group joins is a
+      // multi-step Django flow; stubbed for now.
     }
 
-    request.status = AccountRequestStatus.ACCEPTED.value
-    return accountRequestRepository.save(request)
+    accountRequestRepository.delete(request)
+    return request
   }
 
   /**
-   * AUTH-066: Rejects a pending request by setting its status to rejected.
-   * Returns null if the request is not found.
+   * AUTH-066: Rejects a pending request — Django deletes the row.
    */
   @Transactional
   fun rejectRequest(id: Long): AccountRequest? {
     val request = accountRequestRepository.findById(id).orElse(null) ?: return null
-    request.status = AccountRequestStatus.REJECTED.value
-    return accountRequestRepository.save(request)
+    accountRequestRepository.delete(request)
+    return request
   }
 }

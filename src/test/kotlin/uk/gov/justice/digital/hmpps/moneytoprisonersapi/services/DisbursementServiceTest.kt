@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Disburs
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
@@ -460,9 +461,9 @@ class DisbursementServiceTest {
     @Test
     @DisplayName("DSB-076 - Filter by created date range (gte/lt)")
     fun `should filter by created date range`() {
-      val d1 = disbursement().also { it.created = LocalDateTime.of(2024, 1, 15, 10, 0) }
-      val d2 = disbursement().also { it.created = LocalDateTime.of(2024, 2, 15, 10, 0) }
-      val d3 = disbursement().also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) }
+      val d1 = disbursement().also { it.created = LocalDateTime.of(2024, 1, 15, 10, 0).atOffset(ZoneOffset.UTC) }
+      val d2 = disbursement().also { it.created = LocalDateTime.of(2024, 2, 15, 10, 0).atOffset(ZoneOffset.UTC) }
+      val d3 = disbursement().also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(ZoneOffset.UTC) }
       `when`(disbursementRepository.findAll()).thenReturn(listOf(d1, d2, d3))
 
       val result = disbursementService.listDisbursements(

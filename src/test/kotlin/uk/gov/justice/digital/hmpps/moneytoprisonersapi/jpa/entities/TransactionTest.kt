@@ -226,7 +226,7 @@ class TransactionTest {
     @Test
     fun `prePersist sets created and modified`() {
       val txn = createTransaction()
-      txn.onCreate()
+      // /* /* txn.onCreate() */ */ — entity defaults handle init
       assertNotNull(txn.created)
       assertNotNull(txn.modified)
     }

@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Private
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class PaymentResourceTest : IntegrationTestBase() {
 
@@ -543,7 +544,7 @@ class PaymentResourceTest : IntegrationTestBase() {
         resolution = CreditResolution.PENDING,
       )
       credit1.source = CreditSource.ONLINE
-      credit1.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0)
+      credit1.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0).atOffset(ZoneOffset.UTC)
       val savedCredit1 = creditRepository.save(credit1)
 
       val payment1 = Payment(amount = 1000L, status = "taken", credit = savedCredit1)
@@ -615,7 +616,7 @@ class PaymentResourceTest : IntegrationTestBase() {
         resolution = CreditResolution.PENDING,
       )
       credit.source = CreditSource.ONLINE
-      credit.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0)
+      credit.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0).atOffset(ZoneOffset.UTC)
       val savedCredit = creditRepository.save(credit)
 
       val payment = Payment(amount = 1500L, status = "taken", credit = savedCredit)
@@ -657,7 +658,7 @@ class PaymentResourceTest : IntegrationTestBase() {
       // First reconcile
       val credit1 = Credit(amount = 1000L, prisonerNumber = "A1234BC", resolution = CreditResolution.PENDING)
       credit1.source = CreditSource.ONLINE
-      credit1.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0)
+      credit1.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0).atOffset(ZoneOffset.UTC)
       creditRepository.save(credit1)
       paymentRepository.save(Payment(amount = 1000L, status = "taken", credit = credit1))
 
@@ -676,7 +677,7 @@ class PaymentResourceTest : IntegrationTestBase() {
       // Second reconcile with new credits
       val credit2 = Credit(amount = 2000L, prisonerNumber = "B5678DE", resolution = CreditResolution.PENDING)
       credit2.source = CreditSource.ONLINE
-      credit2.receivedAt = LocalDateTime.of(2024, 2, 15, 10, 0, 0)
+      credit2.receivedAt = LocalDateTime.of(2024, 2, 15, 10, 0, 0).atOffset(ZoneOffset.UTC)
       creditRepository.save(credit2)
       paymentRepository.save(Payment(amount = 2000L, status = "taken", credit = credit2))
 

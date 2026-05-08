@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursemen
 interface DisbursementRepository : JpaRepository<Disbursement, Long> {
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @Query("SELECT d FROM Disbursement d WHERE d.id IN :ids")
+  @Query("SELECT d FROM DisbursementDisbursement d WHERE d.id IN :ids")
   fun findByIdInWithLock(ids: List<Long>): List<Disbursement>
 
   fun findByPrisonerNumber(prisonerNumber: String): List<Disbursement>

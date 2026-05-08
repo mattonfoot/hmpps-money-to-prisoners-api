@@ -6,11 +6,11 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.ServiceNoti
 import java.time.OffsetDateTime
 
 /** Django message level integers mapped to their string labels. */
-private val LEVEL_LABELS = mapOf(
-  20 to "info",
-  25 to "success",
-  30 to "warning",
-  40 to "error",
+private val LEVEL_LABELS = mapOf<Short, String>(
+  20.toShort() to "info",
+  25.toShort() to "success",
+  30.toShort() to "warning",
+  40.toShort() to "error",
 )
 
 /**
@@ -27,7 +27,7 @@ data class Notification(
   val level: String,
 
   @Schema(description = "When the notification becomes active")
-  val start: LocalDateTime,
+  val start: OffsetDateTime,
 
   @Schema(description = "When the notification expires; null means no scheduled end", nullable = true)
   val end: OffsetDateTime?,
@@ -49,7 +49,7 @@ data class Notification(
       end = entity.end,
       headline = entity.headline,
       message = entity.message,
-      public = entity.public,
+      public = entity.publicField,
     )
   }
 }

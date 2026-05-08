@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPrison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Transaction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.TransactionCategory
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.TransactionSource
@@ -15,24 +16,24 @@ class TransactionStatusTest {
   private fun makeCredit(
     prison: String? = null,
     blocked: Boolean = false,
-  ) = Credit(
-    amount = 1000L,
-    prison = prison,
-    blocked = blocked,
-  )
+  ) = Credit().apply {
+    amount = 1000L
+    this.prison = prison?.let { PrisonPrison().apply { nomisId = it } }
+    this.blocked = blocked
+  }
 
   private fun makeTxn(
     category: TransactionCategory = TransactionCategory.CREDIT,
     source: TransactionSource = TransactionSource.BANK_TRANSFER,
     incompleteSenderInfo: Boolean = false,
     credit: Credit? = null,
-  ) = Transaction(
-    amount = 1000L,
-    category = category,
-    source = source,
-    incompleteSenderInfo = incompleteSenderInfo,
-    credit = credit,
-  )
+  ) = Transaction().apply {
+    amount = 1000L
+    this.category = category.value
+    this.source = source.value
+    this.incompleteSenderInfo = incompleteSenderInfo
+    this.credit = credit
+  }
 
   @Nested
   @DisplayName("TXN-010: Creditable — credit exists, prison assigned, not blocked")

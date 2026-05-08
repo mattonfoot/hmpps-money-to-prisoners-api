@@ -93,6 +93,29 @@ open class AuthUser {
 
   // Convenience: walk through prisonUserMapping. Used by UserService /
   // AccountRequestService where existing code expected `user.prisons`.
-  val prisons: MutableSet<PrisonPrison>
+  // Setting allocates an unsaved `MtpAuthPrisonusermapping` if needed —
+  // services persisting prison changes should still go through
+  // `PrisonUserMappingService` to wire up the FK back to this user.
+  var prisons: MutableSet<PrisonPrison>
     get() = prisonUserMapping?.prisons ?: mutableSetOf()
+    set(value) {
+      val mapping = prisonUserMapping ?: MtpAuthPrisonusermapping().also { it.user = this; prisonUserMapping = it }
+      mapping.prisons = value
+    }
+
+  // Django auth groups M2M (auth_user_groups). Used by the OAuth2 filter to
+  // map group memberships to Spring Security authorities.
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(
+    name = "auth_user_groups",
+    joinColumns = [JoinColumn(name = "user_id")],
+    inverseJoinColumns = [JoinColumn(name = "group_id")],
+  )
+  open var groups: MutableSet<AuthGroup> = mutableSetOf()
+
+  // Django resolves a user's `role` by joining `mtp_auth_role.key_group_id`
+  // through the user's groups. Held transient here as a cached convenience —
+  // populated by services that need it. Not a persisted column.
+  @Transient
+  open var role: MtpAuthRole? = null
 }

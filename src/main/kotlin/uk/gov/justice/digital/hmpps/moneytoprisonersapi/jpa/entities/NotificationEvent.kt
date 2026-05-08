@@ -9,6 +9,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
@@ -55,4 +56,28 @@ open class NotificationEvent {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id")
   open var user: AuthUser? = null
+
+  // Convenience back-references onto the per-subject child rows. Django stores
+  // the actual link on those child tables (notification_creditevent etc.).
+  @OneToOne(mappedBy = "event", fetch = FetchType.LAZY)
+  open var creditEvent: NotificationCreditevent? = null
+
+  @OneToOne(mappedBy = "event", fetch = FetchType.LAZY)
+  open var disbursementEvent: NotificationDisbursementevent? = null
+
+  @OneToOne(mappedBy = "event", fetch = FetchType.LAZY)
+  open var senderProfileEvent: NotificationSenderprofileevent? = null
+
+  @OneToOne(mappedBy = "event", fetch = FetchType.LAZY)
+  open var prisonerProfileEvent: NotificationPrisonerprofileevent? = null
+
+  @OneToOne(mappedBy = "event", fetch = FetchType.LAZY)
+  open var recipientProfileEvent: NotificationRecipientprofileevent? = null
+
+  // Helpers that follow the per-subject child rows, mirroring the legacy
+  // Kotlin-domain accessors.
+  val credit: CreditCredit? get() = creditEvent?.credit
+  val disbursement: DisbursementDisbursement? get() = disbursementEvent?.disbursement
+  val senderProfile: SecuritySenderprofile? get() = senderProfileEvent?.senderProfile
+  val prisonerProfile: SecurityPrisonerprofile? get() = prisonerProfileEvent?.prisonerProfile
 }

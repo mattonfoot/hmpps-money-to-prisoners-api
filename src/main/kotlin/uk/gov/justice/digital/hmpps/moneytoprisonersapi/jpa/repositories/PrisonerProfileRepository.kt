@@ -8,7 +8,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerPro
 @Repository
 interface PrisonerProfileRepository : JpaRepository<PrisonerProfile, Long> {
 
-  @Query("SELECT DISTINCT c.id FROM PrisonerProfile pp JOIN pp.credits c WHERE pp.monitoringUsers IS NOT EMPTY")
+  @Query("SELECT DISTINCT c.id FROM SecurityPrisonerprofile pp JOIN pp.credits c WHERE pp.monitoringUsers IS NOT EMPTY")
   fun findCreditIdsWithMonitoredPrisonerProfiles(): Set<Long>
 
   fun findByPrisonerNumber(prisonerNumber: String): List<PrisonerProfile>

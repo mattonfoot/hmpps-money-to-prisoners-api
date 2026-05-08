@@ -13,7 +13,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Downtime
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DowntimeRepository
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @ExtendWith(MockitoExtension::class)
 @DisplayName("ServiceAvailabilityService")
@@ -25,8 +25,8 @@ class ServiceAvailabilityServiceTest {
   @InjectMocks
   private lateinit var service: ServiceAvailabilityService
 
-  private val pastTime = LocalDateTime.now().minusHours(1)
-  private val futureTime = LocalDateTime.now().plusHours(1)
+  private val pastTime = OffsetDateTime.now().minusHours(1)
+  private val futureTime = OffsetDateTime.now().plusHours(1)
 
   // -------------------------------------------------------------------------
   // SVC-002: Returns status per service
@@ -47,7 +47,7 @@ class ServiceAvailabilityServiceTest {
 
     @Test
     fun `SVC-002 returns false when active downtime exists`() {
-      val downtime = Downtime(service = "gov_uk_pay", start = pastTime)
+      val downtime = Downtime().apply { service = "gov_uk_pay"; start = pastTime }
       whenever(downtimeRepository.findActiveDowntimes(eq("gov_uk_pay"), any())).thenReturn(listOf(downtime))
 
       val result = service.getServiceAvailability()
@@ -75,7 +75,7 @@ class ServiceAvailabilityServiceTest {
 
     @Test
     fun `SVC-003 wildcard is false when any service is down`() {
-      val downtime = Downtime(service = "gov_uk_pay", start = pastTime)
+      val downtime = Downtime().apply { service = "gov_uk_pay"; start = pastTime }
       whenever(downtimeRepository.findActiveDowntimes(eq("gov_uk_pay"), any())).thenReturn(listOf(downtime))
 
       val result = service.getServiceAvailability()
@@ -104,7 +104,7 @@ class ServiceAvailabilityServiceTest {
 
     @Test
     fun `SVC-004 includes downtime_end when end is set`() {
-      val downtime = Downtime(service = "gov_uk_pay", start = pastTime, end = futureTime)
+      val downtime = Downtime().apply { service = "gov_uk_pay"; start = pastTime; end = futureTime }
       whenever(downtimeRepository.findActiveDowntimes(eq("gov_uk_pay"), any())).thenReturn(listOf(downtime))
 
       val result = service.getServiceAvailability()
@@ -114,7 +114,7 @@ class ServiceAvailabilityServiceTest {
 
     @Test
     fun `SVC-004 does not include downtime_end when end is null`() {
-      val downtime = Downtime(service = "gov_uk_pay", start = pastTime, end = null)
+      val downtime = Downtime().apply { service = "gov_uk_pay"; start = pastTime; end = null }
       whenever(downtimeRepository.findActiveDowntimes(eq("gov_uk_pay"), any())).thenReturn(listOf(downtime))
 
       val result = service.getServiceAvailability()
@@ -124,7 +124,7 @@ class ServiceAvailabilityServiceTest {
 
     @Test
     fun `SVC-004 includes message_to_users when set`() {
-      val downtime = Downtime(service = "gov_uk_pay", start = pastTime, messageToUsers = "Maintenance in progress")
+      val downtime = Downtime().apply { service = "gov_uk_pay"; start = pastTime; messageToUsers = "Maintenance in progress" }
       whenever(downtimeRepository.findActiveDowntimes(eq("gov_uk_pay"), any())).thenReturn(listOf(downtime))
 
       val result = service.getServiceAvailability()
@@ -134,7 +134,7 @@ class ServiceAvailabilityServiceTest {
 
     @Test
     fun `SVC-004 does not include message_to_users when empty`() {
-      val downtime = Downtime(service = "gov_uk_pay", start = pastTime, messageToUsers = "")
+      val downtime = Downtime().apply { service = "gov_uk_pay"; start = pastTime; messageToUsers = "" }
       whenever(downtimeRepository.findActiveDowntimes(eq("gov_uk_pay"), any())).thenReturn(listOf(downtime))
 
       val result = service.getServiceAvailability()
@@ -149,7 +149,7 @@ class ServiceAvailabilityServiceTest {
 
   @Test
   fun `SVC-005 null end means ongoing downtime with no downtime_end in response`() {
-    val downtime = Downtime(service = "gov_uk_pay", start = pastTime, end = null)
+    val downtime = Downtime().apply { service = "gov_uk_pay"; start = pastTime; end = null }
     whenever(downtimeRepository.findActiveDowntimes(eq("gov_uk_pay"), any())).thenReturn(listOf(downtime))
 
     val result = service.getServiceAvailability()

@@ -37,6 +37,11 @@ class BalanceService(
     if (balanceRepository.existsByDate(date)) {
       throw DuplicateBalanceDateException(date)
     }
-    return balanceRepository.save(Balance(closingBalance = closingBalance, date = date))
+    return balanceRepository.save(
+      Balance().apply {
+        this.closingBalance = closingBalance.toLong()
+        this.date = date
+      },
+    )
   }
 }

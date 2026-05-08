@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Prisone
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class ProcessedCreditsResourceTest : IntegrationTestBase() {
 
@@ -233,3 +234,4 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
     }
   }
 }
+.atOffset(ZoneOffset.UTC)

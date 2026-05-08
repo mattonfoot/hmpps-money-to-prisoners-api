@@ -60,8 +60,8 @@ data class Transaction(
     fun from(transaction: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Transaction): Transaction = Transaction(
       id = transaction.id,
       amount = transaction.amount,
-      category = transaction.category,
-      source = transaction.source,
+      category = TransactionCategory.fromValue(transaction.category),
+      source = TransactionSource.fromValue(transaction.source),
       status = TransactionStatus.computeFrom(transaction),
       senderSortCode = transaction.senderSortCode,
       senderAccountNumber = transaction.senderAccountNumber,

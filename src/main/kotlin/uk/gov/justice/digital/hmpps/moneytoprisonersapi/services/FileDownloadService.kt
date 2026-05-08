@@ -21,7 +21,12 @@ class FileDownloadService(
    * COR-002: Creates a new file download record (label + date must be unique).
    */
   @Transactional
-  fun createDownload(label: String, date: LocalDate): FileDownload = fileDownloadRepository.save(FileDownload(label = label, date = date))
+  fun createDownload(label: String, date: LocalDate): FileDownload = fileDownloadRepository.save(
+    FileDownload().apply {
+      this.label = label
+      this.date = date
+    },
+  )
 
   /**
    * COR-003: Finds which requested dates are missing from the database for a given label.

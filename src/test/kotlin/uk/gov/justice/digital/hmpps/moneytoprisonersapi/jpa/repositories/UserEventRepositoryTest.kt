@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Import
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.UserEvent
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @DataJpaTest
 @Import(ContainersConfig::class)

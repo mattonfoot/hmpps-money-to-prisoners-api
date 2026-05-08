@@ -7,30 +7,42 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
-import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPrison
+import java.time.OffsetDateTime
 
+/**
+ * Django stores `credit_credit.resolution` as varchar; pass through `String`
+ * values rather than the legacy `CreditResolution` enum directly.
+ */
 @Repository
 interface CreditRepository : JpaRepository<Credit, Long> {
-  fun findByResolutionNotIn(resolutions: List<CreditResolution>): List<Credit>
-  fun findByResolution(resolution: CreditResolution): List<Credit>
-  fun findByPrison(prison: String): List<Credit>
+  fun findByResolutionNotIn(resolutions: List<String>): List<Credit>
+  fun findByResolution(resolution: String): List<Credit>
+  fun findByPrison(prison: PrisonPrison): List<Credit>
   fun findByPrisonIsNull(): List<Credit>
   fun findByBlocked(blocked: Boolean): List<Credit>
   fun findByReviewed(reviewed: Boolean): List<Credit>
-  fun findByOwner(owner: String): List<Credit>
-  fun findByReceivedAtGreaterThanEqualAndReceivedAtBefore(from: LocalDateTime, to: LocalDateTime): List<Credit>
   fun findByPrisonerNumber(prisonerNumber: String): List<Credit>
-  fun existsByPrisonerNumberAndResolution(prisonerNumber: String, resolution: CreditResolution): Boolean
+  fun existsByPrisonerNumberAndResolution(prisonerNumber: String, resolution: String): Boolean
 
   fun findByPrisonerNumberAndPrisonIsNull(prisonerNumber: String): List<Credit>
 
+  fun findByReceivedAtGreaterThanEqualAndReceivedAtBefore(
+    from: OffsetDateTime,
+    to: OffsetDateTime,
+  ): List<Credit>
+
   fun findByResolutionAndReconciledFalseAndReceivedAtGreaterThanEqualAndReceivedAtBefore(
-    resolution: CreditResolution,
-    from: LocalDateTime,
-    to: LocalDateTime,
+    resolution: String,
+    from: OffsetDateTime,
+    to: OffsetDateTime,
   ): List<Credit>
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @Query("SELECT c FROM Credit c WHERE c.id IN :ids")
+  @Query("SELECT c FROM CreditCredit c WHERE c.id IN :ids")
   fun findByIdInWithLock(ids: List<Long>): List<Credit>
+
+  // Convenience: find by owner via auth_user join.
+  @Query("SELECT c FROM CreditCredit c WHERE c.owner.username = :username")
+  fun findByOwnerUsername(username: String): List<Credit>
 }

@@ -29,7 +29,7 @@ data class JobInformation(
   companion object {
     fun from(info: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.JobInformation) = JobInformation(
       id = info.id,
-      user = info.user.id,
+      user = info.user?.id,
       title = info.title,
       prisonEstate = info.prisonEstate,
       tasks = info.tasks,

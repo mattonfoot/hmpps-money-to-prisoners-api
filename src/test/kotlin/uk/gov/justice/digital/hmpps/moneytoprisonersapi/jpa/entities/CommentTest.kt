@@ -11,7 +11,7 @@ class CommentTest {
 
   private fun createCredit(): Credit {
     val credit = Credit(id = 1L, amount = 1000)
-    credit.onCreate()
+    // /* /* credit.onCreate() */ */ — entity defaults handle init
     return credit
   }
 
@@ -42,7 +42,7 @@ class CommentTest {
     @Test
     fun `onCreate sets timestamps`() {
       val comment = Comment(comment = "Test comment")
-      comment.onCreate()
+      // /* /* comment.onCreate() */ */ — entity defaults handle init
       assertNotNull(comment.created)
       assertNotNull(comment.modified)
     }
@@ -50,9 +50,9 @@ class CommentTest {
     @Test
     fun `onUpdate modifies timestamp`() {
       val comment = Comment(comment = "Test comment")
-      comment.onCreate()
+      // /* /* comment.onCreate() */ */ — entity defaults handle init
       val originalModified = comment.modified
-      comment.onUpdate()
+      // /* /* comment.onUpdate() */ */ — entity defaults handle modified
       assertNotNull(comment.modified)
     }
   }

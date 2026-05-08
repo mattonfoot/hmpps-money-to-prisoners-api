@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResol
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @DataJpaTest
 @Import(ContainersConfig::class)
@@ -114,7 +115,7 @@ class CreditRepositoryTest @Autowired constructor(
       assertEquals("Jane Doe", found.prisonerName)
       assertEquals(LocalDate.of(1985, 6, 20), found.prisonerDob)
       assertEquals("LEI", found.prison)
-      assertEquals(CreditResolution.PENDING, found.resolution)
+      assertEquals(CreditResolution.PENDING.value, found.resolution)
       assertTrue(found.blocked)
       assertTrue(found.reviewed)
       assertTrue(found.reconciled)
@@ -129,7 +130,7 @@ class CreditRepositoryTest @Autowired constructor(
 
     @Test
     fun `findByResolutionNotIn excludes initial and failed`() {
-      val excluded = listOf(CreditResolution.INITIAL, CreditResolution.FAILED)
+      val excluded = listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)
       val countBefore = creditRepository.findByResolutionNotIn(excluded).size
 
       creditRepository.save(createCredit(amount = 100, resolution = CreditResolution.INITIAL))
@@ -144,8 +145,8 @@ class CreditRepositoryTest @Autowired constructor(
       val results = creditRepository.findByResolutionNotIn(excluded)
 
       assertEquals(countBefore + 4, results.size)
-      assertTrue(results.none { it.resolution == CreditResolution.INITIAL })
-      assertTrue(results.none { it.resolution == CreditResolution.FAILED })
+      assertTrue(results.none { it.resolution == CreditResolution.INITIAL.value })
+      assertTrue(results.none { it.resolution == CreditResolution.FAILED.value })
     }
   }
 
@@ -175,7 +176,7 @@ class CreditRepositoryTest @Autowired constructor(
 
     @Test
     fun `findByResolution returns only matching credits`() {
-      val countBefore = creditRepository.findByResolution(CreditResolution.PENDING).size
+      val countBefore = creditRepository.findByResolution(CreditResolution.PENDING.value).size
 
       creditRepository.save(createCredit(amount = 100, resolution = CreditResolution.PENDING))
       creditRepository.save(createCredit(amount = 200, resolution = CreditResolution.CREDITED))
@@ -183,9 +184,9 @@ class CreditRepositoryTest @Autowired constructor(
       entityManager.flush()
       entityManager.clear()
 
-      val results = creditRepository.findByResolution(CreditResolution.PENDING)
+      val results = creditRepository.findByResolution(CreditResolution.PENDING.value)
       assertEquals(countBefore + 2, results.size)
-      assertTrue(results.all { it.resolution == CreditResolution.PENDING })
+      assertTrue(results.all { it.resolution == CreditResolution.PENDING.value })
     }
   }
 

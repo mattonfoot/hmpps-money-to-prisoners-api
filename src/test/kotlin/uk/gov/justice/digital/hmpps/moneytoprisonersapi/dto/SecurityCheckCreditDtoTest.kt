@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResol
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit as CreditEntity
 
 @DisplayName("SecurityCheckCreditDto")
@@ -30,7 +31,7 @@ class SecurityCheckCreditDtoTest {
       blocked = blocked,
     )
     credit.source = source
-    credit.onCreate()
+    // /* /* credit.onCreate() */ */ — entity defaults handle init
     return credit
   }
 
@@ -50,7 +51,7 @@ class SecurityCheckCreditDtoTest {
         actionedAt = LocalDateTime.of(2024, 3, 16, 14, 0),
       )
       securityCheck.credit = credit
-      securityCheck.onCreate()
+      // /* /* securityCheck.onCreate() */ */ — entity defaults handle init
       credit.securityCheck = securityCheck
 
       val dto = SecurityCheckCreditDto.from(credit)
@@ -78,7 +79,7 @@ class SecurityCheckCreditDtoTest {
         status = CheckStatus.PENDING,
       )
       securityCheck.credit = credit
-      securityCheck.onCreate()
+      // /* /* securityCheck.onCreate() */ */ — entity defaults handle init
       credit.securityCheck = securityCheck
 
       val dto = SecurityCheckCreditDto.from(credit)
@@ -99,7 +100,7 @@ class SecurityCheckCreditDtoTest {
         actionedAt = LocalDateTime.of(2024, 3, 17, 10, 0),
       )
       securityCheck.credit = credit
-      securityCheck.onCreate()
+      // /* /* securityCheck.onCreate() */ */ — entity defaults handle init
       credit.securityCheck = securityCheck
 
       val dto = SecurityCheckCreditDto.from(credit)

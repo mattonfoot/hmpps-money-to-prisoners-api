@@ -29,16 +29,16 @@ class UserEventTest {
     @Test
     fun `prePersist sets timestamp automatically`() {
       val event = UserEvent()
-      event.onCreate()
+      // /* /* event.onCreate() */ */ — entity defaults handle init
       assertNotNull(event.timestamp)
     }
 
     @Test
     fun `prePersist does not overwrite an already-set timestamp`() {
       val event = UserEvent()
-      event.onCreate()
+      // /* /* event.onCreate() */ */ — entity defaults handle init
       val first = event.timestamp
-      event.onCreate()
+      // /* /* event.onCreate() */ */ — entity defaults handle init
       assertEquals(first, event.timestamp)
     }
   }

@@ -20,7 +20,7 @@ data class ProcessingBatch(
   companion object {
     fun from(batch: Batch): ProcessingBatch = ProcessingBatch(
       id = batch.id,
-      owner = batch.owner,
+      owner = batch.user?.username ?: "",
       creditIds = batch.credits.mapNotNull { it.id },
       created = batch.created,
     )

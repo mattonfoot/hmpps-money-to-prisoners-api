@@ -24,7 +24,7 @@ data class CommentDto(
       id = comment.id,
       credit = comment.credit?.id,
       comment = comment.comment,
-      userId = comment.userId,
+      userId = comment.user?.username,
       created = comment.created,
       modified = comment.modified,
     )

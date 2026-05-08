@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.EmailFrequency
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.EmailNotificationPreferences
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Event
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.EmailNotificationPreferencesRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.EventRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.EventSpecifications
@@ -16,6 +17,7 @@ import java.time.LocalDateTime
 class NotificationService(
   private val eventRepository: EventRepository,
   private val emailPreferencesRepository: EmailNotificationPreferencesRepository,
+  private val userRepository: AuthUserRepository,
 ) {
 
   /**
@@ -61,7 +63,7 @@ class NotificationService(
   /**
    * NOT-010: Returns the user's email notification frequency, defaulting to 'never' if not set.
    */
-  fun getEmailFrequency(username: String): String = emailPreferencesRepository.findByUsername(username)?.frequency?.value
+  fun getEmailFrequency(username: String): String = emailPreferencesRepository.findByUserUsername(username)?.frequency
     ?: EmailFrequency.NEVER.value
 
   /**
@@ -69,13 +71,17 @@ class NotificationService(
    */
   @Transactional
   fun setEmailFrequency(username: String, frequency: EmailFrequency) {
-    val existing = emailPreferencesRepository.findByUsername(username)
+    val existing = emailPreferencesRepository.findByUserUsername(username)
     if (existing != null) {
-      existing.frequency = frequency
+      existing.frequency = frequency.value
       emailPreferencesRepository.save(existing)
     } else {
+      val owner = userRepository.findByUsername(username) ?: return
       emailPreferencesRepository.save(
-        EmailNotificationPreferences(username = username, frequency = frequency),
+        EmailNotificationPreferences().apply {
+          this.user = owner
+          this.frequency = frequency.value
+        },
       )
     }
   }

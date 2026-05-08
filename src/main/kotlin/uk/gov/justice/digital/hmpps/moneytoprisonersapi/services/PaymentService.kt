@@ -43,22 +43,21 @@ class PaymentService(
       throw PaymentValidationException("amount must be a positive integer")
     }
 
-    val credit = Credit(
-      amount = request.amount,
-      prisonerNumber = request.prisonerNumber,
-      prisonerDob = request.prisonerDob,
-      resolution = CreditResolution.INITIAL,
-    )
-    credit.source = CreditSource.ONLINE
+    val credit = Credit().apply {
+      amount = request.amount
+      prisonerNumber = request.prisonerNumber
+      prisonerDob = request.prisonerDob
+      resolution = CreditResolution.INITIAL.value
+    }
 
     val savedCredit = creditRepository.save(credit)
 
-    val payment = Payment(
-      amount = request.amount,
-      status = "pending",
-      credit = savedCredit,
-      ipAddress = request.ipAddress,
-    )
+    val payment = Payment().apply {
+      amount = request.amount.toInt()
+      status = "pending"
+      this.credit = savedCredit
+      ipAddress = request.ipAddress?.let { java.net.InetAddress.getByName(it) }
+    }
 
     return paymentRepository.save(payment)
   }
@@ -78,14 +77,14 @@ class PaymentService(
       when (newStatus) {
         "taken" -> {
           val credit = payment.credit!!
-          credit.resolution = CreditResolution.PENDING
-          credit.receivedAt = request.receivedAt ?: LocalDateTime.now()
+          credit.resolution = CreditResolution.PENDING.value
+          credit.receivedAt = request.receivedAt ?: java.time.OffsetDateTime.now()
           creditRepository.save(credit)
         }
 
         "rejected", "expired" -> {
           val credit = payment.credit!!
-          credit.resolution = CreditResolution.FAILED
+          credit.resolution = CreditResolution.FAILED.value
           creditRepository.save(credit)
         }
 
@@ -102,7 +101,7 @@ class PaymentService(
     request.cardNumberLastDigits?.let { payment.cardNumberLastDigits = it }
     request.cardExpiryDate?.let { payment.cardExpiryDate = it }
     request.cardBrand?.let { payment.cardBrand = it }
-    request.ipAddress?.let { payment.ipAddress = it }
+    request.ipAddress?.let { payment.ipAddress = java.net.InetAddress.getByName(it) }
 
     // Handle billing address
     val billingAddressUpdate = request.billingAddress
@@ -117,14 +116,13 @@ class PaymentService(
         existingAddress.postcode = billingAddressUpdate.postcode ?: existingAddress.postcode
         existingAddress
       } else {
-        // Create new billing address
-        BillingAddress(
-          line1 = billingAddressUpdate.line1,
-          line2 = billingAddressUpdate.line2,
-          city = billingAddressUpdate.city,
-          country = billingAddressUpdate.country,
-          postcode = billingAddressUpdate.postcode,
-        )
+        BillingAddress().apply {
+          line1 = billingAddressUpdate.line1
+          line2 = billingAddressUpdate.line2
+          city = billingAddressUpdate.city
+          country = billingAddressUpdate.country
+          postcode = billingAddressUpdate.postcode
+        }
       }
       val savedAddress = billingAddressRepository.save(addressToSave)
       payment.billingAddress = savedAddress
@@ -143,7 +141,7 @@ class PaymentService(
     .orElseThrow { PaymentNotFoundException(uuid) }
 
   fun listPaymentBatches(settlementDate: java.time.LocalDate?): List<PaymentBatch> = if (settlementDate != null) {
-    paymentBatchRepository.findBySettlementDate(settlementDate)
+    paymentBatchRepository.findByDate(settlementDate)
   } else {
     paymentBatchRepository.findAll()
   }
@@ -151,7 +149,7 @@ class PaymentService(
   @Transactional
   fun reconcilePayments(request: ReconcilePaymentsRequest): PaymentBatch? {
     val credits = creditRepository.findByResolutionAndReconciledFalseAndReceivedAtGreaterThanEqualAndReceivedAtBefore(
-      CreditResolution.PENDING,
+      CreditResolution.PENDING.value,
       request.receivedAtGte,
       request.receivedAtLt,
     )
@@ -160,8 +158,10 @@ class PaymentService(
       return null
     }
 
-    val maxRefCode = paymentBatchRepository.findMaxRefCode() ?: 0
-    val newRefCode = maxRefCode + 1
+    // Django's payment_batch.ref_code is varchar(12). Old code used Int — preserve
+    // numeric monotonic increment, store as string.
+    val maxRefCode = (paymentBatchRepository.findMaxRefCode()?.toIntOrNull() ?: 0)
+    val newRefCode = (maxRefCode + 1).toString()
 
     // Mark all credits as reconciled
     for (credit in credits) {
@@ -169,11 +169,22 @@ class PaymentService(
       creditRepository.save(credit)
     }
 
-    val batch = PaymentBatch(
-      refCode = newRefCode,
-      credits = credits.toMutableList(),
-    )
+    val batch = PaymentBatch().apply {
+      refCode = newRefCode
+      date = java.time.LocalDate.now()
+    }
+    val saved = paymentBatchRepository.save(batch)
 
-    return paymentBatchRepository.save(batch)
+    // Django's payment_batch links to payments via payment_payment.batch_id (FK
+    // on the child), not a M2M of credits. Wire each credit's payment to point
+    // at this new batch.
+    for (credit in credits) {
+      credit.payment?.let { p ->
+        p.batch = saved
+        paymentRepository.save(p)
+      }
+    }
+
+    return saved
   }
 }

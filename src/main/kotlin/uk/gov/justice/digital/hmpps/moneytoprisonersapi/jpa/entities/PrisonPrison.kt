@@ -2,7 +2,11 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinTable
+import jakarta.persistence.ManyToMany
 import jakarta.persistence.Table
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
@@ -55,4 +59,23 @@ open class PrisonPrison {
   @NotNull
   @Column(name = "use_nomis_for_balances", nullable = false)
   open var useNomisForBalances: Boolean = false
+
+  // Manually-maintained M2M back-references onto Django's prison junction tables.
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(
+    name = "prison_prison_categories",
+    schema = "public",
+    joinColumns = [JoinColumn(name = "prison_id")],
+    inverseJoinColumns = [JoinColumn(name = "category_id")],
+  )
+  open var categories: MutableSet<PrisonCategory> = mutableSetOf()
+
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(
+    name = "prison_prison_populations",
+    schema = "public",
+    joinColumns = [JoinColumn(name = "prison_id")],
+    inverseJoinColumns = [JoinColumn(name = "population_id")],
+  )
+  open var populations: MutableSet<PrisonPopulation> = mutableSetOf()
 }

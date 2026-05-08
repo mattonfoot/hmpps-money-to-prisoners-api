@@ -31,7 +31,7 @@ class CreditService(
   private val userRepository: AuthUserRepository,
 ) {
 
-  fun listCompletedCredits(): List<Credit> = creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED))
+  fun listCompletedCredits(): List<Credit> = creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value))
 
   fun listAllCredits(): List<Credit> = creditRepository.findAll()
 

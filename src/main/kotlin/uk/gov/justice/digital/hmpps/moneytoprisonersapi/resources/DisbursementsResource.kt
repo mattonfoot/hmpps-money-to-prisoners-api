@@ -36,6 +36,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdateDisbursementRe
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementComment
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementMethod
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementCommentRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
@@ -52,6 +53,7 @@ class DisbursementsResource(
   private val disbursementRepository: DisbursementRepository,
   private val disbursementCommentRepository: DisbursementCommentRepository,
   private val prisonRepository: PrisonRepository,
+  private val userRepository: AuthUserRepository,
 ) {
 
   private fun prisonNameMap(): Map<String, String> = prisonRepository.findAll().associate { it.nomisId to it.name }
@@ -413,14 +415,14 @@ class DisbursementsResource(
     principal: Principal,
   ): List<DisbursementCommentDto> {
     val created = requests.map { request ->
-      val disbursement = disbursementRepository.findById(request.disbursement).orElse(null)
-      val comment = DisbursementComment(
-        comment = request.comment,
-        category = request.category,
-        disbursement = disbursement,
-        userId = principal.name,
-      )
-      disbursementCommentRepository.save(comment)
+      val disbursementEntity = disbursementRepository.findById(request.disbursement).orElse(null)
+      val newComment = DisbursementComment().apply {
+        this.comment = request.comment
+        this.category = request.category ?: ""
+        this.disbursement = disbursementEntity
+        this.user = userRepository.findByUsername(principal.name)
+      }
+      disbursementCommentRepository.save(newComment)
     }
     return created.map { DisbursementCommentDto.from(it) }
   }

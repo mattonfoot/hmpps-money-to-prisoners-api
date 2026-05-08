@@ -125,14 +125,14 @@ data class Disbursement(
       recipientProfileMap: Map<String, Long> = emptyMap(),
     ): Disbursement = Disbursement(
       id = disbursement.id,
-      amount = disbursement.amount,
-      method = disbursement.method,
-      prison = disbursement.prison,
+      amount = disbursement.amount.toLong(),
+      method = DisbursementMethod.fromValue(disbursement.method),
+      prison = disbursement.prison?.nomisId,
       prisonerNumber = disbursement.prisonerNumber,
       prisonerName = disbursement.prisonerName,
       recipientFirstName = disbursement.recipientFirstName,
       recipientLastName = disbursement.recipientLastName,
-      recipientName = disbursement.recipientName,
+      recipientName = "${disbursement.recipientFirstName} ${disbursement.recipientLastName}".trim(),
       recipientEmail = disbursement.recipientEmail,
       addressLine1 = disbursement.addressLine1,
       addressLine2 = disbursement.addressLine2,
@@ -143,19 +143,19 @@ data class Disbursement(
       accountNumber = disbursement.accountNumber,
       rollNumber = disbursement.rollNumber,
       recipientIsCompany = disbursement.recipientIsCompany,
-      resolution = disbursement.resolution,
+      resolution = DisbursementResolution.fromValue(disbursement.resolution),
       nomisTransactionId = disbursement.nomisTransactionId,
       invoiceNumber = disbursement.invoiceNumber,
       created = disbursement.created,
       modified = disbursement.modified,
       remittanceDescription = disbursement.remittanceDescription,
-      prisonerProfile = disbursement.prisonerNumber?.let { prisonerProfileMap[it] },
+      prisonerProfile = prisonerProfileMap[disbursement.prisonerNumber],
       recipientProfile = disbursement.sortCode?.let { sc ->
         disbursement.accountNumber?.let { an -> recipientProfileMap["$sc-$an"] }
       },
-      prisonName = disbursement.prison?.let { prisonNameMap[it] },
+      prisonName = disbursement.prison?.let { prisonNameMap[it.nomisId] },
       logSet = disbursement.logs.map {
-        Log(action = it.action.value, created = it.created, user = it.userId)
+        Log(action = it.action, created = it.created, user = it.user?.username)
       },
       comments = disbursement.comments.map { DisbursementCommentDto.from(it) },
     )

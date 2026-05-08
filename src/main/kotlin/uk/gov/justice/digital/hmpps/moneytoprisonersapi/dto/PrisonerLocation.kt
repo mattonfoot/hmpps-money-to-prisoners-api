@@ -34,9 +34,9 @@ data class PrisonerLocation(
     fun from(loc: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerLocation): PrisonerLocation = PrisonerLocation(
       id = loc.id,
       prisonerNumber = loc.prisonerNumber,
-      prison = loc.prison.nomisId,
+      prison = loc.prison?.nomisId ?: "",
       active = loc.active,
-      createdBy = loc.createdBy,
+      createdBy = loc.createdBy?.username ?: "",
       prisonerDob = loc.prisonerDob,
       created = loc.created,
       modified = loc.modified,

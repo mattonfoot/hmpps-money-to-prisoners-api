@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderP
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.TransactionRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 class CreditResourceTest : IntegrationTestBase() {
@@ -944,8 +945,8 @@ class CreditResourceTest : IntegrationTestBase() {
     fun `should filter by logged_at__gte`() {
       val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
       val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
-      logRepository.save(Log(action = LogAction.CREDITED, credit = credit1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59) })
-      logRepository.save(Log(action = LogAction.CREDITED, credit = credit2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) })
+      logRepository.save(Log(action = LogAction.CREDITED, credit = credit1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59).atOffset(ZoneOffset.UTC) })
+      logRepository.save(Log(action = LogAction.CREDITED, credit = credit2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(ZoneOffset.UTC) })
 
       webTestClient.get()
         .uri("/credits/?logged_at__gte=2024-03-15T00:00:00")
@@ -962,8 +963,8 @@ class CreditResourceTest : IntegrationTestBase() {
     fun `should filter by logged_at__lt`() {
       val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
       val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
-      logRepository.save(Log(action = LogAction.CREDITED, credit = credit1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59) })
-      logRepository.save(Log(action = LogAction.CREDITED, credit = credit2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) })
+      logRepository.save(Log(action = LogAction.CREDITED, credit = credit1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59).atOffset(ZoneOffset.UTC) })
+      logRepository.save(Log(action = LogAction.CREDITED, credit = credit2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(ZoneOffset.UTC) })
 
       webTestClient.get()
         .uri("/credits/?logged_at__lt=2024-03-15T00:00:00")

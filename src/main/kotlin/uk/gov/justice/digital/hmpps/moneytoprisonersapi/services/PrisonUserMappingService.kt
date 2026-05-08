@@ -2,36 +2,46 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.services
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpAuthPrisonusermapping
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonUserMappingRepository
 
+/**
+ * Django models user-to-prison assignment via mtp_auth_prisonusermapping (one
+ * row per user) plus the mtp_auth_prisonusermapping_prisons join table. The
+ * legacy Kotlin `user.prisons = …` assignment goes through this mapping row.
+ */
 @Service
 class PrisonUserMappingService(
   private val mtpUserRepository: MtpUserRepository,
+  private val mappingRepository: PrisonUserMappingRepository,
 ) {
 
-  /**
-   * AUTH-051: Returns all prisons mapped to [user].
-   */
-  fun getPrisonsForUser(user: MtpUser): Set<Prison> = user.prisons.toSet()
+  /** AUTH-051: Returns all prisons mapped to [user]. */
+  fun getPrisonsForUser(user: MtpUser): Set<Prison> = user.prisonUserMapping?.prisons ?: emptySet()
 
-  /**
-   * AUTH-050: Replaces the prison mapping for [user] with [prisons].
-   */
+  private fun mappingFor(user: MtpUser): MtpAuthPrisonusermapping = user.prisonUserMapping
+    ?: MtpAuthPrisonusermapping().apply { this.user = user }
+
+  /** AUTH-050: Replaces the prison mapping for [user] with [prisons]. */
   @Transactional
   fun assignPrisons(user: MtpUser, prisons: Set<Prison>) {
-    user.prisons = prisons.toMutableSet()
+    val mapping = mappingFor(user)
+    mapping.prisons.clear()
+    mapping.prisons.addAll(prisons)
+    mappingRepository.save(mapping)
     mtpUserRepository.save(user)
   }
 
-  /**
-   * AUTH-052: Copies the prison mapping from [source] user to [target] user,
-   * overriding any existing assignments on [target].
-   */
+  /** AUTH-052: Copies the prison mapping from [source] user to [target] user. */
   @Transactional
   fun copyPrisonMapping(source: MtpUser, target: MtpUser) {
-    target.prisons = source.prisons.toMutableSet()
+    val targetMapping = mappingFor(target)
+    targetMapping.prisons.clear()
+    targetMapping.prisons.addAll(source.prisonUserMapping?.prisons ?: emptySet())
+    mappingRepository.save(targetMapping)
     mtpUserRepository.save(target)
   }
 }

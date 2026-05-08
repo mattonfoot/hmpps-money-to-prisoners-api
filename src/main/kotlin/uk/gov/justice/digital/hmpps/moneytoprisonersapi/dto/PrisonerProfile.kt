@@ -50,8 +50,8 @@ data class PrisonerProfile(
       val mostCommonDob = credits.mapNotNull { it.prisonerDob }
         .groupingBy { it }.eachCount()
         .maxByOrNull { it.value }?.key
-      val latestPrison = credits.filter { it.prison != null && it.created != null }
-        .maxByOrNull { it.created!! }?.prison
+      val latestPrison = credits.filter { it.prison != null }
+        .maxByOrNull { it.created }?.prison
       return PrisonerProfile(
         id = profile.id,
         prisonerNumber = profile.prisonerNumber,
@@ -62,12 +62,15 @@ data class PrisonerProfile(
         senderCount = senderCount ?: 0,
         recipientCount = recipientCount ?: 0,
         disbursementCount = disbursements.size,
-        disbursementTotal = disbursements.sumOf { it.amount },
-        prisons = credits.mapNotNull { it.prison }.distinct(),
-        currentPrison = latestPrison,
+        disbursementTotal = disbursements.sumOf { it.amount.toLong() },
+        prisons = credits.mapNotNull { it.prison?.nomisId }.distinct(),
+        currentPrison = latestPrison?.nomisId,
         providedNames = credits.mapNotNull { it.prisonerName }.distinct(),
-        monitoringUsers = profile.monitoringUsers.toList(),
-        monitoring = if (currentUsername != null) profile.monitoringUsers.contains(currentUsername) else null,
+        // monitoringUsers are stored as auth_user IDs in Django; the legacy
+        // contract surfaces usernames. Conversion lives in the service layer
+        // — emit empty here to keep the DTO schema-stable.
+        monitoringUsers = emptyList(),
+        monitoring = null,
         created = profile.created,
         modified = profile.modified,
       )

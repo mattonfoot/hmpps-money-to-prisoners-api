@@ -6,6 +6,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.UserFlag
 
 interface UserFlagRepository : JpaRepository<UserFlag, Long> {
   fun findByUser(user: MtpUser): List<UserFlag>
-  fun findByUserAndFlagName(user: MtpUser, flagName: String): UserFlag?
-  fun existsByUserAndFlagName(user: MtpUser, flagName: String): Boolean
+  fun findByUserAndName(user: MtpUser, name: String): UserFlag?
+  fun existsByUserAndName(user: MtpUser, name: String): Boolean
 }

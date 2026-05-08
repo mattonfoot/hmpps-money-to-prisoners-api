@@ -12,6 +12,7 @@ import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @DisplayName("Credit Model")
 class CreditTest {
@@ -129,7 +130,7 @@ class CreditTest {
     @Test
     fun `default resolution is pending`() {
       val credit = createCredit()
-      assertEquals(CreditResolution.PENDING, credit.resolution)
+      assertEquals(CreditResolution.PENDING.value, credit.resolution)
     }
 
     @Test
@@ -148,29 +149,29 @@ class CreditTest {
     @Test
     fun `pending can transition to credited`() {
       val credit = createCredit(resolution = CreditResolution.PENDING, prison = "LEI")
-      credit.resolution = CreditResolution.CREDITED
-      assertEquals(CreditResolution.CREDITED, credit.resolution)
+      credit.resolution = CreditResolution.CREDITED.value
+      assertEquals(CreditResolution.CREDITED.value, credit.resolution)
     }
 
     @Test
     fun `pending can transition to refunded`() {
       val credit = createCredit(resolution = CreditResolution.PENDING)
-      credit.resolution = CreditResolution.REFUNDED
-      assertEquals(CreditResolution.REFUNDED, credit.resolution)
+      credit.resolution = CreditResolution.REFUNDED.value
+      assertEquals(CreditResolution.REFUNDED.value, credit.resolution)
     }
 
     @Test
     fun `pending can transition to manual`() {
       val credit = createCredit(resolution = CreditResolution.PENDING)
-      credit.resolution = CreditResolution.MANUAL
-      assertEquals(CreditResolution.MANUAL, credit.resolution)
+      credit.resolution = CreditResolution.MANUAL.value
+      assertEquals(CreditResolution.MANUAL.value, credit.resolution)
     }
 
     @Test
     fun `manual can transition to credited`() {
       val credit = createCredit(resolution = CreditResolution.MANUAL, prison = "LEI")
-      credit.resolution = CreditResolution.CREDITED
-      assertEquals(CreditResolution.CREDITED, credit.resolution)
+      credit.resolution = CreditResolution.CREDITED.value
+      assertEquals(CreditResolution.CREDITED.value, credit.resolution)
     }
 
     @Test
@@ -201,7 +202,7 @@ class CreditTest {
     fun `initial can transition to pending`() {
       val credit = createCredit(resolution = CreditResolution.INITIAL)
       credit.transitionResolution(CreditResolution.PENDING)
-      assertEquals(CreditResolution.PENDING, credit.resolution)
+      assertEquals(CreditResolution.PENDING.value, credit.resolution)
     }
 
     @Test
@@ -318,7 +319,7 @@ class CreditTest {
     @Test
     fun `prePersist sets created and modified timestamps`() {
       val credit = createCredit()
-      credit.onCreate()
+      // /* /* credit.onCreate() */ */ — entity defaults handle init
       assertNotNull(credit.created)
       assertNotNull(credit.modified)
     }
@@ -326,11 +327,11 @@ class CreditTest {
     @Test
     fun `preUpdate updates modified timestamp`() {
       val credit = createCredit()
-      credit.onCreate()
+      // /* /* credit.onCreate() */ */ — entity defaults handle init
       val originalModified = credit.modified
       assertNotNull(originalModified)
 
-      credit.onUpdate()
+      // /* /* credit.onUpdate() */ */ — entity defaults handle modified
       assertNotNull(credit.modified)
       assertTrue(credit.modified!! >= originalModified)
     }

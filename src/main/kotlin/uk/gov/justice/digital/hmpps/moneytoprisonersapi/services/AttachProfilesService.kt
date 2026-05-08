@@ -60,8 +60,12 @@ class AttachProfilesService(
       val prisonerNumber = credit.prisonerNumber
       if (prisonerNumber != null) {
         val existing = prisonerProfileRepository.findByPrisonerNumber(prisonerNumber)
-        val profile = if (existing.isNotEmpty()) existing.first() else PrisonerProfile(prisonerNumber = prisonerNumber)
-        profile.prisonerName = credit.prisonerName
+        val profile = if (existing.isNotEmpty()) {
+          existing.first()
+        } else {
+          PrisonerProfile().apply { this.prisonerNumber = prisonerNumber }
+        }
+        profile.prisonerName = credit.prisonerName ?: ""
         profile.credits.add(credit)
         prisonerProfileRepository.save(profile)
       }

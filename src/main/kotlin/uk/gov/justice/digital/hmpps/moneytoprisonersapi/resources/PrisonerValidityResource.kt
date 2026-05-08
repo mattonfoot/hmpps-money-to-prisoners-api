@@ -69,7 +69,7 @@ class PrisonerValidityResource(
     prisonerDob: LocalDate,
   ): PrisonerValidityResponse {
     val locations = prisonService.checkPrisonerValidity(prisonerNumber, prisonerDob)
-    val results = locations.map { mapOf("prisoner_number" to it.prisonerNumber, "prison" to it.prison.nomisId) }
+    val results = locations.map { mapOf("prisoner_number" to it.prisonerNumber, "prison" to (it.prison?.nomisId ?: "")) }
     return PrisonerValidityResponse(count = locations.size, results = results)
   }
 }

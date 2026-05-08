@@ -5,21 +5,22 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.FailedLoginAttempt
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
-import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.OAuthApplication
+import java.time.OffsetDateTime
 
 interface FailedLoginAttemptRepository : JpaRepository<FailedLoginAttempt, Long> {
 
-  fun countByUserAndApplicationAndAttemptedAtAfter(
+  fun countByUserAndApplicationAndCreatedAfter(
     user: MtpUser,
-    application: String,
-    since: LocalDateTime,
+    application: OAuthApplication,
+    since: OffsetDateTime,
   ): Long
 
   @Modifying
-  @Query("DELETE FROM FailedLoginAttempt f WHERE f.user = :user AND f.application = :application")
-  fun deleteByUserAndApplication(user: MtpUser, application: String)
+  @Query("DELETE FROM MtpAuthFailedloginattempt f WHERE f.user = :user AND f.application = :application")
+  fun deleteByUserAndApplication(user: MtpUser, application: OAuthApplication)
 
   @Modifying
-  @Query("DELETE FROM FailedLoginAttempt f WHERE f.user = :user")
+  @Query("DELETE FROM MtpAuthFailedloginattempt f WHERE f.user = :user")
   fun deleteByUser(user: MtpUser)
 }

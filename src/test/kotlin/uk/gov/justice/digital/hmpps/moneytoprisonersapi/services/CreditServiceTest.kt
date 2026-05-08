@@ -35,6 +35,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Prisone
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
@@ -100,7 +101,7 @@ class CreditServiceTest {
       )
       whenever(
         creditRepository.findByResolutionNotIn(
-          listOf(CreditResolution.INITIAL, CreditResolution.FAILED),
+          listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value),
         ),
       ).thenReturn(credits)
 
@@ -306,7 +307,7 @@ class CreditServiceTest {
         createCredit(id = 1, resolution = CreditResolution.PENDING, prison = "LEI"),
         createCredit(id = 2, resolution = CreditResolution.CREDITED),
       )
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED))).thenReturn(credits)
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value))).thenReturn(credits)
 
       val result = creditService.listCredits()
 
@@ -387,7 +388,7 @@ class CreditServiceTest {
     fun `CRD-040 filters by prison`() {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
       val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(lei, mdi))
 
       val result = creditService.listCredits(prisons = listOf("LEI"))
@@ -400,7 +401,7 @@ class CreditServiceTest {
     fun `CRD-042 filters by prison__isnull=true`() {
       val noPrison = createCredit(id = 1, prison = null, resolution = CreditResolution.PENDING)
       val withPrison = createCredit(id = 2, prison = "LEI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(noPrison, withPrison))
 
       val result = creditService.listCredits(prisonIsNull = true)
@@ -412,7 +413,7 @@ class CreditServiceTest {
     @Test
     fun `CRD-046 invalid prison returns empty set`() {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(lei))
 
       val result = creditService.listCredits(prisons = listOf("NONEXISTENT"))
@@ -425,7 +426,7 @@ class CreditServiceTest {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
       val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
       val bxi = createCredit(id = 3, prison = "BXI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(lei, mdi, bxi))
 
       val result = creditService.listCredits(prisons = listOf("LEI", "MDI"))
@@ -438,7 +439,7 @@ class CreditServiceTest {
     fun `CRD-041 single value in prison list works as exact match`() {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
       val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(lei, mdi))
 
       val result = creditService.listCredits(prisons = listOf("LEI"))
@@ -452,7 +453,7 @@ class CreditServiceTest {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
       val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
       val bxi = createCredit(id = 3, prison = "BXI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(lei, mdi, bxi))
 
       val leiPrison = Prison(nomisId = "LEI", region = "Yorkshire and Humber")
@@ -469,7 +470,7 @@ class CreditServiceTest {
     @Test
     fun `CRD-043 prison region filter is case-insensitive`() {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(lei))
 
       val leiPrison = Prison(nomisId = "LEI", region = "Yorkshire and Humber")
@@ -484,7 +485,7 @@ class CreditServiceTest {
     @Test
     fun `CRD-043 prison region no match returns empty set`() {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(lei))
       whenever(prisonRepository.findByRegionContainingIgnoreCase("NonExistent"))
         .thenReturn(emptyList())
@@ -499,7 +500,7 @@ class CreditServiceTest {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
       val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
       val bxi = createCredit(id = 3, prison = "BXI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(lei, mdi, bxi))
 
       val catB = PrisonCategory(id = 1, name = "Category B")
@@ -516,7 +517,7 @@ class CreditServiceTest {
     @Test
     fun `CRD-044 prison category no match returns empty set`() {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(lei))
       whenever(prisonRepository.findByCategoryName("NonExistent"))
         .thenReturn(emptyList())
@@ -530,7 +531,7 @@ class CreditServiceTest {
     fun `CRD-045 filters by prison population`() {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
       val mdi = createCredit(id = 2, prison = "MDI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(lei, mdi))
 
       val adult = PrisonPopulation(id = 1, name = "Adult")
@@ -547,7 +548,7 @@ class CreditServiceTest {
     @Test
     fun `CRD-045 prison population no match returns empty set`() {
       val lei = createCredit(id = 1, prison = "LEI", resolution = CreditResolution.PENDING)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(lei))
       whenever(prisonRepository.findByPopulationName("NonExistent"))
         .thenReturn(emptyList())
@@ -561,7 +562,7 @@ class CreditServiceTest {
     fun `CRD-050 filters by exact amount`() {
       val c1 = createCredit(id = 1, amount = 1000, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, amount = 2000, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(amount = 1000L)
@@ -575,7 +576,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, amount = 1000, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, amount = 1500, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(amountGte = 1000L)
@@ -588,7 +589,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, amount = 1000, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, amount = 1500, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(amountLte = 1000L)
@@ -600,7 +601,7 @@ class CreditServiceTest {
     fun `CRD-080 filters by prisoner_name case-insensitive substring`() {
       val c1 = createCredit(id = 1, prisonerName = "John Smith", resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, prisonerName = "Jane Doe", resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(prisonerName = "john")
@@ -613,7 +614,7 @@ class CreditServiceTest {
     fun `CRD-081 filters by prisoner_number exact match`() {
       val c1 = createCredit(id = 1, prisonerNumber = "A1234BC", resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, prisonerNumber = "B5678DE", resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(prisonerNumber = "A1234BC")
@@ -625,7 +626,7 @@ class CreditServiceTest {
     fun `CRD-082 filters by user (owner)`() {
       val c1 = createCredit(id = 1, owner = "clerk1", resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, owner = "clerk2", resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(user = "clerk1")
@@ -637,7 +638,7 @@ class CreditServiceTest {
     fun `CRD-083 filters by resolution`() {
       val c1 = createCredit(id = 1, resolution = CreditResolution.PENDING)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(resolution = CreditResolution.CREDITED)
@@ -650,7 +651,7 @@ class CreditServiceTest {
     fun `CRD-084 filters by reviewed=true`() {
       val c1 = createCredit(id = 1, reviewed = true, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, reviewed = false, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(reviewed = true)
@@ -665,7 +666,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, receivedAt = now.minusDays(1), resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, receivedAt = now, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, receivedAt = now.plusDays(1), resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(receivedAtGte = now, receivedAtLt = now.plusDays(1))
@@ -679,7 +680,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, amount = 1050, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, amount = 2050, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, amount = 1099, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(amountEndswith = "50")
@@ -691,7 +692,7 @@ class CreditServiceTest {
     @Test
     fun `CRD-053 amount__endswith with no matches returns empty`() {
       val c1 = createCredit(id = 1, amount = 1000, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1))
 
       val result = creditService.listCredits(amountEndswith = "99")
@@ -704,7 +705,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, amount = 1000, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, amount = 2000, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, amount = 1500, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(amountRegex = "^1.*")
@@ -716,7 +717,7 @@ class CreditServiceTest {
     @Test
     fun `CRD-054 amount__regex with no matches returns empty`() {
       val c1 = createCredit(id = 1, amount = 1000, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1))
 
       val result = creditService.listCredits(amountRegex = "^9.*")
@@ -729,7 +730,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, amount = 1050, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, amount = 2050, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, amount = 1099, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(excludeAmountEndswith = "50")
@@ -743,7 +744,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, amount = 1000, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, amount = 2000, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, amount = 1500, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(excludeAmountRegex = "^1.*")
@@ -757,7 +758,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, amount = 500, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, amount = 1000, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, amount = 1500, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(amountGte = 800L, amountLte = 1200L)
@@ -771,7 +772,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, amount = 1050, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, amount = 2050, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, amount = 1099, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(amountEndswith = "50", amountRegex = "^1.*")
@@ -812,7 +813,7 @@ class CreditServiceTest {
       c1.transaction = Transaction(id = 1, senderName = "John Smith", credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.transaction = Transaction(id = 2, senderName = "Jane Doe", credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(senderName = "john")
@@ -827,7 +828,7 @@ class CreditServiceTest {
       c1.payment = Payment(cardholderName = "Alice Jones", credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(cardholderName = "Bob Brown", credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(senderName = "alice")
@@ -842,7 +843,7 @@ class CreditServiceTest {
       c1.transaction = Transaction(id = 1, senderName = "John Smith", credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(cardholderName = "John Doe", credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(senderName = "john")
@@ -856,7 +857,7 @@ class CreditServiceTest {
       c1.transaction = Transaction(id = 1, senderSortCode = "112233", credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.transaction = Transaction(id = 2, senderSortCode = "445566", credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(senderSortCode = "112233")
@@ -871,7 +872,7 @@ class CreditServiceTest {
       c1.transaction = Transaction(id = 1, senderAccountNumber = "12345678", credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.transaction = Transaction(id = 2, senderAccountNumber = "87654321", credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(senderAccountNumber = "12345678")
@@ -886,7 +887,7 @@ class CreditServiceTest {
       c1.transaction = Transaction(id = 1, senderRollNumber = "ROLL001", credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.transaction = Transaction(id = 2, senderRollNumber = "ROLL002", credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(senderRollNumber = "ROLL001")
@@ -903,7 +904,7 @@ class CreditServiceTest {
       c2.transaction = Transaction(id = 2, senderName = "John", credit = c2)
       val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
       c3.transaction = Transaction(id = 3, senderName = null, credit = c3)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(senderNameIsBlank = true)
@@ -920,7 +921,7 @@ class CreditServiceTest {
       c2.transaction = Transaction(id = 2, senderSortCode = "112233", credit = c2)
       val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
       c3.transaction = Transaction(id = 3, senderSortCode = null, credit = c3)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(senderSortCodeIsBlank = true)
@@ -935,7 +936,7 @@ class CreditServiceTest {
       c1.payment = Payment(email = "John@Example.com", credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(email = "jane@other.com", credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(senderEmail = "example")
@@ -950,7 +951,7 @@ class CreditServiceTest {
       c1.payment = Payment(ipAddress = "192.168.1.1", credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(ipAddress = "10.0.0.1", credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(senderIpAddress = "192.168.1.1")
@@ -965,7 +966,7 @@ class CreditServiceTest {
       c1.payment = Payment(cardNumberFirstDigits = "411111", credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(cardNumberFirstDigits = "522222", credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(cardNumberFirstDigits = "411111")
@@ -980,7 +981,7 @@ class CreditServiceTest {
       c1.payment = Payment(cardNumberLastDigits = "1234", credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(cardNumberLastDigits = "5678", credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(cardNumberLastDigits = "1234")
@@ -995,7 +996,7 @@ class CreditServiceTest {
       c1.payment = Payment(cardExpiryDate = "12/25", credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(cardExpiryDate = "06/26", credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(cardExpiryDate = "12/25")
@@ -1012,7 +1013,7 @@ class CreditServiceTest {
       c1.payment = Payment(billingAddress = addr1, credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(billingAddress = addr2, credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(senderPostcode = "sw1a1aa")
@@ -1026,7 +1027,7 @@ class CreditServiceTest {
       val addr1 = BillingAddress(id = 1, postcode = "sw1a1aa")
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
       c1.payment = Payment(billingAddress = addr1, credit = c1)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1))
 
       val result = creditService.listCredits(senderPostcode = "SW1A 1AA")
@@ -1042,7 +1043,7 @@ class CreditServiceTest {
       c1.payment = Payment(uuid = uuid1, credit = c1)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(uuid = uuid2, credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(paymentReference = "abcdef12")
@@ -1058,7 +1059,7 @@ class CreditServiceTest {
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(credit = c2)
       val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(source = CreditSource.BANK_TRANSFER)
@@ -1074,7 +1075,7 @@ class CreditServiceTest {
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(credit = c2)
       val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(source = CreditSource.ONLINE)
@@ -1090,7 +1091,7 @@ class CreditServiceTest {
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.payment = Payment(credit = c2)
       val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(source = CreditSource.UNKNOWN)
@@ -1102,12 +1103,12 @@ class CreditServiceTest {
     @Test
     fun `CRD-086 filters by logged_at__gte truncated to UTC date`() {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
-      c1.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59) })
+      c1.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59).atOffset(ZoneOffset.UTC) })
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
-      c2.logs.add(Log(id = 2, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) })
+      c2.logs.add(Log(id = 2, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(ZoneOffset.UTC) })
       val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
-      c3.logs.add(Log(id = 3, action = LogAction.CREDITED, credit = c3).also { it.created = LocalDateTime.of(2024, 3, 16, 8, 0) })
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      c3.logs.add(Log(id = 3, action = LogAction.CREDITED, credit = c3).also { it.created = LocalDateTime.of(2024, 3, 16, 8, 0).atOffset(ZoneOffset.UTC) })
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(loggedAtGte = LocalDateTime.of(2024, 3, 15, 0, 0))
@@ -1119,10 +1120,10 @@ class CreditServiceTest {
     @Test
     fun `CRD-086 filters by logged_at__lt truncated to UTC date`() {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
-      c1.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59) })
+      c1.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c1).also { it.created = LocalDateTime.of(2024, 3, 14, 23, 59).atOffset(ZoneOffset.UTC) })
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
-      c2.logs.add(Log(id = 2, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) })
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      c2.logs.add(Log(id = 2, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(ZoneOffset.UTC) })
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(loggedAtLt = LocalDateTime.of(2024, 3, 15, 0, 0))
@@ -1134,10 +1135,10 @@ class CreditServiceTest {
     @Test
     fun `CRD-086 logged_at filter uses date truncation ignoring time component`() {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
-      c1.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c1).also { it.created = LocalDateTime.of(2024, 3, 15, 0, 0) })
+      c1.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c1).also { it.created = LocalDateTime.of(2024, 3, 15, 0, 0).atOffset(ZoneOffset.UTC) })
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
-      c2.logs.add(Log(id = 2, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 23, 59) })
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      c2.logs.add(Log(id = 2, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 23, 59).atOffset(ZoneOffset.UTC) })
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(
@@ -1152,8 +1153,8 @@ class CreditServiceTest {
     fun `CRD-086 credits with no logs are excluded by logged_at filter`() {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
-      c2.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0) })
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      c2.logs.add(Log(id = 1, action = LogAction.CREDITED, credit = c2).also { it.created = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(ZoneOffset.UTC) })
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(loggedAtGte = LocalDateTime.of(2024, 3, 15, 0, 0))
@@ -1167,7 +1168,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.securityCheck = SecurityCheck(id = 1, credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(securityCheckIsnull = true)
@@ -1181,7 +1182,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.securityCheck = SecurityCheck(id = 1, credit = c2)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(securityCheckIsnull = false)
@@ -1197,7 +1198,7 @@ class CreditServiceTest {
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.securityCheck = SecurityCheck(id = 2, credit = c2, actionedBy = "admin1")
       val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(securityCheckActionedByIsnull = true)
@@ -1212,7 +1213,7 @@ class CreditServiceTest {
       c1.securityCheck = SecurityCheck(id = 1, credit = c1, actionedBy = null)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       c2.securityCheck = SecurityCheck(id = 2, credit = c2, actionedBy = "admin1")
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(securityCheckActionedByIsnull = false)
@@ -1226,7 +1227,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(excludeCreditIn = listOf(1L, 3L))
@@ -1239,7 +1240,7 @@ class CreditServiceTest {
     fun `CRD-089 exclude_credit__in with empty list returns all`() {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(excludeCreditIn = emptyList())
@@ -1252,7 +1253,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
       whenever(senderProfileRepository.findCreditIdsWithMonitoredSenderProfiles()).thenReturn(setOf(1L))
       whenever(prisonerProfileRepository.findCreditIdsWithMonitoredPrisonerProfiles()).thenReturn(setOf(2L))
@@ -1266,7 +1267,7 @@ class CreditServiceTest {
     @Test
     fun `CRD-090 filters monitored=true with no monitored profiles returns empty`() {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1))
       whenever(senderProfileRepository.findCreditIdsWithMonitoredSenderProfiles()).thenReturn(emptySet())
       whenever(prisonerProfileRepository.findCreditIdsWithMonitoredPrisonerProfiles()).thenReturn(emptySet())
@@ -1281,7 +1282,7 @@ class CreditServiceTest {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
       val c3 = createCredit(id = 3, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2, c3))
 
       val result = creditService.listCredits(pk = listOf(1L, 3L))
@@ -1294,7 +1295,7 @@ class CreditServiceTest {
     fun `CRD-091 pk with single ID returns one credit`() {
       val c1 = createCredit(id = 1, resolution = CreditResolution.CREDITED)
       val c2 = createCredit(id = 2, resolution = CreditResolution.CREDITED)
-      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL, CreditResolution.FAILED)))
+      whenever(creditRepository.findByResolutionNotIn(listOf(CreditResolution.INITIAL.value, CreditResolution.FAILED.value)))
         .thenReturn(listOf(c1, c2))
 
       val result = creditService.listCredits(pk = listOf(2L))

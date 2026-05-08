@@ -19,7 +19,7 @@ data class CheckAutoAcceptRuleState(
       id = state.id,
       active = state.active,
       reason = state.reason,
-      createdBy = state.createdBy,
+      createdBy = state.addedBy?.username,
       created = state.created,
     )
   }

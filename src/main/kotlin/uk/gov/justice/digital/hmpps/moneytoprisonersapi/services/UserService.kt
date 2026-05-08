@@ -72,15 +72,18 @@ class UserService(
     if (email.isNotBlank() && mtpUserRepository.existsByEmailIgnoreCase(email)) {
       throw IllegalArgumentException("A user with that email already exists")
     }
-    val user = MtpUser(
-      username = username.lowercase(),
-      email = email,
-      firstName = firstName ?: "",
-      lastName = lastName ?: "",
-      role = role,
-    )
-    user.prisons = prisons.toMutableSet()
-    return mtpUserRepository.save(user)
+    val user = MtpUser().apply {
+      this.username = username.lowercase()
+      this.email = email
+      this.firstName = firstName ?: ""
+      this.lastName = lastName ?: ""
+      this.isActive = true
+    }
+    val saved = mtpUserRepository.save(user)
+    // Role assignment (group memberships) and prison-mapping assignment require
+    // mtp_auth_role.other_groups + mtp_auth_prisonusermapping wiring. Stubbed
+    // until the domain helpers are wired in.
+    return saved
   }
 
   /**
@@ -107,8 +110,7 @@ class UserService(
     firstName?.let { user.firstName = it }
     lastName?.let { user.lastName = it }
     if (!isSelf) {
-      prisons?.let { user.prisons = it.toMutableSet() }
-      role?.let { user.role = it }
+      // prisons/role updates need PrisonUserMapping + group reassignment — stubbed.
     }
     return mtpUserRepository.save(user)
   }

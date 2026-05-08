@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AccountRequestStatus
 import java.time.OffsetDateTime
 
 @Schema(description = "Account request details")
@@ -47,7 +48,9 @@ data class AccountRequest(
       email = request.email,
       role = request.role?.name,
       prison = request.prison?.nomisId,
-      status = request.status,
+      // Django has no `status` column on mtp_auth_accountrequest — presence-of-row
+      // means pending. Surface "pending" while the request exists.
+      status = AccountRequestStatus.PENDING.name,
       created = request.created,
       modified = request.modified,
       existingUser = existingUser,

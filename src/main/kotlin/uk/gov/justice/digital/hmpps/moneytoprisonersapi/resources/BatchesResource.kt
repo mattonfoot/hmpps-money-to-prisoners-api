@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.Batch
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateBatchRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ProcessingBatch
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.BatchRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PaymentService
@@ -41,6 +42,7 @@ class BatchesResource(
   private val batchRepository: BatchRepository,
   private val creditRepository: CreditRepository,
   private val paymentService: PaymentService,
+  private val userRepository: AuthUserRepository,
 ) {
 
   @Operation(
@@ -66,12 +68,16 @@ class BatchesResource(
     @RequestBody request: CreateBatchRequest,
     principal: Principal,
   ): ProcessingBatch {
-    val credits = if (request.creditIds.isNotEmpty()) {
-      creditRepository.findAllById(request.creditIds).toMutableList()
+    val creditEntities = if (request.creditIds.isNotEmpty()) {
+      creditRepository.findAllById(request.creditIds).toMutableSet()
     } else {
-      mutableListOf()
+      mutableSetOf()
     }
-    val batch = BatchEntity(owner = principal.name, credits = credits)
+    val owner = userRepository.findByUsername(principal.name)
+    val batch = BatchEntity().apply {
+      this.user = owner
+      this.credits = creditEntities
+    }
     return ProcessingBatch.from(batchRepository.save(batch))
   }
 
@@ -96,7 +102,7 @@ class BatchesResource(
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): PaginatedResponse<ProcessingBatch> {
-    val batches = batchRepository.findByOwner(principal.name).map { ProcessingBatch.from(it) }
+    val batches = batchRepository.findByUserUsername(principal.name).map { ProcessingBatch.from(it) }
     return PaginatedResponse.fromList(batches, limit = limit, offset = offset)
   }
 

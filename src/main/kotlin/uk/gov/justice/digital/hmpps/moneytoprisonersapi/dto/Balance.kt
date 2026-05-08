@@ -21,7 +21,7 @@ data class Balance(
   companion object {
     fun from(balance: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Balance): Balance = Balance(
       id = balance.id,
-      closingBalance = balance.closingBalance,
+      closingBalance = java.math.BigInteger.valueOf(balance.closingBalance),
       date = balance.date,
       created = balance.created,
       modified = balance.modified,

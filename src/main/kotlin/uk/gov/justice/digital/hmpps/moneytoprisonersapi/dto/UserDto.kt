@@ -61,8 +61,11 @@ data class UserDto(
       firstName = user.firstName,
       lastName = user.lastName,
       isActive = user.isActive,
-      roleName = user.role?.name,
-      roleApplication = user.role?.application,
+      // Django has no `role` FK on auth_user — role is computed from group
+      // membership via mtp_auth_role.key_group. Surface null until that helper
+      // is wired in.
+      roleName = null,
+      roleApplication = null,
       prisons = user.prisons.map { it.nomisId }.sorted(),
       flags = flags,
       userAdmin = isUserAdmin,

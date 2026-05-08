@@ -15,7 +15,7 @@ interface DowntimeRepository : JpaRepository<Downtime, Long> {
    */
   @Query(
     """
-    SELECT d FROM Downtime d
+    SELECT d FROM ServiceDowntime d
     WHERE d.service = :service
       AND d.start <= :now
       AND (d.end > :now OR d.end IS NULL)

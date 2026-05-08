@@ -31,7 +31,7 @@ class SecurityCreditTest {
       blocked = blocked,
     )
     credit.source = source
-    credit.onCreate()
+    // /* /* credit.onCreate() */ */ — entity defaults handle init
     return credit
   }
 
@@ -133,7 +133,7 @@ class SecurityCreditTest {
         country = "GB",
         postcode = "SW1A 2AA",
       )
-      billingAddress.onCreate()
+      // /* /* billingAddress.onCreate() */ */ — entity defaults handle init
       val payment = PaymentEntity()
       payment.billingAddress = billingAddress
       payment.credit = credit

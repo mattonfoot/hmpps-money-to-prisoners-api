@@ -8,8 +8,8 @@ import java.time.LocalDate
 
 @Repository
 interface PaymentBatchRepository : JpaRepository<PaymentBatch, Long> {
-  fun findBySettlementDate(date: LocalDate): List<PaymentBatch>
+  fun findByDate(date: LocalDate): List<PaymentBatch>
 
   @Query("SELECT MAX(pb.refCode) FROM PaymentBatch pb")
-  fun findMaxRefCode(): Int?
+  fun findMaxRefCode(): String?
 }

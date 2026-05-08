@@ -7,7 +7,9 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUserLogin
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.FailedLoginAttemptRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserLoginRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.OAuthApplicationRepository
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 /** Usernames excluded from all login tracking (AUTH-006). */
 val SERVICE_ACCOUNT_USERNAMES: Set<String> = setOf("send-money", "bank-admin", "transaction-uploader")
@@ -22,7 +24,11 @@ const val LOCKOUT_PERIOD_MINUTES: Long = 30
 class LoginTrackingService(
   private val failedLoginAttemptRepository: FailedLoginAttemptRepository,
   private val mtpUserLoginRepository: MtpUserLoginRepository,
+  private val oauthApplicationRepository: OAuthApplicationRepository,
 ) {
+
+  private fun resolveApplication(clientId: String?) =
+    clientId?.let { oauthApplicationRepository.findByClientId(it) }
 
   /**
    * AUTH-002: Records a failed login attempt for [user] in [application].
@@ -32,11 +38,10 @@ class LoginTrackingService(
   fun recordFailedLogin(user: MtpUser, application: String) {
     if (user.username in SERVICE_ACCOUNT_USERNAMES) return
     failedLoginAttemptRepository.save(
-      FailedLoginAttempt(
-        user = user,
-        application = application,
-        attemptedAt = LocalDateTime.now(),
-      ),
+      FailedLoginAttempt().apply {
+        this.user = user
+        this.application = resolveApplication(application)
+      },
     )
   }
 
@@ -46,8 +51,9 @@ class LoginTrackingService(
    */
   @Transactional(readOnly = true)
   fun isLocked(user: MtpUser, application: String): Boolean {
-    val since = LocalDateTime.now().minusMinutes(LOCKOUT_PERIOD_MINUTES)
-    val count = failedLoginAttemptRepository.countByUserAndApplicationAndAttemptedAtAfter(user, application, since)
+    val since = OffsetDateTime.now().minusMinutes(LOCKOUT_PERIOD_MINUTES)
+    val app = resolveApplication(application) ?: return false
+    val count = failedLoginAttemptRepository.countByUserAndApplicationAndCreatedAfter(user, app, since)
     return count >= LOCKOUT_COUNT
   }
 
@@ -59,11 +65,10 @@ class LoginTrackingService(
   fun recordLogin(user: MtpUser, application: String) {
     if (user.username in SERVICE_ACCOUNT_USERNAMES) return
     mtpUserLoginRepository.save(
-      MtpUserLogin(
-        user = user,
-        application = application,
-        loggedInAt = LocalDateTime.now(),
-      ),
+      MtpUserLogin().apply {
+        this.user = user
+        this.application = resolveApplication(application)
+      },
     )
   }
 
@@ -79,7 +84,13 @@ class LoginTrackingService(
    * AUTH-042: Clears failed attempts for [user] in [application] after a successful password change.
    */
   @Transactional
-  fun clearFailedAttempts(user: MtpUser, application: String) {
-    failedLoginAttemptRepository.deleteByUserAndApplication(user, application)
+  fun clearFailedAttempts(user: MtpUser, application: String?) {
+    val app = resolveApplication(application)
+    if (app != null) {
+      failedLoginAttemptRepository.deleteByUserAndApplication(user, app)
+    } else {
+      // Application context not specified — clear across all applications.
+      failedLoginAttemptRepository.deleteByUser(user)
+    }
   }
 }

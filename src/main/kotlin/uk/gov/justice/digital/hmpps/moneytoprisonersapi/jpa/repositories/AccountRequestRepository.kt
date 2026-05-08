@@ -6,9 +6,11 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AccountRequ
 
 interface AccountRequestRepository : JpaRepository<AccountRequest, Long> {
 
-  @Query("SELECT r FROM AccountRequest r WHERE r.status = 'pending' ORDER BY r.created ASC")
+  // Django's mtp_auth_accountrequest has no `status` column — presence of a
+  // row implies pending. The two orderings are kept for the legacy API shape.
+  @Query("SELECT r FROM MtpAuthAccountrequest r ORDER BY r.created ASC")
   fun findAllPendingOrderByCreatedAsc(): List<AccountRequest>
 
-  @Query("SELECT r FROM AccountRequest r WHERE r.status = 'pending' ORDER BY r.created DESC")
+  @Query("SELECT r FROM MtpAuthAccountrequest r ORDER BY r.created DESC")
   fun findAllPendingOrderByCreatedDesc(): List<AccountRequest>
 }

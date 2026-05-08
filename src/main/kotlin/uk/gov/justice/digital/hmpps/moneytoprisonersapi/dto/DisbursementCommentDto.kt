@@ -35,7 +35,7 @@ data class DisbursementCommentDto(
       disbursement = comment.disbursement?.id,
       comment = comment.comment,
       category = comment.category,
-      userId = comment.userId,
+      userId = comment.user?.username,
       created = comment.created,
       modified = comment.modified,
     )

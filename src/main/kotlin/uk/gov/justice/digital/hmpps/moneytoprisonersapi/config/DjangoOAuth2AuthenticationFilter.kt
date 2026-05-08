@@ -79,13 +79,18 @@ class DjangoOAuth2AuthenticationFilter(
     log.info("DjangoAuth: ${request.method} ${request.requestURI} token=${token?.take(10)}...")
 
     if (token != null) {
-      val accessToken = tokenRepository.findByToken(token)
-      if (accessToken != null && !isExpired(accessToken)) {
-        val authentication = buildAuthentication(accessToken)
-        SecurityContextHolder.getContext().authentication = authentication
-        log.info("DjangoAuth: authenticated as ${authentication.name} with ${authentication.authorities}")
-      } else {
-        log.warn("DjangoAuth: token not found or expired")
+      try {
+        val accessToken = tokenRepository.findByToken(token)
+        log.info("DjangoAuth: lookup returned ${if (accessToken == null) "null" else "id=${accessToken.id}"}")
+        if (accessToken != null && !isExpired(accessToken)) {
+          val authentication = buildAuthentication(accessToken)
+          SecurityContextHolder.getContext().authentication = authentication
+          log.info("DjangoAuth: authenticated as ${authentication.name} with ${authentication.authorities}")
+        } else {
+          log.warn("DjangoAuth: token not found or expired")
+        }
+      } catch (e: Exception) {
+        log.error("DjangoAuth: error during token lookup", e)
       }
     }
 

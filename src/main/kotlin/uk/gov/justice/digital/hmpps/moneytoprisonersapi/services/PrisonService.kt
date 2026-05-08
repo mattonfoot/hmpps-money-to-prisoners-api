@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreatePrisonerLocati
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerCreditNoticeEmail
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerLocation
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonCategoryRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonPopulationRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
@@ -25,6 +26,7 @@ class PrisonService(
   private val prisonerLocationRepository: PrisonerLocationRepository,
   private val prisonerBalanceRepository: PrisonerBalanceRepository,
   private val prisonerCreditNoticeEmailRepository: PrisonerCreditNoticeEmailRepository,
+  private val userRepository: AuthUserRepository,
 ) {
 
   fun listPrisons(excludeEmptyPrisons: Boolean = false): List<Prison> = if (excludeEmptyPrisons) {
@@ -48,13 +50,14 @@ class PrisonService(
       // Deactivate existing active locations for this prisoner+prison
       prisonerLocationRepository.deactivateExistingForPrisonerAndPrison(request.prisonerNumber, request.prison)
       // Create new active location
-      val location = PrisonerLocation(
-        prisonerNumber = request.prisonerNumber,
-        prison = prison,
-        active = true,
-        createdBy = createdBy,
-        prisonerDob = request.prisonerDob,
-      )
+      val location = PrisonerLocation().apply {
+        prisonerNumber = request.prisonerNumber
+        this.prison = prison
+        active = true
+        // createdBy is an FK to AuthUser in Django; resolve from the username.
+        this.createdBy = createdBy?.let { userRepository.findByUsername(it) }
+        prisonerDob = request.prisonerDob ?: LocalDate.now()
+      }
       prisonerLocationRepository.save(location)
     }
   }
@@ -93,7 +96,10 @@ class PrisonService(
     val prison = prisonRepository.findById(prisonNomisId).orElseThrow {
       ResponseStatusException(HttpStatus.BAD_REQUEST, "No prison found with code $prisonNomisId")
     }
-    val noticeEmail = PrisonerCreditNoticeEmail(prison = prison, email = email)
+    val noticeEmail = PrisonerCreditNoticeEmail().apply {
+      this.prison = prison
+      this.email = email
+    }
     return prisonerCreditNoticeEmailRepository.save(noticeEmail)
   }
 

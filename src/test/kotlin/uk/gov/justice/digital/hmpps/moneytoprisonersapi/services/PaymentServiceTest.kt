@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Payment
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PaymentRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.Optional
 import java.util.UUID
 
@@ -426,13 +427,13 @@ class PaymentServiceTest {
       val request = ReconcilePaymentsRequest(receivedAtGte = from, receivedAtLt = to)
 
       val credit = makeCredit(CreditResolution.PENDING)
-      credit.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0)
+      credit.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0).atOffset(ZoneOffset.UTC)
       @Suppress("UNUSED_VARIABLE")
       val payment = makePayment(status = "taken", credit = credit)
 
       `when`(
         creditRepository.findByResolutionAndReconciledFalseAndReceivedAtGreaterThanEqualAndReceivedAtBefore(
-          CreditResolution.PENDING,
+          CreditResolution.PENDING.value,
           from,
           to,
         ),
@@ -454,7 +455,7 @@ class PaymentServiceTest {
 
       `when`(
         creditRepository.findByResolutionAndReconciledFalseAndReceivedAtGreaterThanEqualAndReceivedAtBefore(
-          CreditResolution.PENDING,
+          CreditResolution.PENDING.value,
           from,
           to,
         ),
@@ -474,11 +475,11 @@ class PaymentServiceTest {
       val request = ReconcilePaymentsRequest(receivedAtGte = from, receivedAtLt = to)
 
       val credit = makeCredit(CreditResolution.PENDING)
-      credit.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0)
+      credit.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0).atOffset(ZoneOffset.UTC)
 
       `when`(
         creditRepository.findByResolutionAndReconciledFalseAndReceivedAtGreaterThanEqualAndReceivedAtBefore(
-          CreditResolution.PENDING,
+          CreditResolution.PENDING.value,
           from,
           to,
         ),
@@ -501,11 +502,11 @@ class PaymentServiceTest {
       val request = ReconcilePaymentsRequest(receivedAtGte = from, receivedAtLt = to)
 
       val credit = makeCredit(CreditResolution.PENDING)
-      credit.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0)
+      credit.receivedAt = LocalDateTime.of(2024, 1, 15, 10, 0, 0).atOffset(ZoneOffset.UTC)
 
       `when`(
         creditRepository.findByResolutionAndReconciledFalseAndReceivedAtGreaterThanEqualAndReceivedAtBefore(
-          CreditResolution.PENDING,
+          CreditResolution.PENDING.value,
           from,
           to,
         ),

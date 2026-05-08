@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import java.time.LocalDate
@@ -208,4 +209,16 @@ open class CreditCredit {
 
   @OneToMany(mappedBy = "credit", fetch = FetchType.LAZY)
   open var comments: MutableList<CreditComment> = mutableListOf()
+
+  // Django doesn't store `source` as a column. The legacy domain model derived
+  // it from whether the credit had a Transaction (BANK_TRANSFER) or Payment
+  // (ONLINE). Held transient here so old call sites can read/write the value
+  // for tests; production reads should prefer the derived getter when null.
+  @Transient
+  open var source: CreditSource? = null
+    get() = field ?: when {
+      transaction != null -> CreditSource.BANK_TRANSFER
+      payment != null -> CreditSource.ONLINE
+      else -> CreditSource.UNKNOWN
+    }
 }

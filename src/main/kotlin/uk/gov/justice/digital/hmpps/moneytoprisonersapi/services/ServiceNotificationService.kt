@@ -23,7 +23,7 @@ class ServiceNotificationService(
     var notifications = serviceNotificationRepository.findActive(now)
 
     if (!authenticated) {
-      notifications = notifications.filter { it.public }
+      notifications = notifications.filter { it.publicField }
     }
 
     if (targetPrefix != null) {

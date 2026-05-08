@@ -50,6 +50,7 @@ class CreditsResource(
   private val mtpUserRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserRepository,
   private val commentRepository: CommentRepository,
   private val creditRepository: CreditRepository,
+  private val userRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository,
 ) {
 
   private fun ownerNameMap(): Map<String, String> = mtpUserRepository.findAll().associate { it.username to "${it.firstName} ${it.lastName}".trim() }
@@ -633,13 +634,13 @@ class CreditsResource(
     principal: Principal,
   ): List<CommentDto> {
     val created = requests.map { request ->
-      val credit = creditRepository.findById(request.credit).orElse(null)
-      val comment = Comment(
-        comment = request.comment,
-        credit = credit,
-        userId = principal.name,
-      )
-      commentRepository.save(comment)
+      val creditEntity = creditRepository.findById(request.credit).orElse(null)
+      val newComment = Comment().apply {
+        this.comment = request.comment
+        this.credit = creditEntity
+        this.user = userRepository.findByUsername(principal.name)
+      }
+      commentRepository.save(newComment)
     }
     return created.map { CommentDto.from(it) }
   }

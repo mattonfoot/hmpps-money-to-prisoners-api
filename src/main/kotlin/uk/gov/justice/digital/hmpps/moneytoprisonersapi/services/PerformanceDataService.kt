@@ -25,17 +25,19 @@ class PerformanceDataService(
     val effectiveGte = weekGte ?: today.minusWeeks(52)
     val effectiveLt = weekLt ?: today
 
-    val results = performanceDataRepository.findByWeekBetween(effectiveGte, effectiveLt)
+    val results = performanceDataRepository.findByIdBetween(effectiveGte, effectiveLt)
       .map { it.toDto() }
 
     return PerformanceDataResponse(
-      headers = PerformanceDataEntity.HEADERS,
+      headers = HEADERS,
       results = results,
     )
   }
 
+  // Django's `performance_performancedatum` uses the `id` column (a date) as the
+  // primary key; the legacy Kotlin DTO surfaces it as `week`.
   private fun PerformanceDataEntity.toDto() = PerformanceData(
-    week = week,
+    week = id,
     creditsTotal = creditsTotal,
     creditsByMtp = creditsByMtp,
     digitalTakeup = digitalTakeup?.formatPercentage(),
@@ -51,3 +53,18 @@ class PerformanceDataService(
 
 /** PRF-023: Converts a [0,1] float to a rounded percentage string, e.g. 0.6666 → "67%". */
 internal fun Double.formatPercentage(): String = "${(this * 100).roundToInt()}%"
+
+/** PRF-024: Verbose labels surfaced on /performance/data/ responses. */
+internal val HEADERS: Map<String, String> = mapOf(
+  "week" to "Week starting",
+  "credits_total" to "Total credits to prisons",
+  "credits_by_mtp" to "Credits via MTP",
+  "digital_takeup" to "Digital take-up",
+  "completion_rate" to "Completion rate",
+  "user_satisfaction" to "User satisfaction",
+  "rated_1" to "Rated 1",
+  "rated_2" to "Rated 2",
+  "rated_3" to "Rated 3",
+  "rated_4" to "Rated 4",
+  "rated_5" to "Rated 5",
+)

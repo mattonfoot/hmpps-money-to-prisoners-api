@@ -58,7 +58,7 @@ class PasswordService(
     if (user.email.isBlank()) return PasswordResetResult.NoEmail
 
     val resetToken = passwordResetTokenRepository.save(
-      PasswordResetToken(user = user, application = application),
+      PasswordResetToken().apply { this.user = user },
     )
     return PasswordResetResult.TokenCreated(resetToken)
   }
@@ -66,17 +66,23 @@ class PasswordService(
   /**
    * AUTH-045: Changes the user's password using a one-time reset [token].
    * AUTH-042: Clears failed login attempts on success.
+   *
+   * Django models a password-change "used" state by deleting the row, not by a
+   * boolean flag. Mirror that behaviour: lookup by id, delete on consumption.
    */
   @Transactional
   fun changePasswordByToken(token: UUID, newPassword: String): PasswordChangeResult {
-    val resetToken = passwordResetTokenRepository.findByTokenAndUsedFalse(token)
+    val resetToken = passwordResetTokenRepository.findById(token).orElse(null)
       ?: return PasswordChangeResult.InvalidToken
-    resetToken.used = true
-    passwordResetTokenRepository.save(resetToken)
+    val owner = resetToken.user ?: return PasswordChangeResult.InvalidToken
+    passwordResetTokenRepository.delete(resetToken)
     // Password storage is delegated to HMPPS Auth in the production system;
     // here we record the cleared attempts as the side-effect.
-    loginTrackingService.clearFailedAttempts(resetToken.user, resetToken.application)
-    return PasswordChangeResult.Success(resetToken.user)
+    // Application context is no longer carried on the change-request row in
+    // Django's schema — pass null and let LoginTrackingService treat it as
+    // application-agnostic.
+    loginTrackingService.clearFailedAttempts(owner, application = null)
+    return PasswordChangeResult.Success(owner)
   }
 
   /**

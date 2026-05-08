@@ -40,16 +40,29 @@ class UserServiceTest {
   @InjectMocks
   private lateinit var userService: UserService
 
-  private fun makeRole(name: String = "PRISON_CLERK", application: String = "cashbook") = MtpRole(id = 1L, name = name, keyGroup = "PrisonClerkGroup", application = application)
+  private fun makeRole(name: String = "PRISON_CLERK", application: String = "cashbook") = MtpRole().apply {
+    this.id = 1L
+    this.name = name
+    // application/keyGroup are FK objects in the regenerated entities; left
+    // null in tests since they're not what the assertions inspect.
+  }
 
-  private fun makePrison(nomisId: String = "LEI") = Prison(nomisId = nomisId, name = "Leeds Prison")
+  private fun makePrison(nomisId: String = "LEI") = Prison().apply {
+    this.nomisId = nomisId
+    this.name = "Leeds Prison"
+  }
 
   private fun makeUser(
     id: Long = 1L,
     username: String = "testuser",
     email: String = "test@example.com",
     role: MtpRole? = null,
-  ) = MtpUser(id = id, username = username, email = email, role = role)
+  ) = MtpUser().apply {
+    this.id = id
+    this.username = username
+    this.email = email
+    this.role = role
+  }
 
   @Nested
   @DisplayName("getUser (AUTH-011)")

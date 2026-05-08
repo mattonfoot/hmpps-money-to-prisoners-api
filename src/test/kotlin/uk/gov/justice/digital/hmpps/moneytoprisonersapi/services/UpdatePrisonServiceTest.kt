@@ -15,8 +15,10 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdatePrisonRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPrison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
 @DisplayName("UpdatePrisonService")
@@ -25,25 +27,26 @@ class UpdatePrisonServiceTest {
   @Mock
   private lateinit var creditRepository: CreditRepository
 
+  @Mock
+  private lateinit var prisonRepository: PrisonRepository
+
   @InjectMocks
   private lateinit var updatePrisonService: UpdatePrisonService
+
+  private fun makePrison(nomisId: String) = PrisonPrison().apply { this.nomisId = nomisId }
 
   private fun createCredit(
     id: Long = 1L,
     prisonerNumber: String? = "A1234BC",
-    prison: String? = null,
+    prison: PrisonPrison? = null,
     resolution: CreditResolution = CreditResolution.PENDING,
-  ): Credit {
-    val credit = Credit(
-      id = id,
-      amount = 1000,
-      prisonerNumber = prisonerNumber,
-      prisonerName = "John Smith",
-      prison = prison,
-      resolution = resolution,
-    )
-    credit.source = CreditSource.BANK_TRANSFER
-    return credit
+  ): Credit = Credit().apply {
+    this.id = id
+    amount = 1000L
+    this.prisonerNumber = prisonerNumber
+    prisonerName = "John Smith"
+    this.prison = prison
+    this.resolution = resolution.value
   }
 
   @Nested
@@ -54,12 +57,14 @@ class UpdatePrisonServiceTest {
     @DisplayName("CRD-220 - sets prison on credits matching prisoner number")
     fun `should set prison on credits with matching prisoner number`() {
       val credit = createCredit(prisonerNumber = "A1234BC", prison = null)
+      val lei = makePrison("LEI")
+      whenever(prisonRepository.findById("LEI")).thenReturn(Optional.of(lei))
       whenever(creditRepository.findByPrisonerNumberAndPrisonIsNull("A1234BC")).thenReturn(listOf(credit))
       whenever(creditRepository.save(any())).thenAnswer { it.arguments[0] }
 
       updatePrisonService.updatePrisons(listOf(UpdatePrisonRequest(prisonerNumber = "A1234BC", prison = "LEI")))
 
-      assertThat(credit.prison).isEqualTo("LEI")
+      assertThat(credit.prison?.nomisId).isEqualTo("LEI")
       verify(creditRepository).save(credit)
     }
 
@@ -75,12 +80,15 @@ class UpdatePrisonServiceTest {
     @Test
     @DisplayName("CRD-221 - only updates credits with no prison assigned")
     fun `should only update credits with no prison assigned`() {
-      val creditWithPrison = createCredit(prisonerNumber = "A1234BC", prison = "MDI")
+      val mdi = makePrison("MDI")
+      val creditWithPrison = createCredit(prisonerNumber = "A1234BC", prison = mdi)
+      val lei = makePrison("LEI")
+      whenever(prisonRepository.findById("LEI")).thenReturn(Optional.of(lei))
       whenever(creditRepository.findByPrisonerNumberAndPrisonIsNull("A1234BC")).thenReturn(emptyList())
 
       updatePrisonService.updatePrisons(listOf(UpdatePrisonRequest(prisonerNumber = "A1234BC", prison = "LEI")))
 
-      assertThat(creditWithPrison.prison).isEqualTo("MDI")
+      assertThat(creditWithPrison.prison?.nomisId).isEqualTo("MDI")
       verify(creditRepository, never()).save(creditWithPrison)
     }
 
@@ -89,6 +97,10 @@ class UpdatePrisonServiceTest {
     fun `should handle multiple prisoner-prison pairs`() {
       val credit1 = createCredit(id = 1L, prisonerNumber = "A1234BC", prison = null)
       val credit2 = createCredit(id = 2L, prisonerNumber = "B5678DE", prison = null)
+      val lei = makePrison("LEI")
+      val mdi = makePrison("MDI")
+      whenever(prisonRepository.findById("LEI")).thenReturn(Optional.of(lei))
+      whenever(prisonRepository.findById("MDI")).thenReturn(Optional.of(mdi))
       whenever(creditRepository.findByPrisonerNumberAndPrisonIsNull("A1234BC")).thenReturn(listOf(credit1))
       whenever(creditRepository.findByPrisonerNumberAndPrisonIsNull("B5678DE")).thenReturn(listOf(credit2))
       whenever(creditRepository.save(any())).thenAnswer { it.arguments[0] }
@@ -100,8 +112,8 @@ class UpdatePrisonServiceTest {
         ),
       )
 
-      assertThat(credit1.prison).isEqualTo("LEI")
-      assertThat(credit2.prison).isEqualTo("MDI")
+      assertThat(credit1.prison?.nomisId).isEqualTo("LEI")
+      assertThat(credit2.prison?.nomisId).isEqualTo("MDI")
     }
   }
 }

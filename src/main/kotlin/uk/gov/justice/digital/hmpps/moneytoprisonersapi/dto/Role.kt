@@ -20,9 +20,11 @@ data class Role(
   companion object {
     fun from(role: MtpRole): Role = Role(
       name = role.name,
-      keyGroup = role.keyGroup,
-      otherGroups = role.otherGroups,
-      application = role.application,
+      keyGroup = role.keyGroup?.name ?: "",
+      // Django models other-groups via mtp_auth_role_other_groups M2M; surface
+      // as a comma-joined list when callers need it. Empty until that nav is wired.
+      otherGroups = "",
+      application = role.application?.clientId ?: "",
     )
   }
 }

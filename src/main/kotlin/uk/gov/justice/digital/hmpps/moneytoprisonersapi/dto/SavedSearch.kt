@@ -22,25 +22,19 @@ data class SavedSearch(
   val modified: OffsetDateTime?,
 ) {
   companion object {
-    fun from(search: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SavedSearch): SavedSearch = SavedSearch(
+    fun from(
+      search: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SavedSearch,
+      filterRows: List<uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecuritySearchfilter> = emptyList(),
+    ): SavedSearch = SavedSearch(
       id = search.id,
       description = search.description,
       endpoint = search.endpoint,
-      filters = parseFilters(search.filters),
+      filters = filterRows.map { SearchFilter(it.field, it.value) },
       lastResultCount = search.lastResultCount,
       siteUrl = search.siteUrl,
       created = search.created,
       modified = search.modified,
     )
-
-    private fun parseFilters(json: String?): List<SearchFilter> {
-      if (json.isNullOrBlank()) return emptyList()
-      return try {
-        objectMapper.readValue(json)
-      } catch (_: Exception) {
-        emptyList()
-      }
-    }
   }
 }
 

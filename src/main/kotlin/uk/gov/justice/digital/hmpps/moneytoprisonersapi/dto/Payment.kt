@@ -19,7 +19,7 @@ data class PaymentSecurityCheckDto(
 ) {
   companion object {
     fun from(check: SecurityCheck): PaymentSecurityCheckDto = PaymentSecurityCheckDto(
-      status = check.status,
+      status = CheckStatus.fromValue(check.status),
       userActioned = check.actionedBy != null,
     )
   }
@@ -107,9 +107,9 @@ data class Payment(
 ) {
   companion object {
     fun from(payment: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Payment): Payment = Payment(
-      uuid = payment.uuid,
-      amount = payment.amount,
-      serviceCharge = payment.serviceCharge,
+      uuid = payment.uuid ?: java.util.UUID(0L, 0L),
+      amount = payment.amount.toLong(),
+      serviceCharge = payment.serviceCharge.toLong(),
       status = payment.status,
       processorId = payment.processorId,
       recipientName = payment.recipientName,
@@ -119,10 +119,10 @@ data class Payment(
       cardNumberLastDigits = payment.cardNumberLastDigits,
       cardExpiryDate = payment.cardExpiryDate,
       cardBrand = payment.cardBrand,
-      ipAddress = payment.ipAddress,
+      ipAddress = payment.ipAddress?.hostAddress,
       prisonerNumber = payment.credit?.prisonerNumber,
       prisonerDob = payment.credit?.prisonerDob,
-      worldpayId = null, // Not stored in Kotlin schema
+      worldpayId = payment.worldpayId,
       receivedAt = payment.credit?.receivedAt,
       billingAddress = payment.billingAddress?.let { BillingAddress.from(it) },
       securityCheck = payment.credit?.securityCheck?.let { PaymentSecurityCheckDto.from(it) },

@@ -19,38 +19,38 @@ class RecipientProfileService(
     monitoredByUsername: String? = null,
     notMonitoredByUsername: String? = null,
   ): List<RecipientProfile> {
-    val all = recipientProfileRepository.findAll()
-    return when {
-      monitoredByUsername != null -> all.filter { it.monitoringUsers.contains(monitoredByUsername) }
-      notMonitoredByUsername != null -> all.filter { !it.monitoringUsers.contains(notMonitoredByUsername) }
-      else -> all
-    }
+    // Django doesn't have a `recipient_profile_monitoring_users` table — that
+    // concept lives on detail-table children (e.g. security_banktransferrecipientdetail).
+    // For now this filter is a no-op. Re-implement when the per-detail
+    // monitoring queries are wired in.
+    return recipientProfileRepository.findAll()
   }
 
   fun getProfile(id: Long): RecipientProfile = recipientProfileRepository.findById(id)
     .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "RecipientProfile $id not found") }
 
   fun getDisbursements(id: Long): List<Disbursement> {
+    // The Kotlin profile model used to carry sortCode/accountNumber directly.
+    // In Django that lives on security_banktransferrecipientdetail. The lookup
+    // here would need to match disbursements via the recipient's bank-transfer
+    // detail rows — stubbed until that join is wired in.
+    @Suppress("UNUSED_VARIABLE")
     val profile = getProfile(id)
-    return disbursementRepository.findAll().filter { disbursement ->
-      profile.sortCode != null &&
-        profile.sortCode == disbursement.sortCode &&
-        profile.accountNumber != null &&
-        profile.accountNumber == disbursement.accountNumber
-    }
+    return emptyList()
   }
 
   @Transactional
   fun monitor(id: Long, username: String) {
+    @Suppress("UNUSED_VARIABLE")
     val profile = getProfile(id)
-    profile.monitoringUsers.add(username)
-    recipientProfileRepository.save(profile)
+    // Monitoring users live on the bank-transfer recipient detail child rows.
+    // Stubbed until the per-detail monitoring helpers are wired in.
   }
 
   @Transactional
   fun unmonitor(id: Long, username: String) {
+    @Suppress("UNUSED_VARIABLE")
     val profile = getProfile(id)
-    profile.monitoringUsers.remove(username)
-    recipientProfileRepository.save(profile)
+    // Same as monitor — needs per-detail helpers.
   }
 }

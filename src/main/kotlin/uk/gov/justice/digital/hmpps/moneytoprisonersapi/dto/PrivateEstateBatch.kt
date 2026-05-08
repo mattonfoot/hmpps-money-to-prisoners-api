@@ -19,12 +19,16 @@ data class PrivateEstateBatch(
   val count: Int,
 ) {
   companion object {
-    fun from(batch: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrivateEstateBatch): PrivateEstateBatch = PrivateEstateBatch(
-      ref = batch.ref,
-      prison = batch.prison,
-      date = batch.date,
-      totalAmount = batch.totalAmount,
-      count = batch.credits.size,
-    )
+    fun from(batch: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrivateEstateBatch): PrivateEstateBatch {
+      val prisonId = batch.prison?.nomisId ?: ""
+      return PrivateEstateBatch(
+        // Django has no `ref` column; synthesise the legacy "PRISON/DATE" format.
+        ref = "$prisonId/${batch.date}",
+        prison = prisonId,
+        date = batch.date,
+        totalAmount = batch.credits.sumOf { it.amount },
+        count = batch.credits.size,
+      )
+    }
   }
 }

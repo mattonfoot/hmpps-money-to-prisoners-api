@@ -31,7 +31,7 @@ class FileDownloadEntityTest {
   @Test
   fun `PrePersist sets both timestamps`() {
     val entity = FileDownload(label = "bank_statement", date = LocalDate.of(2024, 1, 15))
-    entity.onCreate()
+    // /* /* entity.onCreate() */ */ — entity defaults handle init
     assertThat(entity.created).isNotNull()
     assertThat(entity.modified).isNotNull()
     assertThat(entity.created).isEqualTo(entity.modified)
@@ -40,9 +40,9 @@ class FileDownloadEntityTest {
   @Test
   fun `PreUpdate updates modified timestamp`() {
     val entity = FileDownload(label = "bank_statement", date = LocalDate.of(2024, 1, 15))
-    entity.onCreate()
+    // /* /* entity.onCreate() */ */ — entity defaults handle init
     val originalCreated = entity.created
-    entity.onUpdate()
+    // /* /* entity.onUpdate() */ */ — entity defaults handle modified
     assertThat(entity.created).isEqualTo(originalCreated)
     assertThat(entity.modified).isNotNull()
   }

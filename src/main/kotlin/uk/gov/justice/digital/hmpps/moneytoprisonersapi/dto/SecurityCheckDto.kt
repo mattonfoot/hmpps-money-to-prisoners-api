@@ -43,15 +43,19 @@ data class SecurityCheckDto(
   companion object {
     fun from(securityCheck: SecurityCheck): SecurityCheckDto = SecurityCheckDto(
       id = securityCheck.id,
-      status = securityCheck.status,
-      description = securityCheck.description,
+      status = CheckStatus.fromValue(securityCheck.status),
+      description = securityCheck.description?.toString(),
       decisionReason = securityCheck.decisionReason,
-      actionedBy = securityCheck.actionedBy,
+      actionedBy = securityCheck.actionedBy?.username,
       actionedAt = securityCheck.actionedAt,
-      ruleCodes = securityCheck.ruleCodes,
-      rejectionReasons = securityCheck.rejectionReasons,
-      startedAt = securityCheck.startedAt,
-      assignedTo = securityCheck.assignedTo,
+      // Django stores `rules` as a varchar[] array; the DTO surfaces a
+      // comma-separated string (legacy Kotlin API contract).
+      ruleCodes = (securityCheck.rules as? List<*>)?.joinToString(",") { it?.toString() ?: "" },
+      rejectionReasons = securityCheck.rejectionReasons?.toString(),
+      // Django has no `started_at` column on security_check; use `created` as the
+      // logical "started" timestamp.
+      startedAt = securityCheck.created,
+      assignedTo = securityCheck.assignedTo?.username,
       created = securityCheck.created,
       modified = securityCheck.modified,
     )

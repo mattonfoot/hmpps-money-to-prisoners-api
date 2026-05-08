@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Private
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.TransactionRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 /**
  * TXN-020 to TXN-030: Transaction business logic.
@@ -36,34 +37,34 @@ class TransactionService(
   @Transactional
   fun createTransactions(requests: List<CreateTransactionRequest>): List<Transaction> = requests.map { req ->
     val credit = if (req.category == TransactionCategory.CREDIT && req.source == TransactionSource.BANK_TRANSFER) {
-      val newCredit = Credit(
-        amount = req.amount,
-        resolution = CreditResolution.PENDING,
-        receivedAt = req.receivedAt,
-        incompleteSenderInfo = req.incompleteSenderInfo,
-      )
-      newCredit.source = CreditSource.BANK_TRANSFER
+      val newCredit = Credit().apply {
+        amount = req.amount
+        resolution = CreditResolution.PENDING.value
+        receivedAt = req.receivedAt
+        // Django's credit_credit has no incompleteSenderInfo column — it's on
+        // transaction_transaction. The flag here is captured below on the txn.
+      }
       creditRepository.save(newCredit)
     } else {
       null
     }
 
-    val transaction = Transaction(
-      amount = req.amount,
-      category = req.category,
-      source = req.source,
-      senderSortCode = req.senderSortCode,
-      senderAccountNumber = req.senderAccountNumber,
-      senderName = req.senderName,
-      senderRollNumber = req.senderRollNumber,
-      reference = req.reference,
-      receivedAt = req.receivedAt,
-      refCode = req.refCode,
-      incompleteSenderInfo = req.incompleteSenderInfo,
-      referenceInSenderField = req.referenceInSenderField,
-      processorTypeCode = req.processorTypeCode,
-      credit = credit,
-    )
+    val transaction = Transaction().apply {
+      amount = req.amount
+      category = req.category.value
+      source = req.source.value
+      senderSortCode = req.senderSortCode.orEmpty()
+      senderAccountNumber = req.senderAccountNumber.orEmpty()
+      senderName = req.senderName.orEmpty()
+      senderRollNumber = req.senderRollNumber.orEmpty()
+      reference = req.reference.orEmpty()
+      receivedAt = req.receivedAt ?: OffsetDateTime.now()
+      refCode = req.refCode
+      incompleteSenderInfo = req.incompleteSenderInfo
+      referenceInSenderField = req.referenceInSenderField
+      processorTypeCode = req.processorTypeCode
+      this.credit = credit
+    }
     transactionRepository.save(transaction)
   }
 
@@ -77,12 +78,14 @@ class TransactionService(
     receivedAtLt: LocalDateTime? = null,
     ids: List<Long>? = null,
   ): List<Transaction> {
+    val gte = receivedAtGte?.atOffset(java.time.ZoneOffset.UTC)
+    val lt = receivedAtLt?.atOffset(java.time.ZoneOffset.UTC)
     val all = when {
       ids != null && ids.isNotEmpty() -> transactionRepository.findByIdIn(ids)
-      receivedAtGte != null && receivedAtLt != null ->
-        transactionRepository.findByReceivedAtGreaterThanEqualAndReceivedAtLessThan(receivedAtGte, receivedAtLt)
-      receivedAtGte != null -> transactionRepository.findByReceivedAtGreaterThanEqual(receivedAtGte)
-      receivedAtLt != null -> transactionRepository.findByReceivedAtLessThan(receivedAtLt)
+      gte != null && lt != null ->
+        transactionRepository.findByReceivedAtGreaterThanEqualAndReceivedAtLessThan(gte, lt)
+      gte != null -> transactionRepository.findByReceivedAtGreaterThanEqual(gte)
+      lt != null -> transactionRepository.findByReceivedAtLessThan(lt)
       else -> transactionRepository.findAll()
     }
 
@@ -123,7 +126,11 @@ class TransactionService(
    * Returns a map with batch details if transactions found, null if none found.
    */
   @Transactional
-  fun reconcileTransactions(receivedAtGte: LocalDateTime, receivedAtLt: LocalDateTime): Map<String, Any>? {
+  fun reconcileTransactions(receivedAtGte: OffsetDateTime, receivedAtLt: OffsetDateTime): Map<String, Any>? {
+    // Django's credit_privateestatebatch is keyed by an auto id and uses a
+    // (date, prison_id) unique constraint. The Kotlin `ref = "$prisonId/$date"`
+    // composite-key approach used previously doesn't apply. Reconcile against
+    // Django's shape: look up by (prison, date), create if absent, append credits.
     val transactions = transactionRepository.findByReceivedAtGreaterThanEqualAndReceivedAtLessThan(receivedAtGte, receivedAtLt)
     if (transactions.isEmpty()) return null
 
@@ -132,19 +139,19 @@ class TransactionService(
 
     for (txn in transactions) {
       val credit = txn.credit ?: continue
-      val prisonId = credit.prison ?: continue
-      val prison = prisonRepository.findById(prisonId).orElse(null) ?: continue
+      val prison = credit.prison ?: continue
       if (!prison.privateEstate) continue
+      val prisonId = prison.nomisId
 
-      val ref = "$prisonId/$today"
-      val batch = batchesByPrison.getOrElse(ref) {
-        privateEstateBatchRepository.findById(ref).orElseGet {
-          PrivateEstateBatch(ref = ref, prison = prisonId, date = today, totalAmount = 0)
-        }
+      val batch = batchesByPrison.getOrPut(prisonId) {
+        privateEstateBatchRepository.findByPrisonAndDate(prison, today)
+          ?: PrivateEstateBatch().apply {
+            this.prison = prison
+            this.date = today
+          }
       }
       batch.credits.add(credit)
-      batch.totalAmount = batch.credits.sumOf { it.amount }
-      batchesByPrison[ref] = batch
+      batchesByPrison[prisonId] = batch
     }
 
     batchesByPrison.values.forEach { privateEstateBatchRepository.save(it) }

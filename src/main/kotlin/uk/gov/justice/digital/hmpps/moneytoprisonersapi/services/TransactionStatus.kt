@@ -19,17 +19,17 @@ enum class TransactionStatus(@JsonValue val value: String) {
       val credit = transaction.credit
 
       // TXN-014: Anomalous — credit category + administrative source
-      if (transaction.category == TransactionCategory.CREDIT && transaction.source == TransactionSource.ADMINISTRATIVE) {
+      if (transaction.category == TransactionCategory.CREDIT.value && transaction.source == TransactionSource.ADMINISTRATIVE.value) {
         return ANOMALOUS
       }
 
       // TXN-013: Anonymous — incomplete sender, bank_transfer, no credit
-      if (transaction.incompleteSenderInfo && transaction.source == TransactionSource.BANK_TRANSFER && credit == null) {
+      if (transaction.incompleteSenderInfo && transaction.source == TransactionSource.BANK_TRANSFER.value && credit == null) {
         return ANONYMOUS
       }
 
       // TXN-012: Unidentified — incomplete sender, no prison, bank_transfer credit
-      if (transaction.incompleteSenderInfo && credit != null && credit.prison == null && transaction.source == TransactionSource.BANK_TRANSFER) {
+      if (transaction.incompleteSenderInfo && credit != null && credit.prison == null && transaction.source == TransactionSource.BANK_TRANSFER.value) {
         return UNIDENTIFIED
       }
 

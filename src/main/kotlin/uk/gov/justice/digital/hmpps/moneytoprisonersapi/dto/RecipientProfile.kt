@@ -32,21 +32,15 @@ data class RecipientProfile(
   companion object {
     fun from(profile: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.RecipientProfile, currentUsername: String? = null): RecipientProfile = RecipientProfile(
       id = profile.id,
-      sortCode = profile.sortCode,
-      accountNumber = profile.accountNumber,
-      bankTransferDetails = if (profile.sortCode != null && profile.accountNumber != null) {
-        listOf(
-          BankTransferRecipientDetails(
-            recipientSortCode = profile.sortCode,
-            recipientAccountNumber = profile.accountNumber,
-            recipientRollNumber = null,
-          ),
-        )
-      } else {
-        emptyList()
-      },
-      monitoringUsers = profile.monitoringUsers.toList(),
-      monitoring = if (currentUsername != null) profile.monitoringUsers.contains(currentUsername) else null,
+      // Django stores sortCode/accountNumber on security_banktransferrecipientdetail
+      // children, not on the parent profile. These flat top-level fields are
+      // populated as null until per-detail rendering is wired in.
+      sortCode = null,
+      accountNumber = null,
+      bankTransferDetails = emptyList(),
+      // monitoringUsers also lives on per-detail children; emit empty for now.
+      monitoringUsers = emptyList(),
+      monitoring = null,
       created = profile.created,
       modified = profile.modified,
     )

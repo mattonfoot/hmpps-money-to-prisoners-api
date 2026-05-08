@@ -9,12 +9,12 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 interface PrisonRepository : JpaRepository<Prison, String> {
   fun findByRegionContainingIgnoreCase(region: String): List<Prison>
 
-  @Query("SELECT p FROM Prison p JOIN p.categories c WHERE LOWER(c.name) = LOWER(:categoryName)")
+  @Query("SELECT p FROM PrisonPrison p JOIN p.categories c WHERE LOWER(c.name) = LOWER(:categoryName)")
   fun findByCategoryName(categoryName: String): List<Prison>
 
-  @Query("SELECT p FROM Prison p JOIN p.populations pop WHERE LOWER(pop.name) = LOWER(:populationName)")
+  @Query("SELECT p FROM PrisonPrison p JOIN p.populations pop WHERE LOWER(pop.name) = LOWER(:populationName)")
   fun findByPopulationName(populationName: String): List<Prison>
 
-  @Query("SELECT DISTINCT p FROM Prison p JOIN PrisonerLocation pl ON pl.prison = p WHERE pl.active = true")
+  @Query("SELECT DISTINCT p FROM PrisonPrison p JOIN PrisonPrisonerlocation pl ON pl.prison = p WHERE pl.active = true")
   fun findAllWithActivePrisonerLocations(): List<Prison>
 }

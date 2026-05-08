@@ -12,7 +12,7 @@ data class UserFlagDto(
   val flagName: String,
 ) {
   companion object {
-    fun from(flag: UserFlag): UserFlagDto = UserFlagDto(id = flag.id, flagName = flag.flagName)
+    fun from(flag: UserFlag): UserFlagDto = UserFlagDto(id = flag.id, flagName = flag.name)
   }
 }
 

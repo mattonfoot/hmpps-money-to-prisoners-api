@@ -66,7 +66,7 @@ class MonitoredResource(
     if (monitoredPartialEmailAddressRepository.existsByKeywordIgnoreCase(keyword)) {
       throw ResponseStatusException(HttpStatus.BAD_REQUEST, "keyword already exists")
     }
-    val saved = monitoredPartialEmailAddressRepository.save(MonitoredPartialEmailAddress(keyword = keyword))
+    val saved = monitoredPartialEmailAddressRepository.save(MonitoredPartialEmailAddress().apply { this.keyword = keyword })
     return ResponseEntity.status(HttpStatus.CREATED).body(MonitoredEmailDto(saved.keyword))
   }
 

@@ -19,10 +19,11 @@ data class PrisonerCreditNoticeEmail(
 ) {
   companion object {
     fun from(email: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerCreditNoticeEmail): PrisonerCreditNoticeEmail = PrisonerCreditNoticeEmail(
-      prison = email.prison.nomisId,
+      prison = email.prison?.nomisId ?: "",
       email = email.email,
-      created = email.created,
-      modified = email.modified,
+      // Django's prison_prisonercreditnoticeemail has no audit columns; use null.
+      created = null,
+      modified = null,
     )
   }
 }

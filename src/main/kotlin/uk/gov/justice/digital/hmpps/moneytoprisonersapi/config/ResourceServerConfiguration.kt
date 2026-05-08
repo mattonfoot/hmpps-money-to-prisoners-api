@@ -25,6 +25,7 @@ class ResourceServerConfiguration(
     "/health/**",
     "/info",
     "/ping",
+    "/ping.json",
     "/swagger-ui/**",
     "/v3/api-docs/**",
     "/swagger-ui.html",

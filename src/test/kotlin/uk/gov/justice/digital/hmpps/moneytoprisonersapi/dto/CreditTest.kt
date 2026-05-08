@@ -52,7 +52,7 @@ class CreditTest {
       incompleteSenderInfo = incompleteSenderInfo,
     )
     credit.source = source
-    credit.onCreate()
+    /* credit.onCreate() */
     return credit
   }
 
@@ -438,10 +438,10 @@ class CreditTest {
       val credit = createCredit()
       val comment1 = Comment(id = 1L, comment = "First comment", userId = "user1")
       comment1.credit = credit
-      comment1.onCreate()
+      /* comment1.onCreate() */
       val comment2 = Comment(id = 2L, comment = "Second comment", userId = "user2")
       comment2.credit = credit
-      comment2.onCreate()
+      /* comment2.onCreate() */
       credit.comments.addAll(listOf(comment1, comment2))
 
       val dto = Credit.from(credit)

@@ -26,8 +26,10 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PrivateEstateBatch
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
@@ -41,6 +43,8 @@ class PrivateEstateBatchesResource(
   private val privateEstateBatchRepository: PrivateEstateBatchRepository,
   private val creditRepository: CreditRepository,
   private val logRepository: LogRepository,
+  private val prisonRepository: PrisonRepository,
+  private val userRepository: AuthUserRepository,
 ) {
 
   @Operation(
@@ -88,7 +92,7 @@ class PrivateEstateBatchesResource(
       batches = batches.filter { it.date.isBefore(dateLt) }
     }
     if (prison != null) {
-      batches = batches.filter { it.prison == prison }
+      batches = batches.filter { it.prison?.nomisId == prison }
     }
 
     val results = batches.map { PrivateEstateBatch.from(it) }
@@ -116,8 +120,9 @@ class PrivateEstateBatchesResource(
     @PathVariable prison: String,
     @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
   ): ResponseEntity<PrivateEstateBatch> {
-    val ref = "$prison/$date"
-    val batch = privateEstateBatchRepository.findById(ref).orElse(null)
+    val prisonEntity = prisonRepository.findById(prison).orElse(null)
+      ?: return ResponseEntity.notFound().build()
+    val batch = privateEstateBatchRepository.findByPrisonAndDate(prisonEntity, date)
       ?: return ResponseEntity.notFound().build()
     return ResponseEntity.ok(PrivateEstateBatch.from(batch))
   }
@@ -147,19 +152,25 @@ class PrivateEstateBatchesResource(
     @RequestBody(required = false) _body: Map<String, Any>?,
     principal: Principal,
   ): ResponseEntity<PrivateEstateBatch> {
-    val ref = "$prison/$date"
-    val batch = privateEstateBatchRepository.findById(ref).orElse(null)
+    val prisonEntity = prisonRepository.findById(prison).orElse(null)
       ?: return ResponseEntity.notFound().build()
+    val batch = privateEstateBatchRepository.findByPrisonAndDate(prisonEntity, date)
+      ?: return ResponseEntity.notFound().build()
+    val owner = userRepository.findByUsername(principal.name)
 
     for (credit in batch.credits) {
       if (credit.prison != null &&
         !credit.blocked &&
-        (credit.resolution == CreditResolution.PENDING || credit.resolution == CreditResolution.MANUAL)
+        (credit.resolution == CreditResolution.PENDING.value || credit.resolution == CreditResolution.MANUAL.value)
       ) {
-        credit.resolution = CreditResolution.CREDITED
-        credit.owner = principal.name
+        credit.resolution = CreditResolution.CREDITED.value
+        credit.owner = owner
         creditRepository.save(credit)
-        logRepository.save(Log(action = LogAction.CREDITED, credit = credit, userId = principal.name))
+        val log = Log()
+        log.action = LogAction.CREDITED.value
+        log.credit = credit
+        log.user = owner
+        logRepository.save(log)
       }
     }
 
@@ -187,8 +198,9 @@ class PrivateEstateBatchesResource(
     @PathVariable prison: String,
     @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
   ): ResponseEntity<List<Credit>> {
-    val ref = "$prison/$date"
-    val batch = privateEstateBatchRepository.findById(ref).orElse(null)
+    val prisonEntity = prisonRepository.findById(prison).orElse(null)
+      ?: return ResponseEntity.notFound().build()
+    val batch = privateEstateBatchRepository.findByPrisonAndDate(prisonEntity, date)
       ?: return ResponseEntity.notFound().build()
     return ResponseEntity.ok(batch.credits.map { Credit.from(it) })
   }

@@ -5,11 +5,18 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerProfile
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 
+/**
+ * Django stores monitoring users on `security_prisonerprofile_monitoring_users`
+ * keyed by user-id (integer FK to auth_user). Resolve usernames to user ids when
+ * comparing.
+ */
 @Service
 class PrisonerProfileService(
   private val prisonerProfileRepository: PrisonerProfileRepository,
+  private val userRepository: AuthUserRepository,
 ) {
 
   fun listProfiles(
@@ -28,8 +35,14 @@ class PrisonerProfileService(
       }
     }
     return when {
-      monitoredByUsername != null -> all.filter { it.monitoringUsers.contains(monitoredByUsername) }
-      notMonitoredByUsername != null -> all.filter { !it.monitoringUsers.contains(notMonitoredByUsername) }
+      monitoredByUsername != null -> {
+        val userId = userRepository.findByUsername(monitoredByUsername)?.id?.toInt()
+        if (userId == null) emptyList() else all.filter { it.monitoringUsers.contains(userId) }
+      }
+      notMonitoredByUsername != null -> {
+        val userId = userRepository.findByUsername(notMonitoredByUsername)?.id?.toInt()
+        if (userId == null) all else all.filter { !it.monitoringUsers.contains(userId) }
+      }
       else -> all
     }
   }
@@ -40,17 +53,21 @@ class PrisonerProfileService(
   @Transactional
   fun monitor(id: Long, username: String) {
     val profile = getProfile(id)
-    profile.monitoringUsers.add(username)
+    val userId = userRepository.findByUsername(username)?.id?.toInt() ?: return
+    profile.monitoringUsers.add(userId)
     prisonerProfileRepository.save(profile)
   }
 
   @Transactional
   fun unmonitor(id: Long, username: String) {
     val profile = getProfile(id)
-    profile.monitoringUsers.remove(username)
+    val userId = userRepository.findByUsername(username)?.id?.toInt() ?: return
+    profile.monitoringUsers.remove(userId)
     prisonerProfileRepository.save(profile)
   }
 
-  fun countMonitoredByUser(username: String): Int = prisonerProfileRepository.findAll()
-    .count { it.monitoringUsers.contains(username) }
+  fun countMonitoredByUser(username: String): Int {
+    val userId = userRepository.findByUsername(username)?.id?.toInt() ?: return 0
+    return prisonerProfileRepository.findAll().count { it.monitoringUsers.contains(userId) }
+  }
 }

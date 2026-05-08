@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SavedSearch
 @Repository
 interface SavedSearchRepository : JpaRepository<SavedSearch, Long> {
 
-  fun findByUsername(username: String): List<SavedSearch>
+  fun findByUserUsername(username: String): List<SavedSearch>
 
-  fun findByIdAndUsername(id: Long, username: String): SavedSearch?
+  fun findByIdAndUserUsername(id: Long, username: String): SavedSearch?
 }

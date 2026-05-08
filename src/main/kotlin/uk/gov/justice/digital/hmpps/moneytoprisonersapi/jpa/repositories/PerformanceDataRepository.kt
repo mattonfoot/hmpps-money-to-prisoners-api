@@ -11,8 +11,8 @@ interface PerformanceDataRepository : JpaRepository<PerformanceData, LocalDate> 
   /**
    * PRF-022: Returns records where week >= weekGte and week < weekLt, ordered by week.
    */
-  @Query("SELECT p FROM PerformanceData p WHERE p.week >= :weekGte AND p.week < :weekLt ORDER BY p.week")
-  fun findByWeekBetween(
+  @Query("SELECT p FROM PerformancePerformancedatum p WHERE p.id >= :weekGte AND p.id < :weekLt ORDER BY p.id")
+  fun findByIdBetween(
     @Param("weekGte") weekGte: LocalDate,
     @Param("weekLt") weekLt: LocalDate,
   ): List<PerformanceData>

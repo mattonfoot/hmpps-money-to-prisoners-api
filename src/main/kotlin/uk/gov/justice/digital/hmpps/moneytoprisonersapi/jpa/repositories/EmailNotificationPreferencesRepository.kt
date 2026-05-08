@@ -6,5 +6,5 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.EmailNotifi
 
 @Repository
 interface EmailNotificationPreferencesRepository : JpaRepository<EmailNotificationPreferences, Long> {
-  fun findByUsername(username: String): EmailNotificationPreferences?
+  fun findByUserUsername(username: String): EmailNotificationPreferences?
 }

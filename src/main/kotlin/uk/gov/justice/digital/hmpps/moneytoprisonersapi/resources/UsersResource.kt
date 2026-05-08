@@ -44,7 +44,7 @@ class UsersResource(
   private val userFlagRepository: UserFlagRepository,
 ) {
 
-  private fun flagsFor(user: MtpUser): List<String> = userFlagRepository.findByUser(user).map { it.flagName }
+  private fun flagsFor(user: MtpUser): List<String> = userFlagRepository.findByUser(user).map { it.name }
 
   // -------------------------------------------------------------------------
   // AUTH-010: GET /users/
@@ -252,7 +252,7 @@ class UsersResource(
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
   ): ResponseEntity<PaginatedResponse<String>> {
     val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
-    val flags = userFlagRepository.findByUser(user).map { it.flagName }
+    val flags = userFlagRepository.findByUser(user).map { it.name }
     return ResponseEntity.ok(PaginatedResponse.fromList(flags, limit = limit, offset = offset))
   }
 
@@ -286,11 +286,11 @@ class UsersResource(
     if (request.flagName.isNullOrBlank()) {
       return ResponseEntity.badRequest().body(mapOf("flagName" to listOf("This field is required")))
     }
-    if (userFlagRepository.existsByUserAndFlagName(user, request.flagName)) {
+    if (userFlagRepository.existsByUserAndName(user, request.flagName)) {
       return ResponseEntity.badRequest().body(mapOf("flagName" to listOf("Flag already exists for this user")))
     }
-    val saved = userFlagRepository.save(UserFlag(user = user, flagName = request.flagName))
-    return ResponseEntity.status(HttpStatus.CREATED).body(saved.flagName)
+    val saved = userFlagRepository.save(UserFlag().also { it.user = user; it.name = request.flagName!! })
+    return ResponseEntity.status(HttpStatus.CREATED).body(saved.name)
   }
 
   // -------------------------------------------------------------------------
@@ -315,8 +315,8 @@ class UsersResource(
     @PathVariable("name") flagName: String,
   ): ResponseEntity<Any> {
     val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
-    if (userFlagRepository.findByUserAndFlagName(user, flagName) == null) {
-      userFlagRepository.save(UserFlag(user = user, flagName = flagName))
+    if (userFlagRepository.findByUserAndName(user, flagName) == null) {
+      userFlagRepository.save(UserFlag().also { it.user = user; it.name = flagName })
     }
     return ResponseEntity.noContent().build()
   }
@@ -328,7 +328,7 @@ class UsersResource(
     @Parameter(description = "Flag name to remove") @PathVariable("name") flagName: String,
   ): ResponseEntity<Any> {
     val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
-    val flag = userFlagRepository.findByUserAndFlagName(user, flagName)
+    val flag = userFlagRepository.findByUserAndName(user, flagName)
       ?: return ResponseEntity.notFound().build()
     userFlagRepository.delete(flag)
     return ResponseEntity.noContent().build()

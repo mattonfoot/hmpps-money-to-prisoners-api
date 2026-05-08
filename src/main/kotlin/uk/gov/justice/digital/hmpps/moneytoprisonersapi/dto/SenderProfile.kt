@@ -80,11 +80,14 @@ data class SenderProfile(
         creditTotal = credits.sumOf { it.amount },
         prisonerCount = credits.mapNotNull { it.prisonerNumber }.distinct().size,
         prisonCount = credits.mapNotNull { it.prison }.distinct().size,
-        prisons = credits.mapNotNull { it.prison }.distinct(),
+        prisons = credits.mapNotNull { it.prison?.nomisId }.distinct(),
         bankTransferDetails = bankDetails,
         debitCardDetails = cardDetails,
-        monitoringUsers = profile.monitoringUsers.toList(),
-        monitoring = if (currentUsername != null) profile.monitoringUsers.contains(currentUsername) else null,
+        // Sender-profile monitoring users live on the per-detail children in
+        // Django (security_debitcardsenderdetails_monitoring_users etc.). Emit
+        // empty until per-detail rendering is wired in.
+        monitoringUsers = emptyList(),
+        monitoring = null,
         created = profile.created,
         modified = profile.modified,
       )

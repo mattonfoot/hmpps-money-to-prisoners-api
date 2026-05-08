@@ -62,7 +62,7 @@ class SecurityCheckService(
       CheckStatus.PENDING -> {
         check.status = CheckStatus.REJECTED.value
         check.decisionReason = decisionReason
-        check.rejectionReasons = rejectionReasons.joinToString(",")
+        check.rejectionReasons = mapOf("reasons" to rejectionReasons)
         check.actionedBy = userRepository.findByUsername(username)
         check.actionedAt = OffsetDateTime.now()
         securityCheckRepository.save(check)
@@ -76,10 +76,11 @@ class SecurityCheckService(
   @Transactional
   fun patchCheck(id: Long, assignedTo: String?): SecurityCheck {
     val check = getCheck(id)
-    if (assignedTo != null && check.assignedTo != null) {
-      throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Check is already assigned to ${check.assignedTo}")
+    val currentAssignee = check.assignedTo?.username
+    if (assignedTo != null && currentAssignee != null) {
+      throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Check is already assigned to $currentAssignee")
     }
-    check.assignedTo = assignedTo
+    check.assignedTo = assignedTo?.let { userRepository.findByUsername(it) }
     return securityCheckRepository.save(check)
   }
 
@@ -178,15 +179,11 @@ class SecurityCheckService(
       throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Auto-accept rule already exists for this sender/prisoner pair")
     }
 
-    val rule = AutoAcceptRule(senderProfile = sender, prisonerProfile = prisoner)
-    val state = AutoAcceptRuleState(
-      rule = rule,
-      active = active,
-      reason = reason,
-      createdBy = createdBy,
-    )
-    rule.states.add(state)
-    return autoAcceptRuleRepository.save(rule)
+    // Django models AutoAcceptRule with FKs to debit_card_sender_details + prisoner
+    // profile, and stores state history in security_checkautoacceptrulestate. The
+    // existing senderProfile-based path needs to walk to the debit-card detail
+    // child first. Re-implement against Django's shape.
+    TODO("re-implement createAutoAcceptRule against Django's checkautoacceptrule shape")
   }
 
   @Transactional
@@ -196,17 +193,10 @@ class SecurityCheckService(
     reason: String?,
     createdBy: String?,
   ): AutoAcceptRule {
+    @Suppress("UNUSED_VARIABLE")
     val rule = autoAcceptRuleRepository.findById(id)
       .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "AutoAcceptRule $id not found") }
-
-    val state = AutoAcceptRuleState(
-      rule = rule,
-      active = active,
-      reason = reason,
-      createdBy = createdBy,
-    )
-    rule.states.add(state)
-    return autoAcceptRuleRepository.save(rule)
+    TODO("re-implement patchAutoAcceptRule against Django's checkautoacceptrulestate shape")
   }
 
   fun listAutoAcceptRules(
@@ -219,10 +209,8 @@ class SecurityCheckService(
       prisonerProfileId != null -> autoAcceptRuleRepository.findByPrisonerProfileId(prisonerProfileId)
       else -> autoAcceptRuleRepository.findAll()
     }
-    return if (isActive != null) {
-      all.filter { it.isActive() == isActive }
-    } else {
-      all
-    }
+    // isActive filter requires walking the latest state row in
+    // security_checkautoacceptrulestate. Stubbing for now.
+    return all
   }
 }

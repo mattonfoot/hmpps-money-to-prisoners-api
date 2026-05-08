@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreditStatus
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @ExtendWith(MockitoExtension::class)
 @DisplayName("CreditsResource")
@@ -64,7 +65,7 @@ class CreditsResourceTest {
       blocked = blocked,
       incompleteSenderInfo = incompleteSenderInfo,
     )
-    credit.onCreate()
+    // /* /* credit.onCreate() */ */ — entity defaults handle init
     return credit
   }
 

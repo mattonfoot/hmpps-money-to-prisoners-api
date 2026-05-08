@@ -22,11 +22,11 @@ class JobInformationService(
     prisonEstate: String,
     tasks: String,
   ): JobInformation = jobInformationRepository.save(
-    JobInformation(
-      user = user,
-      title = title,
-      prisonEstate = prisonEstate,
-      tasks = tasks,
-    ),
+    JobInformation().apply {
+      this.user = user
+      this.title = title
+      this.prisonEstate = prisonEstate
+      this.tasks = tasks
+    },
   )
 }

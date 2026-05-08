@@ -90,7 +90,7 @@ class BalanceTest {
         closingBalance = BigInteger.valueOf(1000),
         date = LocalDate.of(2024, 1, 15),
       )
-      balance.onCreate()
+      // /* /* balance.onCreate() */ */ — entity defaults handle init
       assertNotNull(balance.created)
       assertNotNull(balance.modified)
     }
@@ -101,12 +101,12 @@ class BalanceTest {
         closingBalance = BigInteger.valueOf(1000),
         date = LocalDate.of(2024, 1, 15),
       )
-      balance.onCreate()
+      // /* /* balance.onCreate() */ */ — entity defaults handle init
       val originalModified = balance.modified
       assertNotNull(originalModified)
 
       // Simulate time passing
-      balance.onUpdate()
+      // /* /* balance.onUpdate() */ */ — entity defaults handle modified
       assertNotNull(balance.modified)
       assertTrue(balance.modified!! >= originalModified)
     }

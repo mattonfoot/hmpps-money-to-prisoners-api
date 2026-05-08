@@ -21,10 +21,14 @@ data class CheckAutoAcceptRule(
   companion object {
     fun from(rule: AutoAcceptRule): CheckAutoAcceptRule = CheckAutoAcceptRule(
       id = rule.id,
-      senderProfile = rule.senderProfile.id!!,
-      prisonerProfile = rule.prisonerProfile.id!!,
-      states = rule.states.map { CheckAutoAcceptRuleState.from(it) },
-      isActive = rule.isActive(),
+      // Django links the rule to a debit-card sender detail, not the parent
+      // sender profile. Surface the parent profile id when the detail is loaded.
+      senderProfile = rule.debitCardSenderDetails?.sender?.id ?: 0L,
+      prisonerProfile = rule.prisonerProfile?.id ?: 0L,
+      // States live on `security_checkautoacceptrulestate`, not on the rule.
+      // Stub as empty until the back-reference / explicit query is wired in.
+      states = emptyList(),
+      isActive = false,
       created = rule.created,
       modified = rule.modified,
     )
