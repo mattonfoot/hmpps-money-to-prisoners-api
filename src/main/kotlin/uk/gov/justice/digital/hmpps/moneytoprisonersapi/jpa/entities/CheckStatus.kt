@@ -24,4 +24,3 @@ class CheckStatusConverter : AttributeConverter<CheckStatus, String> {
   override fun convertToDatabaseColumn(attribute: CheckStatus?): String? = attribute?.value
   override fun convertToEntityAttribute(dbData: String?): CheckStatus? = dbData?.let { CheckStatus.fromValue(it) }
 }
-

@@ -12,7 +12,6 @@ import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 @DisplayName("Credit Model")
 class CreditTest {

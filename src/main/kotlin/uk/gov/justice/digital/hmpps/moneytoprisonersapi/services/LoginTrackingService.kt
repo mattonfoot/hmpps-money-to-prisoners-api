@@ -26,8 +26,7 @@ class LoginTrackingService(
   private val oauthApplicationRepository: OAuthApplicationRepository,
 ) {
 
-  private fun resolveApplication(clientId: String?) =
-    clientId?.let { oauthApplicationRepository.findByClientId(it) }
+  private fun resolveApplication(clientId: String?) = clientId?.let { oauthApplicationRepository.findByClientId(it) }
 
   /**
    * AUTH-002: Records a failed login attempt for [user] in [application].

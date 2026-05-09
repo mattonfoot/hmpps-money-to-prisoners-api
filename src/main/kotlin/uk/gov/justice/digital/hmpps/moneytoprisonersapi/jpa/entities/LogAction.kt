@@ -33,4 +33,3 @@ class LogActionConverter : AttributeConverter<LogAction, String> {
   override fun convertToDatabaseColumn(attribute: LogAction?): String? = attribute?.value
   override fun convertToEntityAttribute(dbData: String?): LogAction? = dbData?.let { LogAction.fromValue(it) }
 }
-

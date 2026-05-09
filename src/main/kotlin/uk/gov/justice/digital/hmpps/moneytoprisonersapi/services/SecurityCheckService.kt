@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.SecurityCheckConflictException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AutoAcceptRule
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AutoAcceptRuleState
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CheckStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository

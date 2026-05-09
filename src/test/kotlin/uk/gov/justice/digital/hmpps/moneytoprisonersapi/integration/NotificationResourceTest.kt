@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditR
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.EmailNotificationPreferencesRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.EventRepository
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 class NotificationResourceTest : IntegrationTestBase() {
 

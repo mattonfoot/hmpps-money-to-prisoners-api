@@ -10,10 +10,10 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.DisbursementConfirmR
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdateDisbursementRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursement
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementLog
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.transitionResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementMethod
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.transitionResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementLogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository
@@ -390,7 +390,11 @@ class DisbursementService(
       val disbursement = disbursementMap[id] ?: throw DisbursementNotFoundException(id)
       disbursement.transitionResolution(DisbursementResolution.REJECTED)
       disbursementRepository.save(disbursement)
-      DisbursementLog().also { it.action = LogAction.REJECTED.value; it.disbursement = disbursement; it.user = userRepository.findByUsername(userId) }.let(disbursementLogRepository::save)
+      DisbursementLog().also {
+        it.action = LogAction.REJECTED.value
+        it.disbursement = disbursement
+        it.user = userRepository.findByUsername(userId)
+      }.let(disbursementLogRepository::save)
     }
   }
 
@@ -403,7 +407,11 @@ class DisbursementService(
       val disbursement = disbursementMap[id] ?: throw DisbursementNotFoundException(id)
       disbursement.transitionResolution(DisbursementResolution.PRECONFIRMED)
       disbursementRepository.save(disbursement)
-      DisbursementLog().also { it.action = LogAction.PRECONFIRMED.value; it.disbursement = disbursement; it.user = userRepository.findByUsername(userId) }.let(disbursementLogRepository::save)
+      DisbursementLog().also {
+        it.action = LogAction.PRECONFIRMED.value
+        it.disbursement = disbursement
+        it.user = userRepository.findByUsername(userId)
+      }.let(disbursementLogRepository::save)
     }
   }
 
@@ -416,7 +424,11 @@ class DisbursementService(
       val disbursement = disbursementMap[id] ?: throw DisbursementNotFoundException(id)
       disbursement.transitionResolution(DisbursementResolution.PENDING)
       disbursementRepository.save(disbursement)
-      DisbursementLog().also { it.action = LogAction.CREATED.value; it.disbursement = disbursement; it.user = userRepository.findByUsername(userId) }.let(disbursementLogRepository::save)
+      DisbursementLog().also {
+        it.action = LogAction.CREATED.value
+        it.disbursement = disbursement
+        it.user = userRepository.findByUsername(userId)
+      }.let(disbursementLogRepository::save)
     }
   }
 
@@ -436,7 +448,11 @@ class DisbursementService(
         disbursement.nomisTransactionId = item.nomisTransactionId
       }
       disbursementRepository.save(disbursement)
-      DisbursementLog().also { it.action = LogAction.CONFIRMED.value; it.disbursement = disbursement; it.user = userRepository.findByUsername(userId) }.let(disbursementLogRepository::save)
+      DisbursementLog().also {
+        it.action = LogAction.CONFIRMED.value
+        it.disbursement = disbursement
+        it.user = userRepository.findByUsername(userId)
+      }.let(disbursementLogRepository::save)
     }
   }
 
@@ -449,7 +465,11 @@ class DisbursementService(
       val disbursement = disbursementMap[id] ?: throw DisbursementNotFoundException(id)
       disbursement.transitionResolution(DisbursementResolution.SENT)
       disbursementRepository.save(disbursement)
-      DisbursementLog().also { it.action = LogAction.SENT.value; it.disbursement = disbursement; it.user = userRepository.findByUsername(userId) }.let(disbursementLogRepository::save)
+      DisbursementLog().also {
+        it.action = LogAction.SENT.value
+        it.disbursement = disbursement
+        it.user = userRepository.findByUsername(userId)
+      }.let(disbursementLogRepository::save)
     }
   }
 

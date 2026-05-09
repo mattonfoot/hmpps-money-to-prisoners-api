@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 import org.springframework.http.HttpStatus
 import org.springframework.scheduling.support.CronExpression
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.CustomException
-import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 // Extension functions that bring back the rich domain methods that lived on
@@ -20,11 +19,9 @@ class InvalidCreditResolutionException(
   attempted: CreditResolution,
 ) : CustomException("Cannot transition credit from $current to $attempted", HttpStatus.CONFLICT)
 
-private fun parseDisbursementResolution(value: String): DisbursementResolution =
-  DisbursementResolution.fromValue(value)
+private fun parseDisbursementResolution(value: String): DisbursementResolution = DisbursementResolution.fromValue(value)
 
-private fun parseCreditResolution(value: String): CreditResolution =
-  CreditResolution.fromValue(value)
+private fun parseCreditResolution(value: String): CreditResolution = CreditResolution.fromValue(value)
 
 fun DisbursementDisbursement.transitionResolution(newResolution: DisbursementResolution) {
   val current = parseDisbursementResolution(resolution)
@@ -56,4 +53,3 @@ fun CoreScheduledcommand.updateNextExecution() {
   val next = expr.next(java.time.LocalDateTime.now()) ?: return
   nextExecution = next.atOffset(ZoneOffset.UTC)
 }
-

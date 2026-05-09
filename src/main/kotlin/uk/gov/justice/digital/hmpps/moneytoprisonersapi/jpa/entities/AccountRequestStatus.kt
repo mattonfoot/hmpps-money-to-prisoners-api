@@ -4,4 +4,3 @@ enum class AccountRequestStatus(val value: String) {
   ACCEPTED("accepted"),
   REJECTED("rejected"),
 }
-

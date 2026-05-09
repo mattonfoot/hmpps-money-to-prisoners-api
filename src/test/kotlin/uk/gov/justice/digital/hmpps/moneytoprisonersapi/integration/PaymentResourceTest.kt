@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Private
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 class PaymentResourceTest : IntegrationTestBase() {
 

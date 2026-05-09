@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonPrison
 import java.time.OffsetDateTime
 

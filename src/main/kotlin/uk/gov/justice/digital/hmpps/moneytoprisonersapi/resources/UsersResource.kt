@@ -289,7 +289,12 @@ class UsersResource(
     if (userFlagRepository.existsByUserAndName(user, request.flagName)) {
       return ResponseEntity.badRequest().body(mapOf("flagName" to listOf("Flag already exists for this user")))
     }
-    val saved = userFlagRepository.save(UserFlag().also { it.user = user; it.name = request.flagName!! })
+    val saved = userFlagRepository.save(
+      UserFlag().also {
+        it.user = user
+        it.name = request.flagName!!
+      },
+    )
     return ResponseEntity.status(HttpStatus.CREATED).body(saved.name)
   }
 
@@ -316,7 +321,12 @@ class UsersResource(
   ): ResponseEntity<Any> {
     val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
     if (userFlagRepository.findByUserAndName(user, flagName) == null) {
-      userFlagRepository.save(UserFlag().also { it.user = user; it.name = flagName })
+      userFlagRepository.save(
+        UserFlag().also {
+          it.user = user
+          it.name = flagName
+        },
+      )
     }
     return ResponseEntity.noContent().build()
   }

@@ -11,7 +11,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UpdatePaymentRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.BillingAddress
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Payment
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PaymentBatch
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.BillingAddressRepository

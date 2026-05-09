@@ -306,7 +306,10 @@ fun MtpRole(
   }
   this.application = when (application) {
     is Oauth2ProviderApplication -> application
-    is String -> Oauth2ProviderApplication().apply { clientId = application; this.name = application }
+    is String -> Oauth2ProviderApplication().apply {
+      clientId = application
+      this.name = application
+    }
     else -> null
   }
 }

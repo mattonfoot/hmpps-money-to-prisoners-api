@@ -5,7 +5,6 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrivateEstateBatch
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Transaction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.TransactionCategory

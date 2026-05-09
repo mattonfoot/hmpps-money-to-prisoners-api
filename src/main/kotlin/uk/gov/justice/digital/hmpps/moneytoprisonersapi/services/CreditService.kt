@@ -8,10 +8,10 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditActionItem
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreditsGroupedByCredited
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Credit
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResolution
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.transitionResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.transitionResolution
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
@@ -475,7 +475,14 @@ class CreditService(
     for (credit in credits) {
       credit.reviewed = true
       creditRepository.save(credit)
-      logRepository.save(Log().let { _l -> _l.action = LogAction.REVIEWED.value; _l.credit = credit; _l.user = userRepository.findByUsername(userId); _l })
+      logRepository.save(
+        Log().let { _l ->
+          _l.action = LogAction.REVIEWED.value
+          _l.credit = credit
+          _l.user = userRepository.findByUsername(userId)
+          _l
+        },
+      )
     }
   }
 
@@ -515,7 +522,14 @@ class CreditService(
       }
       creditRepository.save(credit)
 
-      logRepository.save(Log().let { _l -> _l.action = LogAction.CREDITED.value; _l.credit = credit; _l.user = userRepository.findByUsername(userId); _l })
+      logRepository.save(
+        Log().let { _l ->
+          _l.action = LogAction.CREDITED.value
+          _l.credit = credit
+          _l.user = userRepository.findByUsername(userId)
+          _l
+        },
+      )
     }
 
     return conflictIds
@@ -552,7 +566,14 @@ class CreditService(
       credit.owner = userRepository.findByUsername(userId)
       creditRepository.save(credit)
 
-      logRepository.save(Log().let { _l -> _l.action = LogAction.MANUAL.value; _l.credit = credit; _l.user = userRepository.findByUsername(userId); _l })
+      logRepository.save(
+        Log().let { _l ->
+          _l.action = LogAction.MANUAL.value
+          _l.credit = credit
+          _l.user = userRepository.findByUsername(userId)
+          _l
+        },
+      )
     }
 
     return conflictIds
@@ -590,7 +611,14 @@ class CreditService(
       credit.resolution = CreditResolution.REFUNDED.value
       creditRepository.save(credit)
 
-      logRepository.save(Log().let { _l -> _l.action = LogAction.REFUNDED.value; _l.credit = credit; _l.user = userRepository.findByUsername(userId); _l })
+      logRepository.save(
+        Log().let { _l ->
+          _l.action = LogAction.REFUNDED.value
+          _l.credit = credit
+          _l.user = userRepository.findByUsername(userId)
+          _l
+        },
+      )
     }
   }
 

@@ -25,8 +25,14 @@ class PrisonUserMappingServiceTest {
   @InjectMocks
   private lateinit var prisonUserMappingService: PrisonUserMappingService
 
-  private fun makePrison(id: String) = Prison().apply { nomisId = id; name = "Prison $id" }
-  private fun makeUser(id: Long = 1L, username: String = "testuser") = MtpUser().apply { this.id = id; this.username = username }
+  private fun makePrison(id: String) = Prison().apply {
+    nomisId = id
+    name = "Prison $id"
+  }
+  private fun makeUser(id: Long = 1L, username: String = "testuser") = MtpUser().apply {
+    this.id = id
+    this.username = username
+  }
 
   @Nested
   @DisplayName("getPrisonsForUser (AUTH-051)")

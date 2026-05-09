@@ -99,7 +99,10 @@ open class AuthUser {
   var prisons: MutableSet<PrisonPrison>
     get() = prisonUserMapping?.prisons ?: mutableSetOf()
     set(value) {
-      val mapping = prisonUserMapping ?: MtpAuthPrisonusermapping().also { it.user = this; prisonUserMapping = it }
+      val mapping = prisonUserMapping ?: MtpAuthPrisonusermapping().also {
+        it.user = this
+        prisonUserMapping = it
+      }
       mapping.prisons = value
     }
 
