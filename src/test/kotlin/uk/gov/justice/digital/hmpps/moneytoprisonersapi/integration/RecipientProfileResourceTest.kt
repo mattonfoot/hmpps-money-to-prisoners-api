@@ -91,7 +91,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     fun `should filter by monitoring true`() {
       val monitoredProfile = transactionTemplate.execute {
         val p = RecipientProfile(sortCode = "112233", accountNumber = "11111111")
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         recipientProfileRepository.save(p)
       }
       createRecipientProfile("445566", "22222222")
@@ -111,7 +111,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     fun `should filter by monitoring false`() {
       transactionTemplate.execute {
         val p = RecipientProfile(sortCode = "112233", accountNumber = "11111111")
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         recipientProfileRepository.save(p)
       }
       createRecipientProfile("445566", "22222222")
@@ -146,7 +146,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     fun `should return profile with monitoring field`() {
       val profile = transactionTemplate.execute {
         val p = RecipientProfile(sortCode = "112233", accountNumber = "12345678")
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         recipientProfileRepository.save(p)
       }
 
@@ -266,7 +266,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         val p = recipientProfileRepository.findById(profile.id!!).get()
         p.monitoringUsers.toSet()
       }
-      assertThat(monitoringUsers).contains("test-security")
+      assertThat(monitoringUsers).contains(8)
     }
 
     @Test
@@ -274,7 +274,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     fun `should remove user from monitoring`() {
       val saved = transactionTemplate.execute {
         val p = RecipientProfile(sortCode = "112233", accountNumber = "12345678")
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         recipientProfileRepository.save(p)
       }
 
@@ -288,7 +288,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         val p = recipientProfileRepository.findById(saved.id!!).get()
         p.monitoringUsers.toSet()
       }
-      assertThat(monitoringUsers).doesNotContain("test-security")
+      assertThat(monitoringUsers).doesNotContain(8)
     }
   }
 }

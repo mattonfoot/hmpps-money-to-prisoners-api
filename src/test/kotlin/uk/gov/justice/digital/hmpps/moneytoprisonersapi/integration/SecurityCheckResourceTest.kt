@@ -312,8 +312,8 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
       val updated = securityCheckRepository.findById(check.id!!).get()
       assertThat(updated.status).isEqualTo(CheckStatus.REJECTED)
       assertThat(updated.decisionReason).isEqualTo("Suspicious activity")
-      assertThat(updated.actionedBy).isEqualTo("test-security")
-      assertThat(updated.rejectionReasons).contains("FIUMONP")
+      assertThat(updated.actionedBy?.username).isEqualTo("test-security")
+      assertThat(updated.rejectionReasons?.containsKey("FIUMONP")).isTrue()
     }
 
     @Test
@@ -449,7 +449,7 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
     @DisplayName("Returns 400 when reassigning an already-assigned check")
     fun `should return 400 when check already assigned`() {
       val check = createCreditWithCheck(CheckStatus.PENDING)
-      val savedCheck = securityCheckRepository.save(check.apply { assignedTo = "existing_user" })
+      val savedCheck = securityCheckRepository.save(check.apply { assignedTo = uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AuthUser().apply { username = "existing_user" } })
 
       webTestClient.patch()
         .uri("/security/checks/${savedCheck.id}/")
@@ -464,7 +464,7 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
     @DisplayName("Allows reassignment after clearing assigned_to with null")
     fun `should allow reassignment after clearing to null`() {
       val check = createCreditWithCheck(CheckStatus.PENDING)
-      securityCheckRepository.save(check.apply { assignedTo = "existing_user" })
+      securityCheckRepository.save(check.apply { assignedTo = uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AuthUser().apply { username = "existing_user" } })
 
       // Clear the assignment
       webTestClient.patch()

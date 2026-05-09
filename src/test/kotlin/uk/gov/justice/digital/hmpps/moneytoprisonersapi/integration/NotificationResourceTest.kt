@@ -368,7 +368,7 @@ class NotificationResourceTest : IntegrationTestBase() {
 
       val prefs = emailPreferencesRepository.findByUsername("admin")
       assertThat(prefs).isNotNull
-      assertThat(prefs!!.frequency).isEqualTo(EmailFrequency.DAILY)
+      assertThat(prefs!!.frequency).isEqualTo(EmailFrequency.DAILY.value)
     }
 
     @Test
@@ -401,7 +401,7 @@ class NotificationResourceTest : IntegrationTestBase() {
         .expectStatus().isNoContent
 
       val prefs = emailPreferencesRepository.findByUsername("admin")
-      assertThat(prefs!!.frequency).isEqualTo(EmailFrequency.DAILY)
+      assertThat(prefs!!.frequency).isEqualTo(EmailFrequency.DAILY.value)
     }
 
     @Test

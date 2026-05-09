@@ -96,7 +96,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
         val p = prisonerProfileRepository.findById(profile.id!!).get()
         p.monitoringUsers.toSet()
       }!!
-      assertThat(monitoringUsers).contains("test-security")
+      assertThat(monitoringUsers).contains(8)
     }
 
     @Test
@@ -104,7 +104,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     fun `should remove user from monitoring`() {
       val saved = transactionTemplate.execute {
         val p = PrisonerProfile(prisonerNumber = "A1234BC", prisonerName = "John Smith")
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         prisonerProfileRepository.save(p)
       }!!
 
@@ -118,7 +118,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
         val p = prisonerProfileRepository.findById(saved.id!!).get()
         p.monitoringUsers.toSet()
       }!!
-      assertThat(monitoringUsers).doesNotContain("test-security")
+      assertThat(monitoringUsers).doesNotContain(8)
     }
   }
 
@@ -131,7 +131,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     fun `should filter by monitoring true`() {
       val monitoredProfile = transactionTemplate.execute {
         val p = PrisonerProfile(prisonerNumber = "MONITORED1", prisonerName = "Monitored Prisoner")
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         prisonerProfileRepository.save(p)
       }!!
       createPrisonerProfile("A1111BC")
@@ -152,7 +152,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     fun `should filter by monitoring false`() {
       transactionTemplate.execute {
         val p = PrisonerProfile(prisonerNumber = "MONITORED1", prisonerName = "Monitored Prisoner")
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         prisonerProfileRepository.save(p)
       }
       createPrisonerProfile("A1111BC")
@@ -172,7 +172,7 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     fun `should return monitoring field on detail endpoint`() {
       val profile = transactionTemplate.execute {
         val p = PrisonerProfile(prisonerNumber = "A1234BC", prisonerName = "John Smith")
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         prisonerProfileRepository.save(p)
       }!!
 

@@ -342,7 +342,7 @@ class PaymentResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      val updated = paymentRepository.findById(savedPayment.uuid).get()
+      val updated = paymentRepository.findById(savedPayment.uuid!!).get()
       assertThat(updated.cardholderName).isEqualTo("John Doe")
       assertThat(updated.cardNumberFirstDigits).isEqualTo("411111")
       assertThat(updated.cardNumberLastDigits).isEqualTo("1234")
@@ -370,7 +370,7 @@ class PaymentResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      val updated = paymentRepository.findById(savedPayment.uuid).get()
+      val updated = paymentRepository.findById(savedPayment.uuid!!).get()
       assertThat(updated.billingAddress).isNotNull()
       assertThat(updated.billingAddress!!.line1).isEqualTo("10 Downing Street")
       assertThat(updated.billingAddress!!.city).isEqualTo("London")

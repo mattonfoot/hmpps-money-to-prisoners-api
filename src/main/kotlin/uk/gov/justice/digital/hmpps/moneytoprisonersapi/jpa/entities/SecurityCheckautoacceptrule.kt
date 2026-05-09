@@ -9,6 +9,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import jakarta.validation.constraints.NotNull
@@ -63,4 +64,9 @@ open class SecurityCheckautoacceptrule {
   @JoinColumn(name = "prisoner_profile_id", nullable = false)
   open var prisonerProfile: SecurityPrisonerprofile? =
     null
+
+  // Reverse OneToMany — the per-rule states. Manually maintained here so
+  // services and tests can walk from a rule down to its history of states.
+  @OneToMany(mappedBy = "autoAcceptRule", fetch = FetchType.LAZY, cascade = [jakarta.persistence.CascadeType.ALL])
+  open var states: MutableList<SecurityCheckautoacceptrulestate> = mutableListOf()
 }

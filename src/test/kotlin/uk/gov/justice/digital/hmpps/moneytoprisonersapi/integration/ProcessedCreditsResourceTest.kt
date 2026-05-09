@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Prisone
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 class ProcessedCreditsResourceTest : IntegrationTestBase() {
@@ -70,7 +71,7 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
     return creditRepository.save(credit)
   }
 
-  private fun addCreditedLog(credit: Credit, userId: String = "clerk1", loggedAt: LocalDateTime = LocalDateTime.now()): Log {
+  private fun addCreditedLog(credit: Credit, userId: String = "clerk1", loggedAt: OffsetDateTime = OffsetDateTime.now()): Log {
     val log = Log(action = LogAction.CREDITED, credit = credit, userId = userId)
     log.created = loggedAt
     return logRepository.save(log)
@@ -93,7 +94,7 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-150 - GET /credits/processed/ returns 200 with list")
     fun `should return 200 with list`() {
       val credit = createAndSaveCreditedCredit()
-      addCreditedLog(credit, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0))
+      addCreditedLog(credit, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(java.time.ZoneOffset.UTC))
 
       webTestClient.get()
         .uri("/credits/processed/")
@@ -126,12 +127,12 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
       val credit4 = createAndSaveCreditedCredit(owner = "clerk1")
 
       // Same day, same owner → same group
-      addCreditedLog(credit1, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0))
-      addCreditedLog(credit2, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 14, 0))
+      addCreditedLog(credit1, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(java.time.ZoneOffset.UTC))
+      addCreditedLog(credit2, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 14, 0).atOffset(java.time.ZoneOffset.UTC))
       // Same day, different owner → different group
-      addCreditedLog(credit3, userId = "clerk2", loggedAt = LocalDateTime.of(2024, 3, 15, 11, 0))
+      addCreditedLog(credit3, userId = "clerk2", loggedAt = LocalDateTime.of(2024, 3, 15, 11, 0).atOffset(java.time.ZoneOffset.UTC))
       // Different day, same owner → different group
-      addCreditedLog(credit4, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 16, 9, 0))
+      addCreditedLog(credit4, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 16, 9, 0).atOffset(java.time.ZoneOffset.UTC))
 
       webTestClient.get()
         .uri("/credits/processed/")
@@ -147,8 +148,8 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
     fun `should return count total and comment_count`() {
       val credit1 = createAndSaveCreditedCredit(amount = 1000, owner = "clerk1")
       val credit2 = createAndSaveCreditedCredit(amount = 2500, owner = "clerk1")
-      addCreditedLog(credit1, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0))
-      addCreditedLog(credit2, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 12, 0))
+      addCreditedLog(credit1, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(java.time.ZoneOffset.UTC))
+      addCreditedLog(credit2, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 12, 0).atOffset(java.time.ZoneOffset.UTC))
 
       val result = webTestClient.get()
         .uri("/credits/processed/")
@@ -165,7 +166,7 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-153 - owner_name is Unknown for unknown users")
     fun `should return Unknown for owner_name`() {
       val credit = createAndSaveCreditedCredit(owner = "unknownuser")
-      addCreditedLog(credit, userId = "unknownuser", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0))
+      addCreditedLog(credit, userId = "unknownuser", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(java.time.ZoneOffset.UTC))
 
       webTestClient.get()
         .uri("/credits/processed/")
@@ -187,7 +188,7 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
       logRepository.save(Log(action = LogAction.REVIEWED, credit = creditReviewedOnly, userId = "clerk1"))
       // Only this one has a CREDITED log
       val creditWithLog = createAndSaveCreditedCredit(owner = "clerk1")
-      addCreditedLog(creditWithLog, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0))
+      addCreditedLog(creditWithLog, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(java.time.ZoneOffset.UTC))
 
       webTestClient.get()
         .uri("/credits/processed/")
@@ -203,8 +204,8 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
     fun `should support prisoner_name filter`() {
       val credit1 = createAndSaveCreditedCredit(prisonerName = "John Smith", owner = "clerk1")
       val credit2 = createAndSaveCreditedCredit(prisonerName = "Jane Doe", owner = "clerk1")
-      addCreditedLog(credit1, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0))
-      addCreditedLog(credit2, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 11, 0))
+      addCreditedLog(credit1, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(java.time.ZoneOffset.UTC))
+      addCreditedLog(credit2, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 11, 0).atOffset(java.time.ZoneOffset.UTC))
 
       webTestClient.get()
         .uri("/credits/processed/?prisoner_name=John")
@@ -220,8 +221,8 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
     fun `should order by logged_at descending`() {
       val credit1 = createAndSaveCreditedCredit(owner = "clerk1")
       val credit2 = createAndSaveCreditedCredit(owner = "clerk2")
-      addCreditedLog(credit1, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0))
-      addCreditedLog(credit2, userId = "clerk2", loggedAt = LocalDateTime.of(2024, 3, 16, 10, 0))
+      addCreditedLog(credit1, userId = "clerk1", loggedAt = LocalDateTime.of(2024, 3, 15, 10, 0).atOffset(java.time.ZoneOffset.UTC))
+      addCreditedLog(credit2, userId = "clerk2", loggedAt = LocalDateTime.of(2024, 3, 16, 10, 0).atOffset(java.time.ZoneOffset.UTC))
 
       webTestClient.get()
         .uri("/credits/processed/")
@@ -234,4 +235,3 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
     }
   }
 }
-.atOffset(ZoneOffset.UTC)

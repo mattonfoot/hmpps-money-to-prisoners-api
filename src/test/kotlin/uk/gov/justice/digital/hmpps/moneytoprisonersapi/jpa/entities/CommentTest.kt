@@ -36,7 +36,7 @@ class CommentTest {
     @Test
     fun `stores user reference`() {
       val comment = Comment(comment = "Test comment", userId = "user1")
-      assertEquals("user1", comment.userId)
+      assertEquals("user1", comment.user?.username)
     }
 
     @Test

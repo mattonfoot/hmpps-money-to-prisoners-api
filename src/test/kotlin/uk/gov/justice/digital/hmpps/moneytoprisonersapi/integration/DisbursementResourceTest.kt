@@ -303,7 +303,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
         .isNoContent
 
       val updated = disbursementRepository.findById(disbursement.id!!).get()
-      assert(updated.resolution == DisbursementResolution.REJECTED)
+      assert(updated.resolution == DisbursementResolution.REJECTED.value)
     }
 
     @Test
@@ -341,7 +341,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
         .isNoContent
 
       val updated = disbursementRepository.findById(disbursement.id!!).get()
-      assert(updated.resolution == DisbursementResolution.PRECONFIRMED)
+      assert(updated.resolution == DisbursementResolution.PRECONFIRMED.value)
     }
   }
 
@@ -364,7 +364,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
         .isNoContent
 
       val updated = disbursementRepository.findById(disbursement.id!!).get()
-      assert(updated.resolution == DisbursementResolution.PENDING)
+      assert(updated.resolution == DisbursementResolution.PENDING.value)
     }
   }
 
@@ -387,7 +387,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
         .isNoContent
 
       val updated = disbursementRepository.findById(disbursement.id!!).get()
-      assert(updated.resolution == DisbursementResolution.CONFIRMED)
+      assert(updated.resolution == DisbursementResolution.CONFIRMED.value)
       assert(updated.invoiceNumber == "PMD${1000000 + disbursement.id!!}")
     }
   }
@@ -411,7 +411,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
         .isNoContent
 
       val updated = disbursementRepository.findById(disbursement.id!!).get()
-      assert(updated.resolution == DisbursementResolution.SENT)
+      assert(updated.resolution == DisbursementResolution.SENT.value)
     }
 
     @Test
@@ -521,7 +521,7 @@ class DisbursementResourceTest : IntegrationTestBase() {
       // The test-token-security token authenticates as username "test-security"
       transactionTemplate.execute {
         val profile = PrisonerProfile(prisonerNumber = "A1234BC", prisonerName = "John Smith")
-        profile.monitoringUsers.add("test-security")
+        profile.monitoringUsers.add(8)
         prisonerProfileRepository.save(profile)
       }
 

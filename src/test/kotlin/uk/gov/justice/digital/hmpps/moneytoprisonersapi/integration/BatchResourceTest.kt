@@ -101,7 +101,7 @@ class BatchResourceTest : IntegrationTestBase() {
         .jsonPath("$.owner").isEqualTo("admin")
 
       assertThat(batchRepository.count()).isEqualTo(1)
-      assertThat(batchRepository.findAll()[0].owner).isEqualTo("admin")
+      assertThat(batchRepository.findAll()[0].user?.username).isEqualTo("admin")
     }
 
     @Test

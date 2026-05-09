@@ -10,4 +10,7 @@ interface SavedSearchRepository : JpaRepository<SavedSearch, Long> {
   fun findByUserUsername(username: String): List<SavedSearch>
 
   fun findByIdAndUserUsername(id: Long, username: String): SavedSearch?
+
+  // Convenience alias used by older tests; resolves through the user FK.
+  fun findByUsername(username: String): List<SavedSearch> = findByUserUsername(username)
 }

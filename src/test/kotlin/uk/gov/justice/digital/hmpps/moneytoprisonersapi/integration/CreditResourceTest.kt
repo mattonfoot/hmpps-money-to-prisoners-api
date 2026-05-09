@@ -1055,12 +1055,12 @@ class CreditResourceTest : IntegrationTestBase() {
 
       val senderProfile = SenderProfile()
       senderProfile.credits.add(credit1)
-      senderProfile.monitoringUsers.add("user1")
+      senderProfile.monitoringUsers.add(1)
       senderProfileRepository.save(senderProfile)
 
       val prisonerProfile = PrisonerProfile(prisonerNumber = "A1234BC")
       prisonerProfile.credits.add(credit2)
-      prisonerProfile.monitoringUsers.add("user2")
+      prisonerProfile.monitoringUsers.add(2)
       prisonerProfileRepository.save(prisonerProfile)
 
       webTestClient.get()
@@ -1144,9 +1144,9 @@ class CreditResourceTest : IntegrationTestBase() {
         .expectStatus()
         .isNoContent
 
-      val logs = logRepository.findAll().filter { it.credit?.id == credit.id && it.action == LogAction.CREDITED }
+      val logs = logRepository.findAll().filter { it.credit?.id == credit.id && it.action == LogAction.CREDITED.value }
       assertThat(logs).hasSize(1)
-      assertThat(logs[0].userId).isEqualTo("admin")
+      assertThat(logs[0].user?.username).isEqualTo("admin")
     }
 
     @Test
@@ -1803,9 +1803,9 @@ class CreditResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isNoContent
 
-      val logs = logRepository.findAll().filter { it.credit?.id == credit.id && it.action == LogAction.MANUAL }
+      val logs = logRepository.findAll().filter { it.credit?.id == credit.id && it.action == LogAction.MANUAL.value }
       assertThat(logs).hasSize(1)
-      assertThat(logs[0].userId).isEqualTo("admin")
+      assertThat(logs[0].user?.username).isEqualTo("admin")
     }
 
     @Test
@@ -1898,11 +1898,11 @@ class CreditResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isNoContent
 
-      val logs1 = logRepository.findAll().filter { it.credit?.id == credit1.id && it.action == LogAction.REVIEWED }
-      val logs2 = logRepository.findAll().filter { it.credit?.id == credit2.id && it.action == LogAction.REVIEWED }
+      val logs1 = logRepository.findAll().filter { it.credit?.id == credit1.id && it.action == LogAction.REVIEWED.value }
+      val logs2 = logRepository.findAll().filter { it.credit?.id == credit2.id && it.action == LogAction.REVIEWED.value }
       assertThat(logs1).hasSize(1)
       assertThat(logs2).hasSize(1)
-      assertThat(logs1[0].userId).isEqualTo("admin")
+      assertThat(logs1[0].user?.username).isEqualTo("admin")
     }
 
     @Test
@@ -1993,7 +1993,7 @@ class CreditResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-200 - credited_at is populated from CREDITED log in API response")
     fun `should include credited_at from CREDITED log in response`() {
       val credit = createAndSaveCredit(resolution = CreditResolution.CREDITED)
-      val creditedTime = LocalDateTime.of(2024, 3, 16, 14, 0)
+      val creditedTime = LocalDateTime.of(2024, 3, 16, 14, 0).atOffset(java.time.ZoneOffset.UTC)
       logRepository.save(Log(action = LogAction.CREDITED, credit = credit, userId = "clerk1").also { it.created = creditedTime })
 
       webTestClient.get()
@@ -2023,7 +2023,7 @@ class CreditResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-202 - refunded_at is populated from REFUNDED log in API response")
     fun `should include refunded_at from REFUNDED log in response`() {
       val credit = createAndSaveCredit(resolution = CreditResolution.REFUNDED)
-      val refundedTime = LocalDateTime.of(2024, 3, 17, 9, 0)
+      val refundedTime = LocalDateTime.of(2024, 3, 17, 9, 0).atOffset(java.time.ZoneOffset.UTC)
       logRepository.save(Log(action = LogAction.REFUNDED, credit = credit, userId = "clerk1").also { it.created = refundedTime })
 
       webTestClient.get()
@@ -2039,7 +2039,7 @@ class CreditResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-203 - set_manual_at is populated from MANUAL log in API response")
     fun `should include set_manual_at from MANUAL log in response`() {
       val credit = createAndSaveCredit(resolution = CreditResolution.MANUAL)
-      val manualTime = LocalDateTime.of(2024, 3, 18, 11, 0)
+      val manualTime = LocalDateTime.of(2024, 3, 18, 11, 0).atOffset(java.time.ZoneOffset.UTC)
       logRepository.save(Log(action = LogAction.MANUAL, credit = credit, userId = "manager1").also { it.created = manualTime })
 
       webTestClient.get()
@@ -2055,8 +2055,8 @@ class CreditResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-204 - all three log timestamps can be present simultaneously")
     fun `should include all three log timestamps when all logs present`() {
       val credit = createAndSaveCredit(resolution = CreditResolution.CREDITED)
-      val manualTime = LocalDateTime.of(2024, 3, 15, 9, 0)
-      val creditedTime = LocalDateTime.of(2024, 3, 16, 14, 0)
+      val manualTime = LocalDateTime.of(2024, 3, 15, 9, 0).atOffset(java.time.ZoneOffset.UTC)
+      val creditedTime = LocalDateTime.of(2024, 3, 16, 14, 0).atOffset(java.time.ZoneOffset.UTC)
       logRepository.save(Log(action = LogAction.MANUAL, credit = credit, userId = "manager1").also { it.created = manualTime })
       logRepository.save(Log(action = LogAction.CREDITED, credit = credit, userId = "clerk1").also { it.created = creditedTime })
 

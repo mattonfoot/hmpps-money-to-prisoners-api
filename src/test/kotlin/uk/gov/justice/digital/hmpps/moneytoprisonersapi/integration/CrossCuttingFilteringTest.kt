@@ -70,7 +70,7 @@ class CrossCuttingFilteringTest : IntegrationTestBase() {
     resolution: CreditResolution = CreditResolution.PENDING,
     prisonerName: String? = "John Smith",
     prisonerNumber: String? = "A1234BC",
-    receivedAt: LocalDateTime? = null,
+    receivedAt: java.time.OffsetDateTime? = null,
     amount: Long = 1000L,
   ): Credit {
     if (prison != null && !prisonRepository.existsById(prison)) savePrison(prison)
@@ -338,7 +338,7 @@ class CrossCuttingFilteringTest : IntegrationTestBase() {
   @DisplayName("XCT-024 Date range filters use lt/gte convention")
   inner class DateRangeFilters {
 
-    private val baseTime = LocalDateTime.of(2024, 6, 15, 12, 0, 0)
+    private val baseTime = LocalDateTime.of(2024, 6, 15, 12, 0, 0).atOffset(java.time.ZoneOffset.UTC)
 
     @Test
     @DisplayName("XCT-024 received_at__gte is inclusive — includes credits at exactly that datetime")

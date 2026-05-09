@@ -101,7 +101,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
         val p = senderProfileRepository.findById(profile.id!!).get()
         p.monitoringUsers.toSet() // initialize lazy collection within tx
       }!!
-      assertThat(monitoringUsers).contains("test-security")
+      assertThat(monitoringUsers).contains(8)
     }
 
     @Test
@@ -109,7 +109,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     fun `should remove user from monitoring`() {
       val saved = transactionTemplate.execute {
         val p = SenderProfile()
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         senderProfileRepository.save(p)
       }!!
 
@@ -123,7 +123,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
         val p = senderProfileRepository.findById(saved.id!!).get()
         p.monitoringUsers.toSet()
       }!!
-      assertThat(monitoringUsers).doesNotContain("test-security")
+      assertThat(monitoringUsers).doesNotContain(8)
     }
   }
 
@@ -136,7 +136,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     fun `should filter by monitoring true`() {
       val monitoredProfile = transactionTemplate.execute {
         val p = SenderProfile()
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         senderProfileRepository.save(p)
       }!!
       createSenderProfile()
@@ -157,7 +157,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     fun `should filter by monitoring false`() {
       transactionTemplate.execute {
         val p = SenderProfile()
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         senderProfileRepository.save(p)
       }
       createSenderProfile()
@@ -177,7 +177,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     fun `should include monitoring field in detail view`() {
       val profile = transactionTemplate.execute {
         val p = SenderProfile()
-        p.monitoringUsers.add("test-security")
+        p.monitoringUsers.add(8)
         senderProfileRepository.save(p)
       }!!
 

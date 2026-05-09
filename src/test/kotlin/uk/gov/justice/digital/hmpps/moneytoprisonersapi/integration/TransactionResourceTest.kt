@@ -527,9 +527,13 @@ class TransactionResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isCreated
 
-      val batches = privateEstateBatchRepository.findByPrison("PRI")
+      val privatePrison = prisonRepository.findById("PRI").get()
+      val batches = privateEstateBatchRepository.findByPrison(privatePrison)
       assertThat(batches).hasSize(1)
-      assertThat(batches[0].totalAmount).isEqualTo(2000L)
+      // Django models the credit↔batch link via FK on the credit, not as a
+      // batch-side total column. Compute the total from the batch's credits.
+      val total = batches[0].credits.sumOf { it.amount }
+      assertThat(total).isEqualTo(2000L)
     }
   }
 }

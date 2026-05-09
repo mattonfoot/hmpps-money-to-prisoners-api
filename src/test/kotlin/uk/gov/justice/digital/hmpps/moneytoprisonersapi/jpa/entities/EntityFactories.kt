@@ -83,6 +83,10 @@ fun Disbursement(
   nomisTransactionId: String? = null,
   resolution: Any? = null,
   remittanceDescription: String = "",
+  // Django doesn't store sender postcode on disbursement_disbursement; the
+  // legacy domain put it on the recipient address. Accepted here for legacy
+  // test signatures and ignored.
+  @Suppress("UNUSED_PARAMETER") postcode: String? = null,
 ): DisbursementDisbursement = DisbursementDisbursement().apply {
   this.id = id
   this.amount = amount.toInt()
@@ -126,10 +130,10 @@ fun Transaction(
   category: Any? = null,
   source: Any? = null,
   reference: String = "",
-  senderName: String = "",
-  senderSortCode: String = "",
-  senderAccountNumber: String = "",
-  senderRollNumber: String = "",
+  senderName: String? = "",
+  senderSortCode: String? = "",
+  senderAccountNumber: String? = "",
+  senderRollNumber: String? = "",
   referenceInSenderField: Boolean = false,
   incompleteSenderInfo: Boolean = false,
   processorTypeCode: String? = null,
@@ -151,10 +155,10 @@ fun Transaction(
     else -> source.toString()
   }
   this.reference = reference
-  this.senderName = senderName
-  this.senderSortCode = senderSortCode
-  this.senderAccountNumber = senderAccountNumber
-  this.senderRollNumber = senderRollNumber
+  this.senderName = senderName ?: ""
+  this.senderSortCode = senderSortCode ?: ""
+  this.senderAccountNumber = senderAccountNumber ?: ""
+  this.senderRollNumber = senderRollNumber ?: ""
   this.referenceInSenderField = referenceInSenderField
   this.incompleteSenderInfo = incompleteSenderInfo
   this.processorTypeCode = processorTypeCode
@@ -177,7 +181,7 @@ fun Transaction(
 @Suppress("FunctionName")
 fun Payment(
   uuid: UUID? = null,
-  amount: Int = 0,
+  amount: Number = 0,
   status: String = "pending",
   cardholderName: String? = null,
   cardNumberFirstDigits: String? = null,
@@ -187,9 +191,13 @@ fun Payment(
   ipAddress: Any? = null,
   billingAddress: PaymentBillingaddress? = null,
   credit: CreditCredit? = null,
+  // Django doesn't model an `email` field directly on payment_payment; the
+  // legacy DTO surfaced it via the billing address. Accepted here as a
+  // legacy-compat parameter and ignored.
+  @Suppress("UNUSED_PARAMETER") email: String? = null,
 ): PaymentPayment = PaymentPayment().apply {
   this.uuid = uuid
-  this.amount = amount
+  this.amount = amount.toInt()
   this.status = status
   this.cardholderName = cardholderName
   this.cardNumberFirstDigits = cardNumberFirstDigits
@@ -662,6 +670,11 @@ fun RecipientProfile(
   @Suppress("UNUSED_PARAMETER") prisonerCount: Long = 0L,
   disbursementCount: Long = 0L,
   disbursementTotal: Long = 0L,
+  // Django moves sortCode/accountNumber onto the per-detail child
+  // (security_banktransferrecipientdetail). Accepted here for legacy test
+  // signatures; the values are not stored on the profile itself.
+  @Suppress("UNUSED_PARAMETER") sortCode: String = "",
+  @Suppress("UNUSED_PARAMETER") accountNumber: String = "",
 ): SecurityRecipientprofile = SecurityRecipientprofile().apply {
   this.id = id
   this.disbursementCount = disbursementCount
@@ -672,13 +685,24 @@ fun RecipientProfile(
 fun Event(
   id: Long? = null,
   rule: String = "",
-  triggeredAt: OffsetDateTime? = null,
+  description: String = "",
+  triggeredAt: Any? = null,
   user: AuthUser? = null,
+  username: String? = null,
+  // Tests sometimes pass `credit` to associate via the per-kind subevent.
+  // Accepted here for legacy compat — the actual subevent row needs to be
+  // created and linked separately.
+  @Suppress("UNUSED_PARAMETER") credit: CreditCredit? = null,
 ): NotificationEvent = NotificationEvent().apply {
   this.id = id
   this.rule = rule
-  this.triggeredAt = triggeredAt ?: OffsetDateTime.now()
-  if (user != null) this.user = user
+  this.description = description
+  this.triggeredAt = when (triggeredAt) {
+    is OffsetDateTime -> triggeredAt
+    is LocalDateTime -> triggeredAt.atOffset(ZoneOffset.UTC)
+    else -> OffsetDateTime.now()
+  }
+  this.user = user ?: stubUser(username)
 }
 
 @Suppress("FunctionName")
@@ -703,11 +727,12 @@ fun SavedSearch(
   endpoint: String = "",
   @Suppress("UNUSED_PARAMETER") filters: Any? = null,
   user: AuthUser? = null,
+  username: String? = null,
 ): SecuritySavedsearch = SecuritySavedsearch().apply {
   this.id = id
   this.description = description
   this.endpoint = endpoint
-  if (user != null) this.user = user
+  this.user = user ?: stubUser(username) ?: AuthUser()
 }
 
 @Suppress("FunctionName")
@@ -736,11 +761,16 @@ fun Flag(
 fun EmailNotificationPreferences(
   id: Long? = null,
   user: AuthUser? = null,
-  frequency: String = "",
+  username: String? = null,
+  frequency: Any = "",
 ): NotificationEmailnotificationpreference = NotificationEmailnotificationpreference().apply {
   this.id = id
-  if (user != null) this.user = user
-  this.frequency = frequency
+  this.user = user ?: stubUser(username)
+  this.frequency = when (frequency) {
+    is String -> frequency
+    is Enum<*> -> frequency.name.lowercase()
+    else -> frequency.toString()
+  }
 }
 
 @Suppress("FunctionName")
@@ -816,11 +846,15 @@ fun SecurityCheck(
   status: Any? = null,
   description: Any? = null,
   decisionReason: String = "",
-  actionedBy: AuthUser? = null,
+  actionedBy: Any? = null,
   actionedAt: OffsetDateTime? = null,
   credit: CreditCredit? = null,
   rules: Any? = null,
   rejectionReasons: Map<String, Any>? = null,
+  // The legacy domain stored per-rule codes as a separate list and the
+  // started-at timestamp on the check; Django models them as `rules`/`actioned_at`.
+  ruleCodes: Any? = null,
+  startedAt: Any? = null,
 ): SecurityCheck = SecurityCheck().apply {
   this.id = id
   this.status = when (status) {
@@ -831,18 +865,35 @@ fun SecurityCheck(
   }
   this.description = description
   this.decisionReason = decisionReason
-  this.actionedBy = actionedBy
+  this.actionedBy = when (actionedBy) {
+    is AuthUser -> actionedBy
+    is String -> stubUser(actionedBy)
+    else -> null
+  }
   this.actionedAt = actionedAt
   this.credit = credit
-  this.rules = rules
+  this.rules = rules ?: ruleCodes
   this.rejectionReasons = rejectionReasons
+  val startedAtOffset = when (startedAt) {
+    is OffsetDateTime -> startedAt
+    is LocalDateTime -> startedAt.atOffset(ZoneOffset.UTC)
+    else -> null
+  }
+  if (startedAtOffset != null) this.actionedAt = this.actionedAt ?: startedAtOffset
 }
 
 @Suppress("FunctionName")
 fun AutoAcceptRule(
   id: Long? = null,
+  // Django keys the rule off `debit_card_sender_details_id`, not the sender
+  // profile directly. The legacy `senderProfile` param is accepted but
+  // ignored — tests asserting auto-accept against a sender need to seed a
+  // detail child that points at the senderProfile.
+  @Suppress("UNUSED_PARAMETER") senderProfile: Any? = null,
+  prisonerProfile: SecurityPrisonerprofile? = null,
 ): SecurityCheckautoacceptrule = SecurityCheckautoacceptrule().apply {
   this.id = id
+  this.prisonerProfile = prisonerProfile
 }
 
 @Suppress("FunctionName")
@@ -850,14 +901,22 @@ fun AutoAcceptRuleState(
   id: Long? = null,
   active: Boolean = true,
   reason: String? = null,
-  addedBy: AuthUser? = null,
+  addedBy: Any? = null,
+  createdBy: Any? = null,
   created: OffsetDateTime? = null,
   autoAcceptRule: SecurityCheckautoacceptrule? = null,
+  rule: SecurityCheckautoacceptrule? = null,
 ): SecurityCheckautoacceptrulestate = SecurityCheckautoacceptrulestate().apply {
   this.id = id
   this.active = active
   this.reason = reason ?: ""
-  this.addedBy = addedBy
+  this.addedBy = when {
+    addedBy is AuthUser -> addedBy
+    addedBy is String -> stubUser(addedBy)
+    createdBy is AuthUser -> createdBy
+    createdBy is String -> stubUser(createdBy)
+    else -> null
+  }
   if (created != null) this.created = created
-  this.autoAcceptRule = autoAcceptRule
+  this.autoAcceptRule = autoAcceptRule ?: rule
 }
