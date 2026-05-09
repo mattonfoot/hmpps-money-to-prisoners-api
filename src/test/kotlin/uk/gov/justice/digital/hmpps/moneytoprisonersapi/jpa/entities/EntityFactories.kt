@@ -234,11 +234,18 @@ fun Prison(
   name: String = "",
   region: String = "",
   privateEstate: Boolean = false,
+  // Django defaults Prison.use_nomis_for_balances to true; mirror that here.
+  useNomisForBalances: Boolean = true,
+  generalLedgerCode: String = "",
+  cmsEstablishmentCode: String = "",
 ): PrisonPrison = PrisonPrison().apply {
   this.nomisId = nomisId
   this.name = name
   this.region = region
   this.privateEstate = privateEstate
+  this.useNomisForBalances = useNomisForBalances
+  this.generalLedgerCode = generalLedgerCode
+  this.cmsEstablishmentCode = cmsEstablishmentCode
 }
 
 @Suppress("FunctionName")
@@ -258,11 +265,10 @@ fun PrisonerLocation(
     else -> null
   }
   this.active = active
-  this.createdBy = when (createdBy) {
-    is AuthUser -> createdBy
-    is String -> stubUser(createdBy)
-    else -> null
-  }
+  // createdBy is an FK to auth_user. A stub AuthUser would fail to cascade-save
+  // through JPA, so when only a String username is given we leave it null —
+  // tests that need a real user should pass a persisted AuthUser instance.
+  this.createdBy = (createdBy as? AuthUser)
   this.prisonerDob = prisonerDob ?: LocalDate.now()
 }
 

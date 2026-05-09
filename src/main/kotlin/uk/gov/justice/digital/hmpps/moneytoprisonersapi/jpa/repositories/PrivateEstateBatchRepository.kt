@@ -15,6 +15,7 @@ interface PrivateEstateBatchRepository : JpaRepository<PrivateEstateBatch, Long>
   // (FK on the credit), not a M2M junction table. The legacy "clearJoinTable"
   // semantic is satisfied by nulling the FK on every credit referencing any
   // batch — used by tests to detach batches before deleting them.
+  @org.springframework.transaction.annotation.Transactional
   @org.springframework.data.jpa.repository.Modifying
   @org.springframework.data.jpa.repository.Query("UPDATE CreditCredit c SET c.privateEstateBatch = NULL WHERE c.privateEstateBatch IS NOT NULL")
   fun clearJoinTable()
