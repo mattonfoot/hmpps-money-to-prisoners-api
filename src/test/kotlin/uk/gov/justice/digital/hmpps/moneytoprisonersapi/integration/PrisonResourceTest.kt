@@ -49,27 +49,7 @@ class PrisonResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var disbursementRepository: DisbursementRepository
 
-  @Autowired
-  private lateinit var jdbcTemplate: JdbcTemplate
-
-  @BeforeEach
-  fun setUp() {
-    // Clear all tables that reference prison_prison (FK order matters)
-    jdbcTemplate.execute("DELETE FROM mtp_auth_accountrequest")
-    jdbcTemplate.execute("DELETE FROM mtp_auth_prisonusermapping_prisons")
-    jdbcTemplate.execute("DELETE FROM prison_prisonercreditnoticeemail")
-    jdbcTemplate.execute("DELETE FROM prison_prisonerbalance")
-    privateEstateBatchRepository.clearJoinTable()
-    privateEstateBatchRepository.deleteAll()
-    securityCheckRepository.deleteAll()
-    logRepository.deleteAll()
-    creditRepository.deleteAll()
-    disbursementRepository.deleteAll()
-    prisonerLocationRepository.deleteAll()
-    prisonRepository.deleteAll()
-    prisonCategoryRepository.deleteAll()
-    prisonPopulationRepository.deleteAll()
-  }
+  // wipeDataTables() in IntegrationTestBase @BeforeEach handles cleanup.
 
   private fun createPrison(nomisId: String, name: String = "Test Prison", privateEstate: Boolean = false): Prison {
     val prison = Prison(nomisId = nomisId, name = name, region = "Test Region", privateEstate = privateEstate)

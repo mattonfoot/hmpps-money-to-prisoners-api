@@ -12,8 +12,38 @@ import java.util.UUID
 // continue to call e.g. `Credit(id = 1L, amount = 100)` without rewriting every
 // call site to the post-regen `Credit().apply { ... }` form.
 
-private fun stubPrison(nomisId: String?): PrisonPrison? = nomisId?.let { PrisonPrison().apply { this.nomisId = it } }
-private fun stubUser(username: String?): AuthUser? = username?.let { AuthUser().apply { this.username = it } }
+/**
+ * Hook installed by IntegrationTestBase so tests that build entities via these
+ * top-level factory functions can reference real (DB-resident) Prison and
+ * AuthUser rows by id without each call site needing to autowire a repository.
+ *
+ * Defaults are passthrough: stubs without id (suitable for unit-only tests).
+ * Integration tests overwrite these to fetch by NOMIS id / username so the
+ * resulting JPA save doesn't trip TransientPropertyValueException.
+ */
+object FactoryHooks {
+  @JvmStatic
+  var prisonResolver: (String) -> PrisonPrison? = { nomis ->
+    PrisonPrison().apply { this.nomisId = nomis }
+  }
+
+  @JvmStatic
+  var userResolver: (String) -> AuthUser? = { username ->
+    AuthUser().apply { this.username = username }
+  }
+}
+
+private fun stubPrison(nomisId: String?): PrisonPrison? = nomisId?.let { FactoryHooks.prisonResolver(it) }
+private fun stubUser(username: String?): AuthUser? = username?.let { FactoryHooks.userResolver(it) }
+
+@Suppress("UNCHECKED_CAST")
+private fun anyToStringArray(v: Any?): Array<String>? = when (v) {
+  null -> null
+  is Array<*> -> v as Array<String>
+  is List<*> -> v.filterIsInstance<String>().toTypedArray()
+  is String -> arrayOf(v)
+  else -> arrayOf(v.toString())
+}
 
 @Suppress("FunctionName")
 fun Credit(
@@ -196,7 +226,7 @@ fun Payment(
   // legacy-compat parameter and ignored.
   @Suppress("UNUSED_PARAMETER") email: String? = null,
 ): PaymentPayment = PaymentPayment().apply {
-  this.uuid = uuid
+  this.uuid = uuid ?: UUID.randomUUID()
   this.amount = amount.toInt()
   this.status = status
   this.cardholderName = cardholderName
@@ -872,7 +902,7 @@ fun SecurityCheck(
     null -> ""
     else -> status.toString()
   }
-  this.description = description
+  this.description = anyToStringArray(description)
   this.decisionReason = decisionReason
   this.actionedBy = when (actionedBy) {
     is AuthUser -> actionedBy
@@ -881,8 +911,8 @@ fun SecurityCheck(
   }
   this.actionedAt = actionedAt
   this.credit = credit
-  this.rules = rules ?: ruleCodes
-  this.rejectionReasons = rejectionReasons
+  this.rules = anyToStringArray(rules ?: ruleCodes)
+  this.rejectionReasons = rejectionReasons?.toMutableMap() ?: mutableMapOf()
   val startedAtOffset = when (startedAt) {
     is OffsetDateTime -> startedAt
     is LocalDateTime -> startedAt.atOffset(ZoneOffset.UTC)

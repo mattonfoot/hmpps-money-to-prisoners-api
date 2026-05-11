@@ -34,11 +34,11 @@ class EntityTableNameTest {
     @JvmStatic
     fun entityTableMappings(): Stream<Arguments> = Stream.of(
       // ── account ─────────────────────────────────────────────────────────────────
-      Arguments.of(Balance::class.java, "balances"),
+      Arguments.of(Balance::class.java, "account_balance"),
 
       // ── core ────────────────────────────────────────────────────────────────────
       Arguments.of(ScheduledCommand::class.java, "core_scheduledcommand"),
-      Arguments.of(FileDownload::class.java, "file_downloads"),
+      Arguments.of(FileDownload::class.java, "core_filedownload"),
 
       // ── credit ──────────────────────────────────────────────────────────────────
       Arguments.of(Credit::class.java, "credit_credit"),
@@ -53,7 +53,7 @@ class EntityTableNameTest {
       // ── payment ─────────────────────────────────────────────────────────────────
       Arguments.of(Payment::class.java, "payment_payment"),
       Arguments.of(BillingAddress::class.java, "payment_billingaddress"),
-      Arguments.of(PaymentBatch::class.java, "payment_batches"),
+      Arguments.of(PaymentBatch::class.java, "payment_batch"),
 
       // ── disbursement ────────────────────────────────────────────────────────────
       Arguments.of(Disbursement::class.java, "disbursement_disbursement"),
@@ -93,16 +93,16 @@ class EntityTableNameTest {
 
       // ── mtp_auth ────────────────────────────────────────────────────────────────
       Arguments.of(MtpRole::class.java, "mtp_auth_role"),
-      Arguments.of(MtpUser::class.java, "mtp_users"),
+      Arguments.of(MtpUser::class.java, "auth_user"),
       Arguments.of(MtpUserLogin::class.java, "mtp_auth_login"),
       Arguments.of(AccountRequest::class.java, "mtp_auth_accountrequest"),
       Arguments.of(FailedLoginAttempt::class.java, "mtp_auth_failedloginattempt"),
       Arguments.of(JobInformation::class.java, "mtp_auth_jobinformation"),
-      Arguments.of(PasswordResetToken::class.java, "password_reset_tokens"),
-      Arguments.of(UserFlag::class.java, "user_flags"),
+      Arguments.of(PasswordResetToken::class.java, "mtp_auth_passwordchangerequest"),
+      Arguments.of(UserFlag::class.java, "mtp_auth_flag"),
 
       // ── user_event_log ──────────────────────────────────────────────────────────
-      Arguments.of(UserEvent::class.java, "user_events"),
+      Arguments.of(UserEvent::class.java, "user_event_log_userevent"),
     )
   }
 }

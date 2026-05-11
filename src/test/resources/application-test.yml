@@ -11,7 +11,7 @@ spring:
 
   flyway:
     enabled: true
-    locations: classpath:/db/migrations/common
+    locations: classpath:/db/migrations/common,classpath:/db/migrations/test
 
 springdoc:
   api-docs:

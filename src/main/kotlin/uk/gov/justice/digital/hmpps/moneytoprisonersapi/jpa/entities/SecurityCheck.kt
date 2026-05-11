@@ -71,7 +71,7 @@ open class SecurityCheck {
   open var status: String = ""
 
   @Column(name = "rules", columnDefinition = "varchar [](50)")
-  open var rules: Any? = null
+  open var rules: Array<String>? = null
 
   @Column(name = "actioned_at")
   open var actionedAt: OffsetDateTime? = null
@@ -94,12 +94,12 @@ open class SecurityCheck {
   open var assignedTo: AuthUser? = null
 
   @Column(name = "description", columnDefinition = "varchar [](200)")
-  open var description: Any? = null
+  open var description: Array<String>? = null
 
   @NotNull
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "rejection_reasons", nullable = false)
-  open var rejectionReasons: Map<String, Any>? = null
+  open var rejectionReasons: MutableMap<String, Any> = mutableMapOf()
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "auto_accept_rule_state_id")

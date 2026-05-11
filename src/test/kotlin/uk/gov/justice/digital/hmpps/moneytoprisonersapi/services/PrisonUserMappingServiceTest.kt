@@ -14,6 +14,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonUserMappingRepository
 
 @ExtendWith(MockitoExtension::class)
 @DisplayName("PrisonUserMappingService")
@@ -21,6 +22,9 @@ class PrisonUserMappingServiceTest {
 
   @Mock
   private lateinit var mtpUserRepository: MtpUserRepository
+
+  @Mock
+  private lateinit var mappingRepository: PrisonUserMappingRepository
 
   @InjectMocks
   private lateinit var prisonUserMappingService: PrisonUserMappingService

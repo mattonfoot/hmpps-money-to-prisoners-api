@@ -60,7 +60,7 @@ class SecurityCheckService(
       CheckStatus.PENDING -> {
         check.status = CheckStatus.REJECTED.value
         check.decisionReason = decisionReason
-        check.rejectionReasons = mapOf("reasons" to rejectionReasons)
+        check.rejectionReasons = mutableMapOf<String, Any>("reasons" to rejectionReasons)
         check.actionedBy = userRepository.findByUsername(username)
         check.actionedAt = OffsetDateTime.now()
         securityCheckRepository.save(check)

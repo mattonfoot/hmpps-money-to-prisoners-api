@@ -57,7 +57,7 @@ open class CreditLog {
   @JoinColumn(name = "credit_id", nullable = false)
   open var credit: CreditCredit? = null
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "user_id")
   open var user: AuthUser? = null
 }
