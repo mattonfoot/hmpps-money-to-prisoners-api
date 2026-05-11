@@ -43,7 +43,7 @@ error response shape, OpenAPI schema parity, authorisation matrix).
 | `core/tests/test_dump_and_upload_for_ap.py`                        | _none_                                                                                                                             | Combined dump-then-upload flow                               | ❌        |
 | `core/tests/test_upload_dump_for_ap.py`                            | _none_                                                                                                                             | Upload component (S3 + retry)                                | ❌        |
 | `core/tests/test_upload_dump_for_linkspace.py`                     | _none_                                                                                                                             | Linkspace upload variant                                     | ❌        |
-| `core/tests/test_file_download.py`                                 | `services/FileDownloadServiceTest.kt`, `jpa/entities/FileDownloadEntityTest.kt`, (parked) `resources/FileDownloadsResourceTest.kt` | FileDownload entity + service: success/conflict/list         | ✅        |
+| `core/tests/test_file_download.py`                                 | `services/FileDownloadServiceTest.kt`, `jpa/entities/FileDownloadEntityTest.kt`, `resources/FileDownloadsResourceTest.kt`          | FileDownload entity + service: success/conflict/list         | ✅        |
 | `core/tests/test_filters.py` :: `SplitTextInMultipleFieldsFilter*` | `integration/CrossCuttingFilteringTest.kt` :: `SplitTextSearch`                                                                    | Search-text filter splits across fields, normalises case     | ✅        |
 | `core/tests/test_filters.py` :: `PostcodeFilter*`                  | `integration/CrossCuttingFilteringTest.kt` :: `PostcodeFilter`                                                                     | Postcode normalisation (case, whitespace) before match       | ✅        |
 | `core/tests/test_filters.py` :: `BlankStringFilter*`               | `integration/CrossCuttingFilteringTest.kt` :: `QueryParameterFiltering`                                                            | Blank-string query params treated as no-filter               | ✅        |
@@ -87,35 +87,35 @@ error response shape, OpenAPI schema parity, authorisation matrix).
 | `credit/.../security_credit_list/test_credit_list_with_blank_string_filters.py`  | `integration/CrossCuttingFilteringTest.kt` :: `BlankStringFilters`                                                                      | Blank string filters do not narrow results               | ✅        |
 | `credit/.../security_credit_list/test_transaction_sender_details_credit_list.py` | `integration/CreditResourceTest.kt` :: `CreditListFiltersSender`                                                                        | Filter on transaction sender sort_code/account_number    | ✅        |
 | (no Python equivalent — entity tests)                                            | `jpa/entities/CreditTest.kt`, `jpa/entities/CreditResolutionTest.kt`, `jpa/entities/CreditSourceTest.kt`, `jpa/entities/CommentTest.kt` | Credit entity state, resolution transitions, source enum | ✅        |
-| (no Python equivalent — service tests)                                           | `services/CreditStatusTest.kt`, (parked) `services/CreditServiceTest.kt`, (parked) `jpa/repositories/CreditRepositoryTest.kt`           | Credit business rules, repository queries                | ⚠        |
+| (no Python equivalent — service tests)                                           | `services/CreditStatusTest.kt`, `services/CreditServiceTest.kt`, `jpa/repositories/CreditRepositoryTest.kt`                             | Credit business rules, repository queries                                | ✅        |
 
 ## disbursement/
 
 | Python                                                        | Kotlin                                               | What it tests                                                                  | Status   |
 |---------------------------------------------------------------|------------------------------------------------------|--------------------------------------------------------------------------------|----------|
 | `disbursement/tests/test_views.py` (25 tests, full lifecycle) | `integration/DisbursementResourceTest.kt` (28 tests) | List/Create/Update + actions (Preconfirm/Confirm/Reset/Reject/Send) + Comments | ✅        |
-| (no Python equivalent — entity tests)                         | (parked) `jpa/entities/DisbursementTest.kt`          | Disbursement entity state                                                      | ⚠ parked |
-| (no Python equivalent — service tests)                        | (parked) `services/DisbursementServiceTest.kt`       | DisbursementService logic                                                      | ⚠ parked |
+| (no Python equivalent — entity tests)                         | `jpa/entities/DisbursementTest.kt`                   | Disbursement entity state                                                      | ✅        |
+| (no Python equivalent — service tests)                        | `services/DisbursementServiceTest.kt`                | DisbursementService logic                                                      | ✅        |
 
 ## mtp_auth/
 
 | Python                                                                                                          | Kotlin                                                                                                                                                                  | What it tests                                                            | Status    |
 |-----------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|-----------|
-| `mtp_auth/tests/test_views.py` (145 tests — UsersAPI, AccountRequestsAPI, ChangePassword, ResetPassword, Roles) | `resources/UsersResourceTest.kt`, `resources/RolesResourceTest.kt`, (parked) `resources/PasswordResourceTest.kt`, (parked) `resources/RequestsResourceTest.kt`          | User CRUD, role listing, password change/reset, account-request approval | ⚠ partial |
-| `mtp_auth/tests/test_account_request_emails.py`                                                                 | (parked) `services/AccountRequestServiceTest.kt`                                                                                                                        | Account request approval/rejection emails                                | ⚠ parked  |
-| `mtp_auth/tests/test_disable_inactive_users.py`                                                                 | (parked) `services/LoginTrackingServiceTest.kt`                                                                                                                         | `disable_inactive_users` mgmt cmd                                        | ⚠ parked  |
-| `mtp_auth/tests/test_login_counts.py`                                                                           | (parked) `services/LoginTrackingServiceTest.kt`                                                                                                                         | Failed-login counter, lockout                                            | ⚠ parked  |
-| `mtp_auth/tests/test_patches.py`                                                                                | (parked) `resources/UserFlagResourceTest.kt`                                                                                                                            | User flags PATCH (e.g., hmpps-employee)                                  | ⚠ parked  |
+| `mtp_auth/tests/test_views.py` (145 tests — UsersAPI, AccountRequestsAPI, ChangePassword, ResetPassword, Roles) | `resources/UsersResourceTest.kt`, `resources/RolesResourceTest.kt`, `resources/PasswordResourceTest.kt`, `resources/RequestsResourceTest.kt`          | User CRUD, role listing, password change/reset, account-request approval | ⚠ partial |
+| `mtp_auth/tests/test_account_request_emails.py`                                                                 | `services/AccountRequestServiceTest.kt`                                                                                                                                 | Account request approval/rejection emails (emails not wired in Kotlin)   | ⚠ partial |
+| `mtp_auth/tests/test_disable_inactive_users.py`                                                                 | `services/LoginTrackingServiceTest.kt`                                                                                                                                  | `disable_inactive_users` mgmt cmd (cmd not yet wired in Kotlin)          | ⚠ partial |
+| `mtp_auth/tests/test_login_counts.py`                                                                           | `services/LoginTrackingServiceTest.kt`                                                                                                                                  | Failed-login counter, lockout                                            | ✅         |
+| `mtp_auth/tests/test_patches.py`                                                                                | `resources/UserFlagResourceTest.kt`                                                                                                                                     | User flags PATCH (e.g., hmpps-employee)                                  | ✅         |
 | `mtp_auth/tests/test_permissions.py`                                                                            | `security/ClientIdPermissionsTest.kt`, `security/ActionsBasedPermissionsTest.kt`, `integration/CrossCuttingAuthTest.kt`                                                 | OAuth2 `client_id` permission, role permissions                          | ✅         |
-| (no Python equivalent — service unit tests)                                                                     | `services/UserServiceTest.kt`, (parked) `services/PasswordServiceTest.kt`, (parked) `services/JobInformationServiceTest.kt`, `services/PrisonUserMappingServiceTest.kt` | UserService, password mgmt, prison mappings                              | ⚠         |
+| (no Python equivalent — service unit tests)                                                                     | `services/UserServiceTest.kt`, `services/PasswordServiceTest.kt`, `services/JobInformationServiceTest.kt`, `services/PrisonUserMappingServiceTest.kt` | UserService, password mgmt, prison mappings                              | ✅         |
 
 ## notification/
 
 | Python                                           | Kotlin                                                                                       | What it tests                                                    | Status   |
 |--------------------------------------------------|----------------------------------------------------------------------------------------------|------------------------------------------------------------------|----------|
-| `notification/tests/test_views.py` (17 tests)    | `integration/NotificationResourceTest.kt`, (parked) `resources/NotificationsResourceTest.kt` | `events/`, `emailpreferences/` endpoints                         | ✅        |
-| `notification/tests/test_commands.py` (13 tests) | (parked) `services/NotificationServiceTest.kt`                                               | Background notification commands                                 | ⚠ parked |
-| `notification/tests/test_rules.py` (18 tests)    | (parked) `services/NotificationServiceTest.kt`                                               | Notification rule engine (monitored sender/prisoner/amount/etc.) | ⚠ parked |
+| `notification/tests/test_views.py` (17 tests)    | `integration/NotificationResourceTest.kt`, `resources/NotificationsResourceTest.kt`          | `events/`, `emailpreferences/` endpoints                         | ✅        |
+| `notification/tests/test_commands.py` (13 tests) | `services/NotificationServiceTest.kt`                                                        | Background notification commands (commands not yet wired in Kotlin) | ⚠ partial |
+| `notification/tests/test_rules.py` (18 tests)    | `services/NotificationServiceTest.kt`                                                        | Notification rule engine (rule engine not yet wired in Kotlin)      | ⚠ partial |
 | `notification/tests/test_utils.py`               | `jpa/entities/EventTest.kt`                                                                  | Event aggregation/de-dup helpers                                 | ✅        |
 
 ## payment/
@@ -123,7 +123,7 @@ error response shape, OpenAPI schema parity, authorisation matrix).
 | Python                                   | Kotlin                                    | What it tests                                               | Status   |
 |------------------------------------------|-------------------------------------------|-------------------------------------------------------------|----------|
 | `payment/tests/test_views.py` (18 tests) | `integration/PaymentResourceTest.kt`      | `POST/PATCH/GET /payments/`, batches, billing address       | ✅        |
-| `payment/tests/test_payments.py`         | (parked) `services/PaymentServiceTest.kt` | Payment business logic (status transitions, credit updates) | ⚠ parked |
+| `payment/tests/test_payments.py`         | `services/PaymentServiceTest.kt`          | Payment business logic (status transitions, credit updates) | ✅        |
 | `payment/tests/test_commands.py`         | (none)                                    | Management cmd: e.g., update_payments                       | ❌        |
 
 ## performance/
@@ -131,11 +131,11 @@ error response shape, OpenAPI schema parity, authorisation matrix).
 | Python                                              | Kotlin                                                                               | What it tests                                     | Status   |
 |-----------------------------------------------------|--------------------------------------------------------------------------------------|---------------------------------------------------|----------|
 | `performance/tests/test_views.py` (8 tests)         | `resources/PerformanceResourceTest.kt`                                               | `digital_takeup/`, `user_satisfaction/` endpoints | ✅        |
-| `performance/tests/test_digital_takeup.py`          | `services/DigitalTakeupServiceTest.kt`, (parked) `jpa/entities/DigitalTakeupTest.kt` | DigitalTakeup model + service reporting           | ⚠        |
+| `performance/tests/test_digital_takeup.py`          | `services/DigitalTakeupServiceTest.kt`, `jpa/entities/DigitalTakeupTest.kt`          | DigitalTakeup model + service reporting           | ✅        |
 | `performance/tests/test_prediction.py`              | _none_                                                                               | Statistical projection (Python-only NumPy)        | ▢        |
-| `performance/tests/test_update_performance_data.py` | (parked) `services/PerformanceDataServiceTest.kt`                                    | `update_performance_data` cmd                     | ⚠ parked |
-| `performance/tests/test_updaters.py`                | (parked) `services/PerformanceDataServiceTest.kt`                                    | Per-metric updaters                               | ⚠ parked |
-| `performance/tests/test_user_satisfaction.py`       | (parked) `jpa/entities/UserSatisfactionTest.kt`                                      | UserSatisfaction model rules                      | ⚠ parked |
+| `performance/tests/test_update_performance_data.py` | `services/PerformanceDataServiceTest.kt`                                             | `update_performance_data` cmd (cmd not yet wired) | ⚠ partial |
+| `performance/tests/test_updaters.py`                | `services/PerformanceDataServiceTest.kt`                                             | Per-metric updaters (updaters not yet wired)      | ⚠ partial |
+| `performance/tests/test_user_satisfaction.py`       | `jpa/entities/UserSatisfactionTest.kt`                                               | UserSatisfaction model rules                      | ✅        |
 
 ## prison/
 
@@ -159,14 +159,14 @@ error response shape, OpenAPI schema parity, authorisation matrix).
 | `security/tests/test_commands.py` (8 tests)                               | _none_                                                                                                                                                   | Management commands (`update_security_profiles`, etc.)         | ❌        |
 | `security/tests/test_monitored_partial_email_address.py`                  | `integration/MonitoredEmailResourceTest.kt`                                                                                                              | Partial-email match algorithm                                  | ✅        |
 | `security/tests/test_monitoring.py`                                       | `integration/SenderProfileResourceTest.kt` :: monitoring tests, `integration/PrisonerProfileResourceTest.kt` :: monitoring tests                         | Monitoring user toggle, propagation to detail records          | ✅        |
-| (no Python equivalent — DTO unit tests)                                   | (parked) `dto/CreditTest.kt`, `dto/PrisonerProfileTest.kt`, `dto/SecurityCheckCreditDtoTest.kt`, `dto/SecurityCreditTest.kt`, `dto/SenderProfileTest.kt` | DTO serialisation rules                                        | ⚠ parked |
+| (no Python equivalent — DTO unit tests)                                   | `dto/CreditTest.kt`, `dto/PrisonerProfileTest.kt`, `dto/SecurityCheckCreditDtoTest.kt`, `dto/SecurityCreditTest.kt`, `dto/SenderProfileTest.kt` | DTO serialisation rules                                        | ✅        |
 
 ## service/
 
 | Python                                          | Kotlin                                                                                                | What it tests                                  | Status   |
 |-------------------------------------------------|-------------------------------------------------------------------------------------------------------|------------------------------------------------|----------|
 | `service/tests/test_downtime.py` (10 tests)     | `services/ServiceAvailabilityServiceTest.kt`, `resources/ServiceAvailabilityResourceTest.kt`          | Downtime windows: list/active/upcoming filters | ✅        |
-| `service/tests/test_notifications.py` (4 tests) | `services/ServiceNotificationServiceTest.kt`, (parked) `resources/ServiceNotificationResourceTest.kt` | Service-wide banners/notifications             | ⚠ parked |
+| `service/tests/test_notifications.py` (4 tests) | `services/ServiceNotificationServiceTest.kt`, `resources/ServiceNotificationResourceTest.kt`          | Service-wide banners/notifications             | ✅        |
 
 ## transaction/
 
@@ -174,14 +174,14 @@ error response shape, OpenAPI schema parity, authorisation matrix).
 |----------------------------------------------|-------------------------------------------------------------------------|-------------------------------------------------|----------|
 | `transaction/tests/test_base.py`             | (factories used by) `integration/TransactionResourceTest.kt`            | TestTransaction base helpers                    | ✅        |
 | `transaction/tests/test_views.py` (27 tests) | `integration/TransactionResourceTest.kt` (23 tests)                     | `POST/PATCH/GET /transactions/`, reconcile flow | ✅        |
-| (no Python equivalent — entity tests)        | (parked) `jpa/entities/TransactionTest.kt`                              | Transaction entity state                        | ⚠ parked |
+| (no Python equivalent — entity tests)        | `jpa/entities/TransactionTest.kt`                                       | Transaction entity state                        | ✅        |
 | (no Python equivalent — service tests)       | `services/TransactionStatusTest.kt`, `services/ReconcileServiceTest.kt` | TransactionStatus enum + ReconcileService logic | ✅        |
 
 ## user_event_log/
 
 | Python                                                                 | Kotlin                                                                                           | What it tests                 | Status   |
 |------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|-------------------------------|----------|
-| `user_event_log/tests/test_utils.py` (no test functions, helpers only) | (parked) `jpa/entities/UserEventTest.kt`, (parked) `jpa/repositories/UserEventRepositoryTest.kt` | UserEvent entity + log helper | ⚠ parked |
+| `user_event_log/tests/test_utils.py` (no test functions, helpers only) | `jpa/entities/UserEventTest.kt`, `jpa/repositories/UserEventRepositoryTest.kt` | UserEvent entity + log helper | ✅        |
 
 ---
 
