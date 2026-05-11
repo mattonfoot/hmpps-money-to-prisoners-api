@@ -37,8 +37,7 @@ class RecipientProfileService(
   fun getProfile(id: Long): RecipientProfile = recipientProfileRepository.findById(id)
     .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "RecipientProfile $id not found") }
 
-  fun getDetails(id: Long): List<SecurityBanktransferrecipientdetail> =
-    recipientDetailRepository.findByRecipient(getProfile(id))
+  fun getDetails(id: Long): List<SecurityBanktransferrecipientdetail> = recipientDetailRepository.findByRecipient(getProfile(id))
 
   fun isMonitoredBy(recipientProfileId: Long, username: String): Boolean {
     val user = authUserRepository.findByUsername(username) ?: return false

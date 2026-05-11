@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -138,7 +137,6 @@ class PaymentsResource(
   fun listPayments(
     @Parameter(description = "Return only payments modified before this datetime (exclusive)", example = "2024-01-01T00:00:00")
     @RequestParam("modified__lt")
-
     modifiedLt: OffsetDateTime? = null,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,

@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditResol
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CreditSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Log
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Prison
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository

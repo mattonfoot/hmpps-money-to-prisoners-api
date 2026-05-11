@@ -16,8 +16,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityRec
  * here mirror Django's data layout.
  */
 @Repository
-interface SecurityBanktransferrecipientdetailRepository :
-  JpaRepository<SecurityBanktransferrecipientdetail, Long> {
+interface SecurityBanktransferrecipientdetailRepository : JpaRepository<SecurityBanktransferrecipientdetail, Long> {
 
   fun findByRecipient(recipient: SecurityRecipientprofile): List<SecurityBanktransferrecipientdetail>
 

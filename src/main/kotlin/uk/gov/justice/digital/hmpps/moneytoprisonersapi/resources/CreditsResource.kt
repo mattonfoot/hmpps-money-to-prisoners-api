@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -168,11 +167,9 @@ class CreditsResource(
     reviewed: Boolean? = null,
     @Parameter(description = "Filter credits received on or after this datetime (inclusive, ISO format)", example = "2024-01-01T00:00:00")
     @RequestParam("received_at__gte")
-
     receivedAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter credits received before this datetime (exclusive, ISO format)", example = "2024-02-01T00:00:00")
     @RequestParam("received_at__lt")
-
     receivedAtLt: OffsetDateTime? = null,
     @Parameter(description = "Filter by validity: true = credit_pending or credited, false = all others")
     @RequestParam("valid")
@@ -230,11 +227,9 @@ class CreditsResource(
     source: CreditSource? = null,
     @Parameter(description = "Filter by log creation date on or after this datetime (truncated to UTC date, inclusive)", example = "2024-01-01T00:00:00")
     @RequestParam("logged_at__gte")
-
     loggedAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter by log creation date before this datetime (truncated to UTC date, exclusive)", example = "2024-02-01T00:00:00")
     @RequestParam("logged_at__lt")
-
     loggedAtLt: OffsetDateTime? = null,
     @Parameter(description = "Filter by presence of security check: true = no check exists, false = check exists")
     @RequestParam("security_check__isnull")
@@ -513,10 +508,8 @@ class CreditsResource(
     @RequestParam("resolution") resolution: CreditResolution? = null,
     @RequestParam("reviewed") reviewed: Boolean? = null,
     @RequestParam("received_at__gte")
-
     receivedAtGte: OffsetDateTime? = null,
     @RequestParam("received_at__lt")
-
     receivedAtLt: OffsetDateTime? = null,
     @RequestParam("valid") valid: Boolean? = null,
     @RequestParam("sender_name") senderName: String? = null,
@@ -534,10 +527,8 @@ class CreditsResource(
     @RequestParam("payment_reference") paymentReference: String? = null,
     @RequestParam("source") source: CreditSource? = null,
     @RequestParam("logged_at__gte")
-
     loggedAtGte: OffsetDateTime? = null,
     @RequestParam("logged_at__lt")
-
     loggedAtLt: OffsetDateTime? = null,
     @RequestParam("log__action") logAction: String? = null,
     @RequestParam("security_check__isnull") securityCheckIsnull: Boolean? = null,

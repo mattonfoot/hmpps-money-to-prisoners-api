@@ -9,8 +9,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityDebitcardsenderdetailsMonitoringUser
 
 @Repository
-interface SecurityDebitcardsenderdetailsMonitoringUserRepository :
-  JpaRepository<SecurityDebitcardsenderdetailsMonitoringUser, Long> {
+interface SecurityDebitcardsenderdetailsMonitoringUserRepository : JpaRepository<SecurityDebitcardsenderdetailsMonitoringUser, Long> {
 
   /** Returns sender profile ids whose any debit-card detail is monitored by [userId]. */
   @Query(

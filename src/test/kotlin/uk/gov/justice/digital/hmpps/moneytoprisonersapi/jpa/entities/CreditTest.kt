@@ -9,9 +9,9 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditResolutionException as InvalidCreditStateException
 import java.time.LocalDate
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditResolutionException as InvalidCreditStateException
 
 @DisplayName("Credit Model")
 class CreditTest {

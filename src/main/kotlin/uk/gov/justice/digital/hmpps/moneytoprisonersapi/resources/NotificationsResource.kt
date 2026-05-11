@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.authentication.AnonymousAuthenticationToken
@@ -78,11 +77,9 @@ class NotificationsResource(
     rules: List<String>? = null,
     @Parameter(description = "Filter events triggered on or after this datetime (inclusive)", example = "2024-01-01T00:00:00")
     @RequestParam("triggered_at__gte")
-
     triggeredAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter events triggered before this datetime (exclusive)", example = "2024-02-01T00:00:00")
     @RequestParam("triggered_at__lt")
-
     triggeredAtLt: OffsetDateTime? = null,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,

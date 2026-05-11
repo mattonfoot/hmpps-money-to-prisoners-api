@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -105,11 +104,9 @@ class TransactionsResource(
     statusParam: String? = null,
     @Parameter(description = "Filter transactions received on or after this datetime (inclusive, ISO format)", example = "2024-01-01T00:00:00")
     @RequestParam("received_at__gte")
-
     receivedAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter transactions received before this datetime (exclusive, ISO format)", example = "2024-02-01T00:00:00")
     @RequestParam("received_at__lt")
-
     receivedAtLt: OffsetDateTime? = null,
     @Parameter(description = "Filter by specific transaction IDs. Pass multiple values (e.g. pk=1&pk=3)")
     @RequestParam("pk")
