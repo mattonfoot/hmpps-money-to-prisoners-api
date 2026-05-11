@@ -43,15 +43,15 @@ error response shape, OpenAPI schema parity, authorisation matrix).
 | `core/tests/test_dump_and_upload_for_ap.py`                        | _none_                                                                                                                             | Combined dump-then-upload flow                               | ❌        |
 | `core/tests/test_upload_dump_for_ap.py`                            | _none_                                                                                                                             | Upload component (S3 + retry)                                | ❌        |
 | `core/tests/test_upload_dump_for_linkspace.py`                     | _none_                                                                                                                             | Linkspace upload variant                                     | ❌        |
-| `core/tests/test_file_download.py`                                 | (parked) `resources/FileDownloadsResourceTest.kt`, `services/FileDownloadServiceTest.kt`, `jpa/entities/FileDownloadEntityTest.kt` | FileDownload entity + service: success/conflict/list         | ⚠ parked |
+| `core/tests/test_file_download.py`                                 | `services/FileDownloadServiceTest.kt`, `jpa/entities/FileDownloadEntityTest.kt`, (parked) `resources/FileDownloadsResourceTest.kt` | FileDownload entity + service: success/conflict/list         | ✅        |
 | `core/tests/test_filters.py` :: `SplitTextInMultipleFieldsFilter*` | `integration/CrossCuttingFilteringTest.kt` :: `SplitTextSearch`                                                                    | Search-text filter splits across fields, normalises case     | ✅        |
 | `core/tests/test_filters.py` :: `PostcodeFilter*`                  | `integration/CrossCuttingFilteringTest.kt` :: `PostcodeFilter`                                                                     | Postcode normalisation (case, whitespace) before match       | ✅        |
 | `core/tests/test_filters.py` :: `BlankStringFilter*`               | `integration/CrossCuttingFilteringTest.kt` :: `QueryParameterFiltering`                                                            | Blank-string query params treated as no-filter               | ✅        |
 | `core/tests/test_logging_filter.py`                                | _none_                                                                                                                             | Logging filter for sensitive request fields (Django logging) | ▢        |
-| `core/tests/test_models.py` :: `TestValidateMonday`                | (helper used internally)                                                                                                           | Validator: a date must be a Monday                           | ⚠        |
+| `core/tests/test_models.py` :: `TestValidateMonday`                | `util/DateValidatorsTest.kt`                                                                                                       | Validator: a date must be a Monday                           | ✅        |
 | `core/tests/test_permissions.py`                                   | `security/ActionsBasedPermissionsTest.kt`, `security/ClientIdPermissionsTest.kt`                                                   | DRF permission classes: action-based + client-id based       | ✅        |
 | `core/tests/test_reports.py`                                       | _none_                                                                                                                             | XLS / PDF reports (Django views)                             | ❌        |
-| `core/tests/test_scheduled_commands.py`                            | `services/ScheduledCommandServiceTest.kt`, (parked) `jpa/entities/ScheduledCommandEntityTest.kt`                                   | ScheduledCommand model + cron-based execution + locking      | ⚠ parked |
+| `core/tests/test_scheduled_commands.py`                            | `services/ScheduledCommandServiceTest.kt`, `jpa/entities/ScheduledCommandEntityTest.kt`                                            | ScheduledCommand model + cron-based execution + locking      | ✅        |
 | `core/tests/test_swagger.py`                                       | `integration/OpenApiDocsTest.kt`, `integration/OpenApiSchemaCompatibilityTest.kt`, `config/OpenApiConfigurationTest.kt`            | Swagger/OpenAPI doc available, schema parity with Python     | ✅        |
 
 ## credit/
@@ -87,7 +87,7 @@ error response shape, OpenAPI schema parity, authorisation matrix).
 | `credit/.../security_credit_list/test_credit_list_with_blank_string_filters.py`  | `integration/CrossCuttingFilteringTest.kt` :: `BlankStringFilters`                                                                      | Blank string filters do not narrow results               | ✅        |
 | `credit/.../security_credit_list/test_transaction_sender_details_credit_list.py` | `integration/CreditResourceTest.kt` :: `CreditListFiltersSender`                                                                        | Filter on transaction sender sort_code/account_number    | ✅        |
 | (no Python equivalent — entity tests)                                            | `jpa/entities/CreditTest.kt`, `jpa/entities/CreditResolutionTest.kt`, `jpa/entities/CreditSourceTest.kt`, `jpa/entities/CommentTest.kt` | Credit entity state, resolution transitions, source enum | ✅        |
-| (no Python equivalent — service tests)                                           | `services/CreditStatusTest.kt`, (parked) `services/CreditServiceTest.kt`, (parked) `jpa/repositories/CreditRepositoryTest.kt`           | Credit business rules, repository queries                | ⚠ parked |
+| (no Python equivalent — service tests)                                           | `services/CreditStatusTest.kt`, (parked) `services/CreditServiceTest.kt`, (parked) `jpa/repositories/CreditRepositoryTest.kt`           | Credit business rules, repository queries                | ⚠        |
 
 ## disbursement/
 
@@ -116,7 +116,7 @@ error response shape, OpenAPI schema parity, authorisation matrix).
 | `notification/tests/test_views.py` (17 tests)    | `integration/NotificationResourceTest.kt`, (parked) `resources/NotificationsResourceTest.kt` | `events/`, `emailpreferences/` endpoints                         | ✅        |
 | `notification/tests/test_commands.py` (13 tests) | (parked) `services/NotificationServiceTest.kt`                                               | Background notification commands                                 | ⚠ parked |
 | `notification/tests/test_rules.py` (18 tests)    | (parked) `services/NotificationServiceTest.kt`                                               | Notification rule engine (monitored sender/prisoner/amount/etc.) | ⚠ parked |
-| `notification/tests/test_utils.py`               | (parked) `jpa/entities/EventTest.kt`                                                         | Event aggregation/de-dup helpers                                 | ⚠ parked |
+| `notification/tests/test_utils.py`               | `jpa/entities/EventTest.kt`                                                                  | Event aggregation/de-dup helpers                                 | ✅        |
 
 ## payment/
 
