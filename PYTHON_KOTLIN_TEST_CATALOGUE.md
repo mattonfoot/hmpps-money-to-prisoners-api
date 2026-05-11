@@ -213,14 +213,28 @@ These verify properties of the Kotlin port itself, not Python behaviour:
 
 The 32 files under `/tmp/parked-tests/` were quarantined during the Django-shape
 schema unification because their entity references no longer compiled against
-the regenerated JPA classes. They cover unit-level concerns of the Python
-codebase that have working integration-test analogues but would still benefit
-from being rebuilt against the new entity names. The catalogue above marks each
-parked file with **⚠ parked** so the parity story is honest: the *behaviour* is
-covered by integration tests, but the unit-level Python tests have no live
-Kotlin twin yet.
+the regenerated JPA classes. Some have now been rebuilt as live tests against
+the new entity shapes; others are still pending. The catalogue above marks each
+parked file with **⚠ parked** so the parity story is honest.
 
 To restore: copy a file out of `/tmp/parked-tests/`, rename the path to its
 target package (`src_test_kotlin_..._FooTest.kt` → `src/test/kotlin/.../FooTest.kt`),
 update entity references (`Credit` → `CreditCredit`, etc.), and update factory
 calls to use the new keyword args in `EntityFactories.kt`.
+
+### Restored / freshly written unit tests
+
+| Kotlin test                                  | Status     | Source                                                                              |
+|----------------------------------------------|------------|-------------------------------------------------------------------------------------|
+| `jpa/entities/DigitalTakeupTest.kt`          | ✅ restored | PRF-001/002/003 — DigitalTakeup ratio calculation                                   |
+| `jpa/entities/UserSatisfactionTest.kt`       | ✅ restored | PRF-010/011/012/013 — UserSatisfaction percentage_satisfied + total                 |
+| `jpa/entities/ScheduledCommandEntityTest.kt` | ✅ restored | COR-010 to COR-014 — ScheduledCommand state + cron + getArgs + isScheduled          |
+| `jpa/entities/TransactionTest.kt`            | ✅ restored | TXN-001 to TXN-007 — Transaction entity field behaviour                             |
+| `jpa/entities/EventTest.kt`                  | ✅ restored | NOT-001/002 — NotificationEvent entity field behaviour                              |
+| `jpa/entities/UserEventTest.kt`              | ✅ restored | UEL-001/002/003 — UserEvent entity (timestamps, user, JSONB data)                   |
+| `services/FileDownloadServiceTest.kt`        | ✅ restored | COR-002/003 — FileDownloadService listDownloads/createDownload/findMissingDownloads |
+| `services/JobInformationServiceTest.kt`      | ✅ restored | AUTH-070/071/072 — JobInformationService create + upsert                            |
+| `util/DateValidatorsTest.kt`                 | ✅ ported   | Python `core/tests/test_models.py::TestValidateMonday`                              |
+
+Total newly-added unit tests: **+74**. The earlier "⚠ parked" entries for the
+above are now ✅.

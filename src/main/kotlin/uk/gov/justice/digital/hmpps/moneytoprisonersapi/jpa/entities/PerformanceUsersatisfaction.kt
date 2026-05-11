@@ -33,4 +33,23 @@ open class PerformanceUsersatisfaction {
   @NotNull
   @Column(name = "rated_5", nullable = false)
   open var rated5: Int = 0
+
+  /** Convenience alias for the @Id field — Django models the PK as `date`. */
+  @get:jakarta.persistence.Transient
+  val date: LocalDate get() = id
+
+  /** PRF-013: sum of all ratings on this day. */
+  @get:jakarta.persistence.Transient
+  val total: Int get() = rated1 + rated2 + rated3 + rated4 + rated5
+
+  /**
+   * PRF-012: ratio of ratings >= 4 over the day's total.
+   * Null when there were no ratings — mirrors Django's behaviour on the proxy.
+   */
+  @get:jakarta.persistence.Transient
+  val percentageSatisfied: Double?
+    get() {
+      val t = total
+      return if (t == 0) null else (rated4 + rated5).toDouble() / t.toDouble()
+    }
 }

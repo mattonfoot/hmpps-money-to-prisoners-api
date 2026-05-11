@@ -53,3 +53,12 @@ fun CoreScheduledcommand.updateNextExecution() {
   val next = expr.next(java.time.LocalDateTime.now()) ?: return
   nextExecution = next.atOffset(ZoneOffset.UTC)
 }
+
+/** COR-013: `true` when this command is due (nextExecution ≤ now). */
+fun CoreScheduledcommand.isScheduled(): Boolean {
+  val next = nextExecution ?: return false
+  return !next.isAfter(java.time.OffsetDateTime.now())
+}
+
+/** COR-014: arg string is space-separated; mirrors Django's `args = argString.split()`. */
+fun CoreScheduledcommand.getArgs(): List<String> = argString.split(" ").filter { it.isNotBlank() }

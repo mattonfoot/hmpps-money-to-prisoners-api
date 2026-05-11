@@ -66,4 +66,16 @@ open class PerformanceDigitaltakeup {
 
   @Column(name = "amount_by_post")
   open var amountByPost: Int? = null
+
+  /**
+   * PRF-003: Digital take-up ratio = `creditsByMtp / (creditsByPost + creditsByMtp)`.
+   * Returns null when the total is zero, mirroring Django's behaviour on the
+   * `DigitalTakeup` proxy/queryset annotations.
+   */
+  @get:jakarta.persistence.Transient
+  val digitalTakeup: Double?
+    get() {
+      val total = creditsByPost + creditsByMtp
+      return if (total == 0) null else creditsByMtp.toDouble() / total.toDouble()
+    }
 }
