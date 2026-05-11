@@ -150,11 +150,11 @@ open class CreditCredit {
   @Column(name = "reconciled", nullable = false)
   open var reconciled: Boolean = false
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "owner_id")
   open var owner: AuthUser? = null
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "prison_id")
   open var prison: PrisonPrison? = null
 
@@ -166,12 +166,12 @@ open class CreditCredit {
   @Column(name = "blocked", nullable = false)
   open var blocked: Boolean = false
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "prisoner_profile_id")
   open var prisonerProfile: SecurityPrisonerprofile? =
     null
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "sender_profile_id")
   open var senderProfile: SecuritySenderprofile? = null
 
@@ -179,7 +179,7 @@ open class CreditCredit {
   @Column(name = "nomis_transaction_id", length = 50)
   open var nomisTransactionId: String? = null
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "private_estate_batch_id")
   open var privateEstateBatch: CreditPrivateestatebatch? =
     null
@@ -195,19 +195,19 @@ open class CreditCredit {
   // Manually-maintained back-references. Do not regenerate from DB — Django's
   // schema only models forward FKs; the existing services/resources rely on
   // these reverse navigations.
-  @OneToOne(mappedBy = "credit", fetch = FetchType.LAZY)
+  @OneToOne(mappedBy = "credit", fetch = FetchType.EAGER)
   open var payment: PaymentPayment? = null
 
-  @OneToOne(mappedBy = "credit", fetch = FetchType.LAZY)
+  @OneToOne(mappedBy = "credit", fetch = FetchType.EAGER)
   open var transaction: TransactionTransaction? = null
 
-  @OneToOne(mappedBy = "credit", fetch = FetchType.LAZY)
+  @OneToOne(mappedBy = "credit", fetch = FetchType.EAGER)
   open var securityCheck: SecurityCheck? = null
 
-  @OneToMany(mappedBy = "credit", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "credit", fetch = FetchType.EAGER)
   open var logs: MutableList<CreditLog> = mutableListOf()
 
-  @OneToMany(mappedBy = "credit", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "credit", fetch = FetchType.EAGER)
   open var comments: MutableList<CreditComment> = mutableListOf()
 
   // Django doesn't store `source` as a column. The legacy domain model derived
@@ -221,4 +221,14 @@ open class CreditCredit {
       payment != null -> CreditSource.ONLINE
       else -> CreditSource.UNKNOWN
     }
+
+  /**
+   * Mirrors Django Credit.__str__: `Credit(<prisoner_number>, £<amount>, <resolution>)`.
+   * Amount is stored in pence; render as pounds.pence with the resolution upper-cased.
+   */
+  override fun toString(): String {
+    val pounds = amount / 100
+    val pence = (amount % 100).let { if (it < 0) -it else it }
+    return "Credit($prisonerNumber, £%d.%02d, %s)".format(pounds, pence, resolution.uppercase())
+  }
 }

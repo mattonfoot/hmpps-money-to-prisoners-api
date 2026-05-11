@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities
 
 import jakarta.persistence.Column
+import jakarta.persistence.JoinColumn
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.params.ParameterizedTest
@@ -23,8 +24,13 @@ class EntityColumnNameTest {
     expectedColumnName: String,
   ) {
     val field = entityClass.getDeclaredField(fieldName)
-    val columnAnnotation = field.getAnnotation(Column::class.java)
-    val actualColumnName = columnAnnotation?.name?.ifEmpty { fieldName } ?: fieldName
+    // Foreign-key fields (@ManyToOne / @OneToOne) carry @JoinColumn instead of @Column.
+    val joinColumn = field.getAnnotation(JoinColumn::class.java)
+    val column = field.getAnnotation(Column::class.java)
+    val actualColumnName =
+      joinColumn?.name?.ifEmpty { fieldName }
+        ?: column?.name?.ifEmpty { fieldName }
+        ?: fieldName
     assertEquals(
       expectedColumnName,
       actualColumnName,

@@ -151,7 +151,7 @@ class BalanceServiceTest {
       val result = balanceService.createBalance(closingBalance = closingBalance, date = date)
 
       assertThat(result.id).isEqualTo(1)
-      assertThat(result.closingBalance).isEqualTo(closingBalance)
+      assertThat(result.closingBalance).isEqualTo(closingBalance.toLong())
       assertThat(result.date).isEqualTo(date)
     }
 
@@ -167,7 +167,7 @@ class BalanceServiceTest {
 
       val result = balanceService.createBalance(closingBalance = largeBalance, date = date)
 
-      assertThat(result.closingBalance).isEqualTo(largeBalance)
+      assertThat(result.closingBalance).isEqualTo(largeBalance.toLong())
     }
 
     @Test
@@ -182,7 +182,7 @@ class BalanceServiceTest {
 
       val result = balanceService.createBalance(closingBalance = zeroBalance, date = date)
 
-      assertThat(result.closingBalance).isEqualTo(BigInteger.ZERO)
+      assertThat(result.closingBalance).isEqualTo(0L)
     }
 
     @Test

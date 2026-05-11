@@ -33,4 +33,14 @@ open class AccountBalance {
   @NotNull
   @Column(name = "date", nullable = false)
   open var date: LocalDate = LocalDate.now()
+
+  /**
+   * Mirrors Django `Balance.__str__`: `<YYYY-MM-DD> £<pounds.pence>`.
+   * Closing balance is stored as integer pence.
+   */
+  override fun toString(): String {
+    val pounds = closingBalance / 100
+    val pence = (closingBalance % 100).let { if (it < 0) -it else it }
+    return "%s £%d.%02d".format(date, pounds, pence)
+  }
 }

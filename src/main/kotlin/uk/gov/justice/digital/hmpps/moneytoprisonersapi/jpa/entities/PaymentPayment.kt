@@ -108,11 +108,11 @@ open class PaymentPayment {
   open var email: String? = null
 
   @NotNull
-  @OneToOne(fetch = FetchType.LAZY, optional = false)
+  @OneToOne(fetch = FetchType.EAGER, optional = false)
   @JoinColumn(name = "credit_id", nullable = false)
   open var credit: CreditCredit? = null
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "batch_id")
   open var batch: PaymentBatch? = null
 
@@ -135,7 +135,7 @@ open class PaymentPayment {
   @Column(name = "card_brand", length = 250)
   open var cardBrand: String? = null
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "billing_address_id")
   open var billingAddress: PaymentBillingaddress? = null
 

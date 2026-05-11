@@ -35,7 +35,11 @@ class CommentTest {
 
     @Test
     fun `stores user reference`() {
-      val comment = Comment(comment = "Test comment", userId = "user1")
+      // FactoryHooks.userResolver may have been re-bound by a prior integration
+      // test (it's JVM-static); pass a real AuthUser so the assertion doesn't
+      // depend on the resolver's current state.
+      val user = AuthUser().apply { username = "user1" }
+      val comment = Comment(comment = "Test comment", user = user)
       assertEquals("user1", comment.user?.username)
     }
 

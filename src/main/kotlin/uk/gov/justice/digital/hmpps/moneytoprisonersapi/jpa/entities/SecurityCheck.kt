@@ -76,12 +76,12 @@ open class SecurityCheck {
   @Column(name = "actioned_at")
   open var actionedAt: OffsetDateTime? = null
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "actioned_by_id")
   open var actionedBy: AuthUser? = null
 
   @NotNull
-  @OneToOne(fetch = FetchType.LAZY, optional = false)
+  @OneToOne(fetch = FetchType.EAGER, optional = false)
   @JoinColumn(name = "credit_id", nullable = false)
   open var credit: CreditCredit? = null
 
@@ -89,7 +89,7 @@ open class SecurityCheck {
   @Column(name = "decision_reason", nullable = false, length = Integer.MAX_VALUE)
   open var decisionReason: String = ""
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "assigned_to_id")
   open var assignedTo: AuthUser? = null
 
@@ -101,7 +101,7 @@ open class SecurityCheck {
   @Column(name = "rejection_reasons", nullable = false)
   open var rejectionReasons: MutableMap<String, Any> = mutableMapOf()
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "auto_accept_rule_state_id")
   open var autoAcceptRuleState: SecurityCheckautoacceptrulestate? =
     null

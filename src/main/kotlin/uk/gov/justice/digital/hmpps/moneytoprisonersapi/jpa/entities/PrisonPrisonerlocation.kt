@@ -65,12 +65,12 @@ open class PrisonPrisonerlocation {
   @Column(name = "prisoner_dob", nullable = false)
   open var prisonerDob: LocalDate = LocalDate.now()
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "created_by_id")
   open var createdBy: AuthUser? = null
 
   @NotNull
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @ManyToOne(fetch = FetchType.EAGER, optional = false)
   @JoinColumn(name = "prison_id", nullable = false)
   open var prison: PrisonPrison? = null
 

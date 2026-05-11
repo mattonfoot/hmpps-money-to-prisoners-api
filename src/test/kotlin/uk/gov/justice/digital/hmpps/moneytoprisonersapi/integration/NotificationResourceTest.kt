@@ -37,15 +37,28 @@ class NotificationResourceTest : IntegrationTestBase() {
     username: String? = "admin",
     triggeredAt: LocalDateTime = LocalDateTime.of(2024, 1, 15, 10, 0),
     credit: Credit? = null,
-  ): Event = eventRepository.save(
-    Event(
-      rule = rule,
-      description = "Test event",
-      triggeredAt = triggeredAt,
-      username = username,
-      credit = credit,
-    ),
-  )
+  ): Event {
+    val event = eventRepository.save(
+      Event(
+        rule = rule,
+        description = "Test event",
+        triggeredAt = triggeredAt,
+        username = username,
+      ),
+    )
+    // Django models event→credit via the `notification_creditevent` child row;
+    // create one if a credit was supplied so the DTO's credit_id resolves.
+    if (credit != null) {
+      jdbcTemplate.update(
+        """
+        INSERT INTO notification_creditevent (event_id, credit_id) VALUES (?, ?)
+        """.trimIndent(),
+        event.id,
+        credit.id,
+      )
+    }
+    return event
+  }
 
   // -------------------------------------------------------------------------
   // NOT-003 to NOT-006: GET /events/
@@ -69,7 +82,7 @@ class NotificationResourceTest : IntegrationTestBase() {
     fun `should return own events and global events`() {
       saveEvent(username = "admin")
       saveEvent(username = null) // global
-      saveEvent(username = "other_user") // another user's — should not appear
+      saveEvent(username = "prison-clerk") // another user's — should not appear
 
       webTestClient.get()
         .uri("/events/")
@@ -248,7 +261,7 @@ class NotificationResourceTest : IntegrationTestBase() {
     @DisplayName("NOT-007 includes only events visible to the user")
     fun `should include only user visible events in pages`() {
       saveEvent(username = "admin", triggeredAt = LocalDateTime.of(2024, 1, 10, 0, 0))
-      saveEvent(username = "other_user", triggeredAt = LocalDateTime.of(2024, 1, 20, 0, 0))
+      saveEvent(username = "prison-clerk", triggeredAt = LocalDateTime.of(2024, 1, 20, 0, 0))
 
       webTestClient.get()
         .uri("/events/pages/")

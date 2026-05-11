@@ -36,7 +36,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
     @DisplayName("SEC-122 - Returns only user's own searches")
     fun `should return only current user's searches`() {
       repository.save(SavedSearch(username = "admin", description = "My search", endpoint = "/credits/", filters = null))
-      repository.save(SavedSearch(username = "other-user", description = "Other search", endpoint = "/credits/", filters = null))
+      repository.save(SavedSearch(username = "prison-clerk", description = "Other search", endpoint = "/credits/", filters = null))
 
       webTestClient.get()
         .uri("/searches/")
@@ -94,7 +94,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("SEC-123 - Returns 404 if search belongs to different user")
     fun `should return 404 if search belongs to different user`() {
-      val search = repository.save(SavedSearch(username = "other-user", description = "Other", endpoint = "/credits/", filters = null))
+      val search = repository.save(SavedSearch(username = "prison-clerk", description = "Other", endpoint = "/credits/", filters = null))
 
       webTestClient.patch()
         .uri("/searches/${search.id}/")
@@ -127,7 +127,7 @@ class SavedSearchResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("SEC-124 - Returns 404 if search belongs to different user")
     fun `should return 404 if search belongs to different user`() {
-      val search = repository.save(SavedSearch(username = "other-user", description = "Other", endpoint = "/credits/", filters = null))
+      val search = repository.save(SavedSearch(username = "prison-clerk", description = "Other", endpoint = "/credits/", filters = null))
 
       webTestClient.delete()
         .uri("/searches/${search.id}/")

@@ -78,11 +78,11 @@ class NotificationsResource(
     rules: List<String>? = null,
     @Parameter(description = "Filter events triggered on or after this datetime (inclusive)", example = "2024-01-01T00:00:00")
     @RequestParam("triggered_at__gte")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     triggeredAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter events triggered before this datetime (exclusive)", example = "2024-02-01T00:00:00")
     @RequestParam("triggered_at__lt")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     triggeredAtLt: OffsetDateTime? = null,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,

@@ -48,7 +48,14 @@ class RecipientsResource(
       monitoredByUsername = monitoredBy,
       notMonitoredByUsername = notMonitoredBy,
     )
-    val results = profiles.map { RecipientProfile.from(it, currentUsername = principal.name) }
+    val results = profiles.map { profile ->
+      RecipientProfile.from(
+        profile,
+        currentUsername = principal.name,
+        details = recipientProfileService.getDetails(profile.id!!),
+        isMonitoredByCurrentUser = recipientProfileService.isMonitoredBy(profile.id!!, principal.name),
+      )
+    }
     return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
@@ -57,7 +64,12 @@ class RecipientsResource(
   @GetMapping("/{id}/")
   fun getProfile(@PathVariable id: Long, principal: Principal): RecipientProfile {
     val profile = recipientProfileService.getProfile(id)
-    return RecipientProfile.from(profile, currentUsername = principal.name)
+    return RecipientProfile.from(
+      profile,
+      currentUsername = principal.name,
+      details = recipientProfileService.getDetails(profile.id!!),
+      isMonitoredByCurrentUser = recipientProfileService.isMonitoredBy(profile.id!!, principal.name),
+    )
   }
 
   @Operation(summary = "Get disbursements for a recipient profile")

@@ -92,6 +92,17 @@ fun Credit(
     else -> null
   }
   this.nomisTransactionId = nomisTransactionId
+  // Django credit_credit has no `incomplete_sender_info` column — the flag
+  // lives on transaction_transaction. Tests that exercise the refund logic
+  // pass `incompleteSenderInfo = true`; expose that by giving the credit a
+  // stub transaction with the flag set.
+  if (incompleteSenderInfo) {
+    val parentCredit = this
+    this.transaction = TransactionTransaction().apply {
+      this.incompleteSenderInfo = true
+      this.credit = parentCredit
+    }
+  }
 }
 
 @Suppress("FunctionName")
@@ -114,10 +125,9 @@ fun Disbursement(
   resolution: Any? = null,
   remittanceDescription: String = "",
   // Django doesn't store sender postcode on disbursement_disbursement; the
-  // legacy domain put it on the recipient address. Accepted here for legacy
-  // test signatures and ignored.
-  @Suppress("UNUSED_PARAMETER") postcode: String? = null,
+  postcode: String? = null,
 ): DisbursementDisbursement = DisbursementDisbursement().apply {
+  this.postcode = postcode
   this.id = id
   this.amount = amount.toInt()
   this.prisonerNumber = prisonerNumber
@@ -193,14 +203,15 @@ fun Transaction(
   this.incompleteSenderInfo = incompleteSenderInfo
   this.processorTypeCode = processorTypeCode
   this.credit = credit
+  val ra: OffsetDateTime? = when (receivedAt) {
+    is OffsetDateTime -> receivedAt
+    is LocalDateTime -> receivedAt.atOffset(ZoneOffset.UTC)
+    else -> null
+  }
+  if (ra != null) this.receivedAt = ra
   if (this.credit != null) {
     if (prisonerNumber.isNotEmpty()) this.credit!!.prisonerNumber = prisonerNumber
     if (prisonerName.isNotEmpty()) this.credit!!.prisonerName = prisonerName
-    val ra: OffsetDateTime? = when (receivedAt) {
-      is OffsetDateTime -> receivedAt
-      is LocalDateTime -> receivedAt.atOffset(ZoneOffset.UTC)
-      else -> null
-    }
     if (ra != null) this.credit!!.receivedAt = ra
   }
   // prison parameter ignored — Transaction has no direct prison FK; lives on credit.
@@ -221,15 +232,13 @@ fun Payment(
   ipAddress: Any? = null,
   billingAddress: PaymentBillingaddress? = null,
   credit: CreditCredit? = null,
-  // Django doesn't model an `email` field directly on payment_payment; the
-  // legacy DTO surfaced it via the billing address. Accepted here as a
-  // legacy-compat parameter and ignored.
-  @Suppress("UNUSED_PARAMETER") email: String? = null,
+  email: String? = null,
 ): PaymentPayment = PaymentPayment().apply {
   this.uuid = uuid ?: UUID.randomUUID()
   this.amount = amount.toInt()
   this.status = status
   this.cardholderName = cardholderName
+  this.email = email
   this.cardNumberFirstDigits = cardNumberFirstDigits
   this.cardNumberLastDigits = cardNumberLastDigits
   this.cardExpiryDate = cardExpiryDate
@@ -325,10 +334,15 @@ fun MtpRole(
   name: String = "",
   keyGroup: Any? = null,
   application: Any? = null,
-  @Suppress("UNUSED_PARAMETER") otherGroups: Any? = null,
+  otherGroups: Any? = null,
 ): MtpAuthRole = MtpAuthRole().apply {
   this.id = id
   this.name = name
+  this.otherGroupsCsv = when (otherGroups) {
+    is String -> otherGroups
+    is Collection<*> -> otherGroups.joinToString(",")
+    else -> null
+  }
   this.keyGroup = when (keyGroup) {
     is AuthGroup -> keyGroup
     is String -> AuthGroup().apply { this.name = keyGroup }

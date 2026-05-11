@@ -46,13 +46,18 @@ data class SenderProfile(
   @JsonProperty("debit_card_details")
   val debitCardDetails: List<DebitCardSenderDetails>,
   @JsonProperty("monitoring_users")
-  val monitoringUsers: List<String>,
+  val monitoringUsers: List<Long>,
   val monitoring: Boolean?,
   val created: OffsetDateTime?,
   val modified: OffsetDateTime?,
 ) {
   companion object {
-    fun from(profile: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SenderProfile, currentUsername: String? = null): SenderProfile {
+    fun from(
+      profile: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SenderProfile,
+      currentUsername: String? = null,
+      isMonitoredByCurrentUser: Boolean? = null,
+      monitoringUserIds: List<Long> = emptyList(),
+    ): SenderProfile {
       val credits = profile.credits
       val bankDetails = credits.mapNotNull { it.transaction }
         .map { tx ->
@@ -83,11 +88,11 @@ data class SenderProfile(
         prisons = credits.mapNotNull { it.prison?.nomisId }.distinct(),
         bankTransferDetails = bankDetails,
         debitCardDetails = cardDetails,
-        // Sender-profile monitoring users live on the per-detail children in
-        // Django (security_debitcardsenderdetails_monitoring_users etc.). Emit
-        // empty until per-detail rendering is wired in.
-        monitoringUsers = emptyList(),
-        monitoring = null,
+        // Django sources monitoring from the per-detail children. The caller
+        // pre-resolves the union (across all of this profile's debit-card
+        // detail children) and passes it in.
+        monitoringUsers = monitoringUserIds,
+        monitoring = isMonitoredByCurrentUser,
         created = profile.created,
         modified = profile.modified,
       )

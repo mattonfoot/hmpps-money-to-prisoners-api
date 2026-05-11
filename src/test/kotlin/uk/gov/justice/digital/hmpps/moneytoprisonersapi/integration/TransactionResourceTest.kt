@@ -123,7 +123,7 @@ class TransactionResourceTest : IntegrationTestBase() {
             "sender_sort_code": "112233",
             "sender_account_number": "12345678",
             "sender_name": "Alice Sender",
-            "received_at": "2024-01-15T10:30:00"
+            "received_at": "2024-01-15T10:30:00Z"
           }]""",
         )
         .exchange()
@@ -135,7 +135,7 @@ class TransactionResourceTest : IntegrationTestBase() {
       assertThat(txn.credit).isNotNull
       assertThat(txn.credit!!.amount).isEqualTo(5000L)
       assertThat(txn.credit!!.source).isEqualTo(CreditSource.BANK_TRANSFER)
-      assertThat(txn.credit!!.resolution).isEqualTo(CreditResolution.PENDING)
+      assertThat(txn.credit!!.resolution).isEqualTo(CreditResolution.PENDING.value)
     }
 
     @Test
@@ -336,8 +336,8 @@ class TransactionResourceTest : IntegrationTestBase() {
     }
 
     @Test
-    @DisplayName("TXN-023 - PATCH /transactions/ bulk refunds eligible transactions and returns 204")
-    fun `should refund transactions in refundable state and return 204`() {
+    @DisplayName("TXN-023 - PATCH /transactions/ bulk refunds eligible transactions and returns 200")
+    fun `should refund transactions in refundable state and return 200`() {
       // Create refundable transaction: credit exists, sender info complete, no prison
       val credit = Credit(amount = 1000L, prison = null, blocked = false, resolution = CreditResolution.PENDING)
       credit.source = CreditSource.BANK_TRANSFER
@@ -358,10 +358,11 @@ class TransactionResourceTest : IntegrationTestBase() {
         .header("Content-Type", "application/json")
         .bodyValue("""[{"id": ${savedTxn.id}, "refunded": true}]""")
         .exchange()
-        .expectStatus().isNoContent
+        // Python returns 200 with the payload echoed back (not 204).
+        .expectStatus().isOk
 
       val updatedCredit = creditRepository.findById(savedCredit.id!!).get()
-      assertThat(updatedCredit.resolution).isEqualTo(CreditResolution.REFUNDED)
+      assertThat(updatedCredit.resolution).isEqualTo(CreditResolution.REFUNDED.value)
     }
 
     @Test
@@ -415,7 +416,7 @@ class TransactionResourceTest : IntegrationTestBase() {
       webTestClient.post()
         .uri("/transactions/reconcile/")
         .header("Content-Type", "application/json")
-        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00", "received_at__lt": "2024-02-01T00:00:00"}""")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00Z", "received_at__lt": "2024-02-01T00:00:00Z"}""")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -427,7 +428,7 @@ class TransactionResourceTest : IntegrationTestBase() {
         .uri("/transactions/reconcile/")
         .headers(setAuthorisation(roles = listOf("ROLE_OTHER")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00", "received_at__lt": "2024-02-01T00:00:00"}""")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00Z", "received_at__lt": "2024-02-01T00:00:00Z"}""")
         .exchange()
         .expectStatus().isForbidden
     }
@@ -439,7 +440,7 @@ class TransactionResourceTest : IntegrationTestBase() {
         .uri("/transactions/reconcile/")
         .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"received_at__lt": "2024-02-01T00:00:00"}""")
+        .bodyValue("""{"received_at__lt": "2024-02-01T00:00:00Z"}""")
         .exchange()
         .expectStatus().isBadRequest
     }
@@ -451,7 +452,7 @@ class TransactionResourceTest : IntegrationTestBase() {
         .uri("/transactions/reconcile/")
         .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00"}""")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00Z"}""")
         .exchange()
         .expectStatus().isBadRequest
     }
@@ -463,7 +464,7 @@ class TransactionResourceTest : IntegrationTestBase() {
         .uri("/transactions/reconcile/")
         .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00", "received_at__lt": "2024-02-01T00:00:00"}""")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00Z", "received_at__lt": "2024-02-01T00:00:00Z"}""")
         .exchange()
         .expectStatus().isNoContent
     }
@@ -489,7 +490,7 @@ class TransactionResourceTest : IntegrationTestBase() {
         .uri("/transactions/reconcile/")
         .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00", "received_at__lt": "2024-02-01T00:00:00"}""")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00Z", "received_at__lt": "2024-02-01T00:00:00Z"}""")
         .exchange()
         .expectStatus().isCreated
         .expectBody()
@@ -522,7 +523,7 @@ class TransactionResourceTest : IntegrationTestBase() {
         .uri("/transactions/reconcile/")
         .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00", "received_at__lt": "2024-02-01T00:00:00"}""")
+        .bodyValue("""{"received_at__gte": "2024-01-01T00:00:00Z", "received_at__lt": "2024-02-01T00:00:00Z"}""")
         .exchange()
         .expectStatus().isCreated
 

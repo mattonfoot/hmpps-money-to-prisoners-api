@@ -23,7 +23,12 @@ class PrisonUserMappingService(
   fun getPrisonsForUser(user: MtpUser): Set<Prison> = user.prisonUserMapping?.prisons ?: emptySet()
 
   private fun mappingFor(user: MtpUser): MtpAuthPrisonusermapping = user.prisonUserMapping
-    ?: MtpAuthPrisonusermapping().apply { this.user = user }
+    ?: MtpAuthPrisonusermapping().also {
+      it.user = user
+      // Wire the back-reference too so callers reading `user.prisonUserMapping`
+      // (or `user.prisons`) immediately after see the new mapping.
+      user.prisonUserMapping = it
+    }
 
   /** AUTH-050: Replaces the prison mapping for [user] with [prisons]. */
   @Transactional

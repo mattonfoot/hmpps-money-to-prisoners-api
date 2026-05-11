@@ -60,11 +60,12 @@ class MonitoredEmailResourceTest : IntegrationTestBase() {
         .uri("/security/monitored-email-addresses/")
         .headers(setAuthorisation(roles = listOf("ROLE_FIU")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"keyword": "Fraud"}""")
+        .bodyValue("\"Fraud\"")
         .exchange()
         .expectStatus().isCreated
-        .expectBody()
-        .jsonPath("$.keyword").isEqualTo("fraud")
+        // Python's MonitoredPartialEmailAddressSerialiser.to_representation
+        // returns a bare JSON string ("fraud"), not an object with a `keyword` key.
+        .expectBody(String::class.java).isEqualTo("\"fraud\"")
 
       assertThat(repository.count()).isEqualTo(1L)
       assertThat(repository.findAll().first().keyword).isEqualTo("fraud")
@@ -77,7 +78,7 @@ class MonitoredEmailResourceTest : IntegrationTestBase() {
         .uri("/security/monitored-email-addresses/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"keyword": "fraud"}""")
+        .bodyValue("\"fraud\"")
         .exchange()
         .expectStatus().isForbidden
     }
@@ -89,7 +90,7 @@ class MonitoredEmailResourceTest : IntegrationTestBase() {
         .uri("/security/monitored-email-addresses/")
         .headers(setAuthorisation(roles = listOf("ROLE_FIU")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"keyword": "ab"}""")
+        .bodyValue("\"ab\"")
         .exchange()
         .expectStatus().isBadRequest
     }
@@ -103,7 +104,7 @@ class MonitoredEmailResourceTest : IntegrationTestBase() {
         .uri("/security/monitored-email-addresses/")
         .headers(setAuthorisation(roles = listOf("ROLE_FIU")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"keyword": "fraud"}""")
+        .bodyValue("\"fraud\"")
         .exchange()
         .expectStatus().isBadRequest
     }

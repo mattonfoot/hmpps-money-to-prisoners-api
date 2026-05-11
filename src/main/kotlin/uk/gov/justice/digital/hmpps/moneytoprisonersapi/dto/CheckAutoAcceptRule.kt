@@ -25,10 +25,10 @@ data class CheckAutoAcceptRule(
       // sender profile. Surface the parent profile id when the detail is loaded.
       senderProfile = rule.debitCardSenderDetails?.sender?.id ?: 0L,
       prisonerProfile = rule.prisonerProfile?.id ?: 0L,
-      // States live on `security_checkautoacceptrulestate`, not on the rule.
-      // Stub as empty until the back-reference / explicit query is wired in.
-      states = emptyList(),
-      isActive = false,
+      states = rule.states.sortedBy { it.created }.map { CheckAutoAcceptRuleState.from(it) },
+      // Mirrors Django CheckAutoAcceptRule.is_active(): the .active flag on
+      // the latest (most recently created) state row.
+      isActive = rule.states.maxByOrNull { it.created }?.active ?: false,
       created = rule.created,
       modified = rule.modified,
     )

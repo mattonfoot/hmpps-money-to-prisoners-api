@@ -17,12 +17,12 @@ class BalanceTest {
   inner class ClosingBalanceField {
 
     @Test
-    fun `closing_balance stores value as BigInteger`() {
+    fun `closing_balance stores value as Long pence`() {
       val balance = Balance(
         closingBalance = BigInteger.valueOf(12345),
         date = LocalDate.of(2024, 1, 15),
       )
-      assertEquals(BigInteger.valueOf(12345), balance.closingBalance)
+      assertEquals(12345L, balance.closingBalance)
     }
 
     @Test
@@ -32,7 +32,7 @@ class BalanceTest {
         closingBalance = largeValue,
         date = LocalDate.of(2024, 1, 15),
       )
-      assertEquals(largeValue, balance.closingBalance)
+      assertEquals(largeValue.toLong(), balance.closingBalance)
     }
 
     @Test
@@ -41,7 +41,7 @@ class BalanceTest {
         closingBalance = BigInteger.ZERO,
         date = LocalDate.of(2024, 1, 15),
       )
-      assertEquals(BigInteger.ZERO, balance.closingBalance)
+      assertEquals(0L, balance.closingBalance)
     }
   }
 
@@ -65,23 +65,23 @@ class BalanceTest {
   inner class Timestamps {
 
     @Test
-    fun `created timestamp defaults to null before persistence`() {
+    fun `created timestamp is auto-populated on construction`() {
       val balance = Balance(
         closingBalance = BigInteger.valueOf(1000),
         date = LocalDate.of(2024, 1, 15),
       )
-      // Before persistence, created is null
-      assertEquals(null, balance.created)
+      // Django's auto_now_add lives on the @PrePersist callback in Kotlin;
+      // the entity provides a sensible default so it is never null pre-save.
+      assertNotNull(balance.created)
     }
 
     @Test
-    fun `modified timestamp defaults to null before persistence`() {
+    fun `modified timestamp is auto-populated on construction`() {
       val balance = Balance(
         closingBalance = BigInteger.valueOf(1000),
         date = LocalDate.of(2024, 1, 15),
       )
-      // Before persistence, modified is null
-      assertEquals(null, balance.modified)
+      assertNotNull(balance.modified)
     }
 
     @Test

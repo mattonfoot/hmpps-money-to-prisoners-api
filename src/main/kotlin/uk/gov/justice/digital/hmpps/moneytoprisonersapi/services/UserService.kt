@@ -110,7 +110,10 @@ class UserService(
     firstName?.let { user.firstName = it }
     lastName?.let { user.lastName = it }
     if (!isSelf) {
-      // prisons/role updates need PrisonUserMapping + group reassignment — stubbed.
+      // Django: a user-admin can change another user's role and prisons; the
+      // user being edited cannot change their own (isSelf above prevents it).
+      prisons?.let { user.prisons = it.toMutableSet() }
+      role?.let { user.role = it }
     }
     return mtpUserRepository.save(user)
   }

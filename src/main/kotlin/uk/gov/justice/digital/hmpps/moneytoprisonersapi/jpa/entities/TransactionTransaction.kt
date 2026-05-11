@@ -120,7 +120,7 @@ open class TransactionTransaction {
   @Column(name = "reference_in_sender_field", nullable = false)
   open var referenceInSenderField: Boolean = false
 
-  @OneToOne(fetch = FetchType.LAZY)
+  @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "credit_id")
   open var credit: CreditCredit? = null
 }

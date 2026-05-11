@@ -169,7 +169,7 @@ class PaymentResourceTest : IntegrationTestBase() {
       assertThat(payment.credit).isNotNull()
 
       val credit = payment.credit!!
-      assertThat(credit.resolution).isEqualTo(CreditResolution.INITIAL)
+      assertThat(credit.resolution).isEqualTo(CreditResolution.INITIAL.value)
       assertThat(credit.source).isEqualTo(CreditSource.ONLINE)
       assertThat(credit.prisonerNumber).isEqualTo("A1234BC")
       assertThat(credit.prisonerDob).isEqualTo(LocalDate.of(1990, 1, 15))
@@ -262,7 +262,7 @@ class PaymentResourceTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       val updatedCredit = creditRepository.findById(savedPayment.credit!!.id!!).get()
-      assertThat(updatedCredit.resolution).isEqualTo(CreditResolution.PENDING)
+      assertThat(updatedCredit.resolution).isEqualTo(CreditResolution.PENDING.value)
       assertThat(updatedCredit.receivedAt).isNotNull()
     }
 
@@ -281,7 +281,7 @@ class PaymentResourceTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       val updatedCredit = creditRepository.findById(creditId).get()
-      assertThat(updatedCredit.resolution).isEqualTo(CreditResolution.INITIAL)
+      assertThat(updatedCredit.resolution).isEqualTo(CreditResolution.INITIAL.value)
     }
 
     @Test
@@ -299,7 +299,7 @@ class PaymentResourceTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       val updatedCredit = creditRepository.findById(creditId).get()
-      assertThat(updatedCredit.resolution).isEqualTo(CreditResolution.FAILED)
+      assertThat(updatedCredit.resolution).isEqualTo(CreditResolution.FAILED.value)
     }
 
     @Test
@@ -317,7 +317,7 @@ class PaymentResourceTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       val updatedCredit = creditRepository.findById(creditId).get()
-      assertThat(updatedCredit.resolution).isEqualTo(CreditResolution.FAILED)
+      assertThat(updatedCredit.resolution).isEqualTo(CreditResolution.FAILED.value)
     }
 
     @Test
@@ -385,12 +385,14 @@ class PaymentResourceTest : IntegrationTestBase() {
         .uri("/payments/${savedPayment.uuid}/")
         .headers(setAuthorisation(roles = listOf("ROLE_SEND_MONEY")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"status": "taken", "received_at": "2024-01-15T10:30:00"}""")
+        // Python expects offset-aware ISO datetime in request bodies (USE_TZ=True).
+        .bodyValue("""{"status": "taken", "received_at": "2024-01-15T10:30:00Z"}""")
         .exchange()
         .expectStatus().isOk
 
       val updatedCredit = creditRepository.findById(creditId).get()
-      assertThat(updatedCredit.receivedAt).isEqualTo(LocalDateTime.of(2024, 1, 15, 10, 30, 0))
+      assertThat(updatedCredit.receivedAt)
+        .isEqualTo(LocalDateTime.of(2024, 1, 15, 10, 30, 0).atOffset(java.time.ZoneOffset.UTC))
     }
   }
 

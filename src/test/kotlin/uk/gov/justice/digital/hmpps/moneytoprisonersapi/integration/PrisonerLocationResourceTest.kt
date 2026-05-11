@@ -150,7 +150,7 @@ class PrisonerLocationResourceTest : IntegrationTestBase() {
       assertThat(locations).hasSize(1)
       assertThat(locations[0].active).isTrue()
       assertThat(locations[0].prisonerNumber).isEqualTo("A1234BC")
-      assertThat(locations[0].createdBy).isEqualTo("test-prisoner-location-admin")
+      assertThat(locations[0].createdBy?.username).isEqualTo("prisoner-location-admin")
     }
 
     @Test

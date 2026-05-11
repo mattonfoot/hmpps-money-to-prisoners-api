@@ -22,8 +22,10 @@ data class Role(
       name = role.name,
       keyGroup = role.keyGroup?.name ?: "",
       // Django models other-groups via mtp_auth_role_other_groups M2M; surface
-      // as a comma-joined list when callers need it. Empty until that nav is wired.
-      otherGroups = "",
+      // as a comma-joined list. Unit-test factories can override via the
+      // transient otherGroupsCsv field on the entity.
+      otherGroups = role.otherGroupsCsv
+        ?: role.otherGroups.joinToString(",") { it.name },
       application = role.application?.clientId ?: "",
     )
   }

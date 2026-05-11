@@ -224,12 +224,16 @@ class PrisonerProfileResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("SEC-093 - Returns credits for prisoner profile")
     fun `should return credits for prisoner profile`() {
-      val credit = creditRepository.save(
-        Credit(amount = 3000, prisonerNumber = "A1234BC", resolution = CreditResolution.PENDING),
+      // PrisonerProfile.credits is @OneToMany(mappedBy = "prisonerProfile") —
+      // the relationship is owned by Credit's prisoner_profile_id FK, so the
+      // credit (not the profile) is the side we set.
+      val profile = prisonerProfileRepository.save(
+        PrisonerProfile(prisonerNumber = "A1234BC", prisonerName = "John Smith"),
       )
-      val profile = PrisonerProfile(prisonerNumber = "A1234BC", prisonerName = "John Smith")
-      profile.credits.add(credit)
-      val saved = prisonerProfileRepository.save(profile)
+      val credit = Credit(amount = 3000, prisonerNumber = "A1234BC", resolution = CreditResolution.PENDING)
+      credit.prisonerProfile = profile
+      creditRepository.save(credit)
+      val saved = profile
 
       webTestClient.get()
         .uri("/prisoners/${saved.id}/credits/")

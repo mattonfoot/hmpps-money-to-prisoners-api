@@ -49,8 +49,20 @@ class ProcessedCreditsResourceTest : IntegrationTestBase() {
     prisonerProfileRepository.deleteAll()
     logRepository.deleteAll()
     creditRepository.deleteAll()
-    prisonRepository.deleteAll()
-    prisonRepository.save(Prison(nomisId = "LEI", name = "Leeds", region = "Yorkshire"))
+    // These tests use bespoke usernames ("clerk1", "clerk2") for the credit
+    // owner / log user. Seed them so the FK resolves.
+    listOf("clerk1", "clerk2", "unknownuser").forEach { name ->
+      jdbcTemplate.update(
+        """
+        INSERT INTO auth_user (password, is_superuser, username, first_name, last_name,
+                               email, is_staff, is_active, date_joined)
+        VALUES ('!unusable', false, ?, '', '', ?, false, true, NOW())
+        ON CONFLICT (username) DO NOTHING
+        """.trimIndent(),
+        name,
+        "$name@mtp.local",
+      )
+    }
   }
 
   private fun createAndSaveCreditedCredit(

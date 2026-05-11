@@ -168,11 +168,11 @@ class CreditsResource(
     reviewed: Boolean? = null,
     @Parameter(description = "Filter credits received on or after this datetime (inclusive, ISO format)", example = "2024-01-01T00:00:00")
     @RequestParam("received_at__gte")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     receivedAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter credits received before this datetime (exclusive, ISO format)", example = "2024-02-01T00:00:00")
     @RequestParam("received_at__lt")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     receivedAtLt: OffsetDateTime? = null,
     @Parameter(description = "Filter by validity: true = credit_pending or credited, false = all others")
     @RequestParam("valid")
@@ -230,11 +230,11 @@ class CreditsResource(
     source: CreditSource? = null,
     @Parameter(description = "Filter by log creation date on or after this datetime (truncated to UTC date, inclusive)", example = "2024-01-01T00:00:00")
     @RequestParam("logged_at__gte")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     loggedAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter by log creation date before this datetime (truncated to UTC date, exclusive)", example = "2024-02-01T00:00:00")
     @RequestParam("logged_at__lt")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     loggedAtLt: OffsetDateTime? = null,
     @Parameter(description = "Filter by presence of security check: true = no check exists, false = check exists")
     @RequestParam("security_check__isnull")
@@ -513,10 +513,10 @@ class CreditsResource(
     @RequestParam("resolution") resolution: CreditResolution? = null,
     @RequestParam("reviewed") reviewed: Boolean? = null,
     @RequestParam("received_at__gte")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     receivedAtGte: OffsetDateTime? = null,
     @RequestParam("received_at__lt")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     receivedAtLt: OffsetDateTime? = null,
     @RequestParam("valid") valid: Boolean? = null,
     @RequestParam("sender_name") senderName: String? = null,
@@ -534,10 +534,10 @@ class CreditsResource(
     @RequestParam("payment_reference") paymentReference: String? = null,
     @RequestParam("source") source: CreditSource? = null,
     @RequestParam("logged_at__gte")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     loggedAtGte: OffsetDateTime? = null,
     @RequestParam("logged_at__lt")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     loggedAtLt: OffsetDateTime? = null,
     @RequestParam("log__action") logAction: String? = null,
     @RequestParam("security_check__isnull") securityCheckIsnull: Boolean? = null,

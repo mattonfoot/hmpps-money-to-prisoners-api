@@ -59,10 +59,10 @@ open class CreditPrivateestatebatch {
   open var date: LocalDate = LocalDate.now()
 
   @NotNull
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @ManyToOne(fetch = FetchType.EAGER, optional = false)
   @JoinColumn(name = "prison_id", nullable = false)
   open var prison: PrisonPrison? = null
 
-  @OneToMany(mappedBy = "privateEstateBatch", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "privateEstateBatch", fetch = FetchType.EAGER)
   open var credits: MutableList<CreditCredit> = mutableListOf()
 }

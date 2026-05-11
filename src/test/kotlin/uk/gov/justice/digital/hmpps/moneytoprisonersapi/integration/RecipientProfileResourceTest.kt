@@ -33,7 +33,52 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
   private fun createRecipientProfile(
     sortCode: String = "112233",
     accountNumber: String = "12345678",
-  ): RecipientProfile = recipientProfileRepository.save(RecipientProfile(sortCode = sortCode, accountNumber = accountNumber))
+    rollNumber: String = "",
+  ): RecipientProfile {
+    val profile = recipientProfileRepository.save(RecipientProfile())
+    // Django stores the bank-transfer details on per-detail children; seed
+    // one row (bank account + recipient detail) so the DTO surfaces sortCode
+    // and accountNumber through the child join.
+    val bankAccountId = jdbcTemplate.queryForObject(
+      """
+      INSERT INTO security_bankaccount (sort_code, account_number, roll_number)
+      VALUES (?, ?, ?) RETURNING id
+      """.trimIndent(),
+      Long::class.java,
+      sortCode,
+      accountNumber,
+      rollNumber,
+    )!!
+    jdbcTemplate.update(
+      """
+      INSERT INTO security_banktransferrecipientdetails
+        (created, modified, recipient_id, recipient_bank_account_id)
+      VALUES (NOW(), NOW(), ?, ?)
+      """.trimIndent(),
+      profile.id,
+      bankAccountId,
+    )
+    return profile
+  }
+
+  /** Variant: profile + detail + monitoring row linking it to [userId]. */
+  private fun createRecipientProfileMonitoredBy(
+    userId: Long,
+    sortCode: String = "112233",
+    accountNumber: String = "12345678",
+  ): RecipientProfile {
+    val profile = createRecipientProfile(sortCode, accountNumber)
+    jdbcTemplate.update(
+      """
+      INSERT INTO security_bankaccount_monitoring_users (bankaccount_id, user_id)
+      SELECT r.recipient_bank_account_id, ?
+      FROM security_banktransferrecipientdetails r WHERE r.recipient_id = ?
+      """.trimIndent(),
+      userId,
+      profile.id,
+    )
+    return profile
+  }
 
   @Nested
   @DisplayName("GET /security/recipients/ (RecipientProfileListTestCase)")
@@ -89,11 +134,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("Filters by monitoring=true returns only recipients monitored by current user")
     fun `should filter by monitoring true`() {
-      val monitoredProfile = transactionTemplate.execute {
-        val p = RecipientProfile(sortCode = "112233", accountNumber = "11111111")
-        p.monitoringUsers.add(8)
-        recipientProfileRepository.save(p)
-      }
+      val monitoredProfile = createRecipientProfileMonitoredBy(userId = 8L, sortCode = "112233", accountNumber = "11111111")
       createRecipientProfile("445566", "22222222")
 
       webTestClient.get()
@@ -109,11 +150,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("Filters by monitoring=false returns recipients NOT monitored by current user")
     fun `should filter by monitoring false`() {
-      transactionTemplate.execute {
-        val p = RecipientProfile(sortCode = "112233", accountNumber = "11111111")
-        p.monitoringUsers.add(8)
-        recipientProfileRepository.save(p)
-      }
+      createRecipientProfileMonitoredBy(userId = 8L, sortCode = "112233", accountNumber = "11111111")
       createRecipientProfile("445566", "22222222")
       createRecipientProfile("778899", "33333333")
 
@@ -144,11 +181,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("Returns 200 with profile details including monitoring field")
     fun `should return profile with monitoring field`() {
-      val profile = transactionTemplate.execute {
-        val p = RecipientProfile(sortCode = "112233", accountNumber = "12345678")
-        p.monitoringUsers.add(8)
-        recipientProfileRepository.save(p)
-      }
+      val profile = createRecipientProfileMonitoredBy(userId = 8L, sortCode = "112233", accountNumber = "12345678")
 
       webTestClient.get()
         .uri("/recipients/${profile.id}/")
@@ -209,6 +242,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         Disbursement(
           amount = 5000,
           method = DisbursementMethod.BANK_TRANSFER,
+          prison = "LEI",
           sortCode = "112233",
           accountNumber = "12345678",
         ),
@@ -217,6 +251,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         Disbursement(
           amount = 2000,
           method = DisbursementMethod.BANK_TRANSFER,
+          prison = "LEI",
           sortCode = "445566",
           accountNumber = "99999999",
         ),
@@ -262,21 +297,23 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isNoContent
 
-      val monitoringUsers = transactionTemplate.execute {
-        val p = recipientProfileRepository.findById(profile.id!!).get()
-        p.monitoringUsers.toSet()
-      }
-      assertThat(monitoringUsers).contains(8)
+      val monitoringIds = jdbcTemplate.queryForList(
+        """
+        SELECT m.user_id FROM security_bankaccount_monitoring_users m
+        JOIN security_banktransferrecipientdetails r
+          ON r.recipient_bank_account_id = m.bankaccount_id
+        WHERE r.recipient_id = ?
+        """.trimIndent(),
+        Long::class.java,
+        profile.id,
+      )
+      assertThat(monitoringIds).contains(8L)
     }
 
     @Test
     @DisplayName("Removes current user from monitoring for recipient")
     fun `should remove user from monitoring`() {
-      val saved = transactionTemplate.execute {
-        val p = RecipientProfile(sortCode = "112233", accountNumber = "12345678")
-        p.monitoringUsers.add(8)
-        recipientProfileRepository.save(p)
-      }
+      val saved = createRecipientProfileMonitoredBy(userId = 8L)
 
       webTestClient.post()
         .uri("/recipients/${saved.id}/unmonitor/")
@@ -284,11 +321,17 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isNoContent
 
-      val monitoringUsers = transactionTemplate.execute {
-        val p = recipientProfileRepository.findById(saved.id!!).get()
-        p.monitoringUsers.toSet()
-      }
-      assertThat(monitoringUsers).doesNotContain(8)
+      val monitoringIds = jdbcTemplate.queryForList(
+        """
+        SELECT m.user_id FROM security_bankaccount_monitoring_users m
+        JOIN security_banktransferrecipientdetails r
+          ON r.recipient_bank_account_id = m.bankaccount_id
+        WHERE r.recipient_id = ?
+        """.trimIndent(),
+        Long::class.java,
+        saved.id,
+      )
+      assertThat(monitoringIds).doesNotContain(8L)
     }
   }
 }

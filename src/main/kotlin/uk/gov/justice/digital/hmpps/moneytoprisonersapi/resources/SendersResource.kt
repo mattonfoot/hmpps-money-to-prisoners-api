@@ -41,7 +41,13 @@ class SendersResource(
       null -> null to null
     }
     val profiles = senderProfileService.listProfiles(monitoredByUsername = monitoredBy, notMonitoredByUsername = notMonitoredBy)
-    val results = profiles.map { SenderProfile.from(it, currentUsername = principal.name) }
+    val results = profiles.map {
+      SenderProfile.from(
+        it,
+        currentUsername = principal.name,
+        isMonitoredByCurrentUser = senderProfileService.isMonitoredBy(it.id!!, principal.name),
+      )
+    }
     return PaginatedResponse.fromList(results, limit = limit, offset = offset)
   }
 
@@ -50,7 +56,11 @@ class SendersResource(
   @GetMapping("/{id}/")
   fun getProfile(@PathVariable id: Long, principal: Principal): SenderProfile {
     val profile = senderProfileService.getProfile(id)
-    return SenderProfile.from(profile, currentUsername = principal.name)
+    return SenderProfile.from(
+      profile,
+      currentUsername = principal.name,
+      isMonitoredByCurrentUser = senderProfileService.isMonitoredBy(profile.id!!, principal.name),
+    )
   }
 
   @Operation(summary = "Get credits for a sender profile (SEC-075)")

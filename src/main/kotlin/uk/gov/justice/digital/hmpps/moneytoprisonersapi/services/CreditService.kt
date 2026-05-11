@@ -173,7 +173,13 @@ class CreditService(
     }
 
     if (user != null) {
-      credits = credits.filter { it.owner?.username == user }
+      // Django: `user` is a ModelChoiceFilter on the owner FK and accepts the
+      // user's primary key. Accept either an integer id (Python's wire format)
+      // or a username string (legacy Kotlin callers).
+      val asLong = user.toLongOrNull()
+      credits = credits.filter {
+        if (asLong != null) it.owner?.id == asLong else it.owner?.username == user
+      }
     }
 
     if (resolution != null) {

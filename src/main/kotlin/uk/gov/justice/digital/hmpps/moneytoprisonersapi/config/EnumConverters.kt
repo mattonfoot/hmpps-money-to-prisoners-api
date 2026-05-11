@@ -24,7 +24,33 @@ class EnumConverters : WebMvcConfigurer {
     registry.addConverter(StringToDisbursementResolution())
     registry.addConverter(StringToDisbursementMethod())
     registry.addConverter(StringToCheckStatus())
+    registry.addConverter(StringToOffsetDateTime())
+    registry.addConverter(StringToLocalDate())
   }
+}
+
+/**
+ * Accepts both naive (`2024-06-15T12:00:00`, `2024-06-15`) and offset-bearing
+ * (`2024-06-15T12:00:00Z`, `2024-06-15T12:00:00+01:00`) ISO datetimes. Naive
+ * datetimes default to UTC — matching Django REST Framework's behaviour when
+ * `USE_TZ=True` and the input has no offset.
+ */
+class StringToOffsetDateTime : Converter<String, java.time.OffsetDateTime> {
+  override fun convert(source: String): java.time.OffsetDateTime {
+    val s = source.trim()
+    return runCatching { java.time.OffsetDateTime.parse(s) }
+      .recoverCatching {
+        java.time.LocalDateTime.parse(s).atOffset(java.time.ZoneOffset.UTC)
+      }
+      .recoverCatching {
+        java.time.LocalDate.parse(s).atStartOfDay().atOffset(java.time.ZoneOffset.UTC)
+      }
+      .getOrThrow()
+  }
+}
+
+class StringToLocalDate : Converter<String, java.time.LocalDate> {
+  override fun convert(source: String): java.time.LocalDate = java.time.LocalDate.parse(source.trim())
 }
 
 class StringToCreditResolution : Converter<String, CreditResolution> {

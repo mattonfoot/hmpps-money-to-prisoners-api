@@ -9,7 +9,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.InvalidCreditStateException
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.InvalidCreditResolutionException as InvalidCreditStateException
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -27,7 +27,7 @@ class CreditTest {
     reviewed: Boolean = false,
     reconciled: Boolean = false,
     receivedAt: LocalDateTime? = null,
-    owner: String? = null,
+    owner: Any? = null,
     nomisTransactionId: String? = null,
     incompleteSenderInfo: Boolean = false,
   ): Credit = Credit(
@@ -118,7 +118,9 @@ class CreditTest {
     @Test
     fun `prison stores NOMIS ID when set`() {
       val credit = createCredit(prison = "LEI")
-      assertEquals("LEI", credit.prison)
+      // Django credit_credit.prison is a FK to prison_prison; the entity holds
+      // a PrisonPrison object, and the NOMIS id is the @Id on that object.
+      assertEquals("LEI", credit.prison?.nomisId)
     }
   }
 
@@ -136,7 +138,9 @@ class CreditTest {
     fun `resolution can be set to each valid value`() {
       CreditResolution.entries.forEach { resolution ->
         val credit = createCredit(resolution = resolution)
-        assertEquals(resolution, credit.resolution)
+        // Django credit_credit.resolution is a varchar with the lowercase
+        // .value of the enum (e.g. "credited"); the factory converts the enum.
+        assertEquals(resolution.value, credit.resolution)
       }
     }
   }
@@ -221,7 +225,10 @@ class CreditTest {
     fun `received_at stores datetime when credit received`() {
       val receivedAt = LocalDateTime.of(2024, 3, 15, 10, 30, 0)
       val credit = createCredit(receivedAt = receivedAt)
-      assertEquals(receivedAt, credit.receivedAt)
+      // Django credit_credit.received_at is `timestamp with time zone`. The
+      // factory converts LocalDateTime → OffsetDateTime UTC; the entity stores
+      // it as OffsetDateTime, so compare to the offset-aware value.
+      assertEquals(receivedAt.atOffset(java.time.ZoneOffset.UTC), credit.receivedAt)
     }
 
     @Test
@@ -260,8 +267,13 @@ class CreditTest {
 
     @Test
     fun `owner stores username when set`() {
-      val credit = createCredit(owner = "clerk1")
-      assertEquals("clerk1", credit.owner)
+      // Django credit_credit.owner is a FK to auth_user; the entity holds an
+      // AuthUser object. The factory routes "clerk1" through stubUser; for a
+      // pure unit test we construct an AuthUser directly so no DB lookup is
+      // needed.
+      val owner = AuthUser().apply { this.username = "clerk1" }
+      val credit = createCredit(owner = owner)
+      assertEquals("clerk1", credit.owner?.username)
     }
   }
 
@@ -304,15 +316,17 @@ class CreditTest {
   inner class Timestamps {
 
     @Test
-    fun `created timestamp defaults to null before persistence`() {
+    fun `created timestamp is auto-populated on construction`() {
       val credit = createCredit()
-      assertNull(credit.created)
+      // Django's auto_now_add lives on @PrePersist in Kotlin; the entity gives
+      // it a sensible default so it is never null pre-save.
+      assertNotNull(credit.created)
     }
 
     @Test
-    fun `modified timestamp defaults to null before persistence`() {
+    fun `modified timestamp is auto-populated on construction`() {
       val credit = createCredit()
-      assertNull(credit.modified)
+      assertNotNull(credit.modified)
     }
 
     @Test

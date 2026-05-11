@@ -41,10 +41,12 @@ object EventSpecifications {
 
   /** NOT-003: Visible to user = own events (user.username matches) + global events (user null). */
   fun visibleToUser(username: String): Specification<Event> = Specification { root, _, cb ->
-    val userPath = root.get<Any?>("user")
+    // LEFT join so events with null user (global) survive the join — an
+    // implicit `root.get("user")` produces an INNER join, which would drop them.
+    val userJoin = root.join<Any, Any>("user", JoinType.LEFT)
     cb.or(
-      cb.equal(userPath.get<String>("username"), username),
-      cb.isNull(userPath),
+      cb.equal(userJoin.get<String>("username"), username),
+      cb.isNull(userJoin.get<Any?>("id")),
     )
   }
 

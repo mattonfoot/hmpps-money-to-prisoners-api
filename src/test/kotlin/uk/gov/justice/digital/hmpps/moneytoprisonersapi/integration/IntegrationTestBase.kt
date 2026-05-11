@@ -38,6 +38,9 @@ abstract class IntegrationTestBase {
   @Autowired
   private lateinit var basePrisonRepository: PrisonRepository
 
+  // Exposed for subclasses that need to look up seeded auth users.
+  protected val authUserRepository: AuthUserRepository get() = baseAuthUserRepository
+
   @BeforeEach
   fun initClients() {
     webTestClient = WebTestClient.bindToServer()

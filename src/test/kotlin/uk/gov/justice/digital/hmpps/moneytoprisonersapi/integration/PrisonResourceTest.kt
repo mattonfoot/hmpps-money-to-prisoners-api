@@ -49,7 +49,12 @@ class PrisonResourceTest : IntegrationTestBase() {
   @Autowired
   private lateinit var disbursementRepository: DisbursementRepository
 
-  // wipeDataTables() in IntegrationTestBase @BeforeEach handles cleanup.
+  // This test class asserts exact prison counts, so unwind the standard
+  // 7-prison seed that IntegrationTestBase plants after wiping.
+  @org.junit.jupiter.api.BeforeEach
+  fun emptyPrisons() {
+    jdbcTemplate.execute("TRUNCATE TABLE prison_prison CASCADE")
+  }
 
   private fun createPrison(nomisId: String, name: String = "Test Prison", privateEstate: Boolean = false): Prison {
     val prison = Prison(nomisId = nomisId, name = name, region = "Test Region", privateEstate = privateEstate)
@@ -151,7 +156,7 @@ class PrisonResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("PRS-007 - short_name strips STC prefix")
     fun `should strip STC prefix for short_name`() {
-      createPrison("STC1", "STC Some Place")
+      createPrison("STC", "STC Some Place")
 
       webTestClient.get()
         .uri("/prisons/")
@@ -164,7 +169,7 @@ class PrisonResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("PRS-008 - short_name strips IRC prefix")
     fun `should strip IRC prefix for short_name`() {
-      createPrison("IRC1", "IRC Some Place")
+      createPrison("IRC", "IRC Some Place")
 
       webTestClient.get()
         .uri("/prisons/")

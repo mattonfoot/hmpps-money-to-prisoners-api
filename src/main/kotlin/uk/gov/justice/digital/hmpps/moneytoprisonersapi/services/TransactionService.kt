@@ -148,11 +148,19 @@ class TransactionService(
             this.date = today
           }
       }
+      // The credit↔batch link is owned by Credit's private_estate_batch_id
+      // FK (the @OneToMany on the batch is the inverse side). Set it on the
+      // credit so the FK actually persists.
+      credit.privateEstateBatch = batch
       batch.credits.add(credit)
       batchesByPrison[prisonId] = batch
     }
 
     batchesByPrison.values.forEach { privateEstateBatchRepository.save(it) }
+    // Re-save credits so the new private_estate_batch_id FK is persisted.
+    for (txn in transactions) {
+      txn.credit?.let { creditRepository.save(it) }
+    }
 
     return mapOf(
       "transaction_count" to transactions.size,

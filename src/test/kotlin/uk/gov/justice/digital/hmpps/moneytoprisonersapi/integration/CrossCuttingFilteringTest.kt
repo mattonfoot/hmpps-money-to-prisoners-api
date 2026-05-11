@@ -193,6 +193,7 @@ class CrossCuttingFilteringTest : IntegrationTestBase() {
     @Test
     @DisplayName("XCT-021 disbursements filtered by multiple resolutions using repeated parameter")
     fun `disbursements can be filtered by multiple resolution values`() {
+      savePrison("LEI")
       disbursementRepository.save(
         Disbursement(amount = 100L, prison = "LEI", resolution = DisbursementResolution.PENDING, method = DisbursementMethod.BANK_TRANSFER),
       )

@@ -8,9 +8,12 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinTable
+import jakarta.persistence.ManyToMany
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import jakarta.persistence.UniqueConstraint
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
@@ -65,4 +68,22 @@ open class MtpAuthRole {
   @NotNull
   @Column(name = "login_url", nullable = false, length = 200)
   open var loginUrl: String = ""
+
+  // Django M2M: mtp_auth_role_other_groups joins role_id ↔ group_id.
+  @ManyToMany(fetch = FetchType.EAGER)
+  @JoinTable(
+    name = "mtp_auth_role_other_groups",
+    joinColumns = [JoinColumn(name = "role_id")],
+    inverseJoinColumns = [JoinColumn(name = "group_id")],
+  )
+  open var otherGroups: MutableSet<AuthGroup> = mutableSetOf()
+
+  /**
+   * Transient override used by unit-test factories where the caller passes a
+   * comma-separated string ("Viewer,Commenter") rather than persisted
+   * AuthGroup rows. When set, DTOs prefer this string verbatim; otherwise
+   * they derive a CSV from [otherGroups].
+   */
+  @Transient
+  open var otherGroupsCsv: String? = null
 }

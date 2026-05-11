@@ -105,11 +105,11 @@ class TransactionsResource(
     statusParam: String? = null,
     @Parameter(description = "Filter transactions received on or after this datetime (inclusive, ISO format)", example = "2024-01-01T00:00:00")
     @RequestParam("received_at__gte")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     receivedAtGte: OffsetDateTime? = null,
     @Parameter(description = "Filter transactions received before this datetime (exclusive, ISO format)", example = "2024-02-01T00:00:00")
     @RequestParam("received_at__lt")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     receivedAtLt: OffsetDateTime? = null,
     @Parameter(description = "Filter by specific transaction IDs. Pass multiple values (e.g. pk=1&pk=3)")
     @RequestParam("pk")

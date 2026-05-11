@@ -53,13 +53,14 @@ class EntityJoinTableNameTest {
       // Django: credit_processingbatch.credits M2M → credit_processingbatch_credits
       Arguments.of(Batch::class.java, "credits", "credit_processingbatch_credits"),
 
-      // credit_privateestatebatch ↔ credit_credit
-      // Django: credit_privateestatebatch.credits M2M → credit_privateestatebatch_credits
-      Arguments.of(PrivateEstateBatch::class.java, "credits", "credit_privateestatebatch_credits"),
+      // Django's credit_privateestatebatch.credits is the reverse side of a
+      // ForeignKey on credit_credit.private_estate_batch_id — not a M2M, so
+      // there is no `credit_privateestatebatch_credits` join table in the
+      // schema and the Kotlin entity correctly uses @OneToMany(mappedBy).
 
       // mtp_auth_prisonusermapping user ↔ prison_prison
       // Django: mtp_auth_prisonusermapping.prisons M2M → mtp_auth_prisonusermapping_prisons
-      Arguments.of(MtpUser::class.java, "prisons", "mtp_auth_prisonusermapping_prisons"),
+      Arguments.of(MtpAuthPrisonusermapping::class.java, "prisons", "mtp_auth_prisonusermapping_prisons"),
     )
   }
 }

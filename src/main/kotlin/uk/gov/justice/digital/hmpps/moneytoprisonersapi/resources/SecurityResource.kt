@@ -41,10 +41,10 @@ class SecurityResource(
     @RequestParam("status") status: CheckStatus? = null,
     @RequestParam("rules") rules: String? = null,
     @RequestParam("started_at__gte")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     startedAtGte: OffsetDateTime? = null,
     @RequestParam("started_at__lt")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     startedAtLt: OffsetDateTime? = null,
     @RequestParam("actioned_by__isnull") actionedByIsNull: Boolean? = null,
     @RequestParam("credit_resolution") creditResolution: String? = null,

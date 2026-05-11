@@ -20,6 +20,8 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerPro
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SenderProfile
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Transaction
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.TransactionCategory
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.TransactionSource
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.BillingAddressRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
@@ -245,13 +247,25 @@ class CreditResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("CRD-020 - Response includes all credit fields")
     fun `should include all credit fields in response`() {
-      createAndSaveCredit(
+      // Django derives `source` from the linked transaction/payment; without
+      // either, the credit reports `unknown`. Pair the credit with a
+      // bank-transfer transaction so the asserted source is bank_transfer.
+      val saved = createAndSaveCredit(
         amount = 5000,
         prisonerNumber = "A1234BC",
         prisonerName = "John Smith",
         prison = "LEI",
         resolution = CreditResolution.PENDING,
         receivedAt = LocalDateTime.of(2024, 3, 15, 10, 30),
+      )
+      transactionRepository.save(
+        Transaction(
+          amount = 5000,
+          category = TransactionCategory.CREDIT,
+          source = TransactionSource.BANK_TRANSFER,
+          receivedAt = LocalDateTime.of(2024, 3, 15, 10, 30),
+          credit = saved,
+        ),
       )
 
       webTestClient.get()
@@ -871,11 +885,15 @@ class CreditResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("CRD-082 - Filter by user (owner)")
     fun `should filter by owner`() {
-      createAndSaveCredit(owner = "clerk1", resolution = CreditResolution.CREDITED)
-      createAndSaveCredit(owner = "clerk2", resolution = CreditResolution.CREDITED)
+      // Owner FK references auth_user; use two seeded usernames so the lookup
+      // returns real rows (factory drops unknown owners).
+      val clerk = authUserRepository.findByUsername("prison-clerk")
+      val admin = authUserRepository.findByUsername("admin")
+      createAndSaveCredit(owner = clerk?.username, resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(owner = admin?.username, resolution = CreditResolution.CREDITED)
 
       webTestClient.get()
-        .uri("/credits/?user=clerk1")
+        .uri("/credits/?user=${clerk?.id}")
         .headers(setAuthorisation())
         .exchange()
         .expectStatus()
@@ -1125,8 +1143,8 @@ class CreditResourceTest : IntegrationTestBase() {
         .isNoContent
 
       val updated = creditRepository.findById(credit.id!!).get()
-      assertThat(updated.resolution).isEqualTo(CreditResolution.CREDITED)
-      assertThat(updated.owner).isEqualTo("admin")
+      assertThat(updated.resolution).isEqualTo(CreditResolution.CREDITED.value)
+      assertThat(updated.owner?.username).isEqualTo("admin")
       assertThat(updated.nomisTransactionId).isEqualTo("TX-001")
     }
 
@@ -1203,7 +1221,7 @@ class CreditResourceTest : IntegrationTestBase() {
         .jsonPath("$.conflict_ids[0]").isEqualTo(invalidCredit.id!!.toInt())
 
       val updatedValid = creditRepository.findById(validCredit.id!!).get()
-      assertThat(updatedValid.resolution).isEqualTo(CreditResolution.CREDITED)
+      assertThat(updatedValid.resolution).isEqualTo(CreditResolution.CREDITED.value)
     }
 
     @Test
@@ -1246,7 +1264,7 @@ class CreditResourceTest : IntegrationTestBase() {
         .isNoContent
 
       val unchanged = creditRepository.findById(credit.id!!).get()
-      assertThat(unchanged.resolution).isEqualTo(CreditResolution.PENDING)
+      assertThat(unchanged.resolution).isEqualTo(CreditResolution.PENDING.value)
     }
   }
 
@@ -1786,8 +1804,8 @@ class CreditResourceTest : IntegrationTestBase() {
         .expectStatus().isNoContent
 
       val updated = creditRepository.findById(credit.id!!).get()
-      assertThat(updated.resolution).isEqualTo(CreditResolution.MANUAL)
-      assertThat(updated.owner).isEqualTo("admin")
+      assertThat(updated.resolution).isEqualTo(CreditResolution.MANUAL.value)
+      assertThat(updated.owner?.username).isEqualTo("admin")
     }
 
     @Test
@@ -2002,7 +2020,7 @@ class CreditResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.results[0].credited_at").isEqualTo("2024-03-16T14:00:00")
+        .jsonPath("$.results[0].credited_at").isEqualTo("2024-03-16T14:00:00Z")
     }
 
     @Test
@@ -2032,7 +2050,7 @@ class CreditResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.results[0].refunded_at").isEqualTo("2024-03-17T09:00:00")
+        .jsonPath("$.results[0].refunded_at").isEqualTo("2024-03-17T09:00:00Z")
     }
 
     @Test
@@ -2048,7 +2066,7 @@ class CreditResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.results[0].set_manual_at").isEqualTo("2024-03-18T11:00:00")
+        .jsonPath("$.results[0].set_manual_at").isEqualTo("2024-03-18T11:00:00Z")
     }
 
     @Test
@@ -2066,8 +2084,8 @@ class CreditResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.results[0].set_manual_at").isEqualTo("2024-03-15T09:00:00")
-        .jsonPath("$.results[0].credited_at").isEqualTo("2024-03-16T14:00:00")
+        .jsonPath("$.results[0].set_manual_at").isEqualTo("2024-03-15T09:00:00Z")
+        .jsonPath("$.results[0].credited_at").isEqualTo("2024-03-16T14:00:00Z")
     }
   }
 }

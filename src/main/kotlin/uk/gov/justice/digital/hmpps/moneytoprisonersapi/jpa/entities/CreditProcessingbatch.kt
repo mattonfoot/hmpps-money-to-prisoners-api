@@ -41,11 +41,11 @@ open class CreditProcessingbatch {
   open var modified: OffsetDateTime = OffsetDateTime.now()
 
   @NotNull
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @ManyToOne(fetch = FetchType.EAGER, optional = false)
   @JoinColumn(name = "user_id", nullable = false)
   open var user: AuthUser? = null
 
-  @ManyToMany(fetch = FetchType.LAZY)
+  @ManyToMany(fetch = FetchType.EAGER)
   @JoinTable(
     name = "credit_processingbatch_credits",
     joinColumns = [JoinColumn(name = "processingbatch_id")],

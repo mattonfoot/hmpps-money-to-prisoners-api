@@ -156,7 +156,7 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("SEC-057 - Filters checks by actioned_by__isnull=false (only actioned checks)")
     fun `should filter checks where actioned_by is not null`() {
-      createCreditWithCheck(actionedBy = "security_user")
+      createCreditWithCheck(actionedBy = "security-staff")
       createCreditWithCheck(actionedBy = null)
 
       webTestClient.get()
@@ -222,16 +222,16 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
 
       webTestClient.post()
         .uri("/security/checks/${check.id}/accept/")
-        .headers(setAuthorisation(username = "security_user", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(username = "security-staff", roles = listOf("ROLE_SECURITY_STAFF")))
         .header("Content-Type", "application/json")
         .bodyValue("""{"decision_reason": "Known sender"}""")
         .exchange()
         .expectStatus().isNoContent
 
       val updated = securityCheckRepository.findById(check.id!!).get()
-      assertThat(updated.status).isEqualTo(CheckStatus.ACCEPTED)
+      assertThat(updated.status).isEqualTo(CheckStatus.ACCEPTED.value)
       assertThat(updated.decisionReason).isEqualTo("Known sender")
-      assertThat(updated.actionedBy).isEqualTo("test-security")
+      assertThat(updated.actionedBy?.username).isEqualTo("security-staff")
       assertThat(updated.actionedAt).isNotNull
     }
 
@@ -309,10 +309,11 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
         .expectStatus().isNoContent
 
       val updated = securityCheckRepository.findById(check.id!!).get()
-      assertThat(updated.status).isEqualTo(CheckStatus.REJECTED)
+      assertThat(updated.status).isEqualTo(CheckStatus.REJECTED.value)
       assertThat(updated.decisionReason).isEqualTo("Suspicious activity")
-      assertThat(updated.actionedBy?.username).isEqualTo("test-security")
-      assertThat(updated.rejectionReasons?.containsKey("FIUMONP")).isTrue()
+      assertThat(updated.actionedBy?.username).isEqualTo("security-staff")
+      val reasonsList = updated.rejectionReasons["reasons"] as? List<*>
+      assertThat(reasonsList).contains("FIUMONP")
     }
 
     @Test
@@ -420,7 +421,7 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
       webTestClient.patch()
         .uri("/security/checks/${check.id}/")
         .header("Content-Type", "application/json")
-        .bodyValue("""{"assigned_to": "security_user"}""")
+        .bodyValue("""{"assigned_to": "security-staff"}""")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -434,27 +435,27 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
         .uri("/security/checks/${check.id}/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"assigned_to": "security_user"}""")
+        .bodyValue("""{"assigned_to": "security-staff"}""")
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.assigned_to").isEqualTo("security_user")
+        .jsonPath("$.assigned_to").isEqualTo("security-staff")
 
       val updated = securityCheckRepository.findById(check.id!!).get()
-      assertThat(updated.assignedTo).isEqualTo("security_user")
+      assertThat(updated.assignedTo?.username).isEqualTo("security-staff")
     }
 
     @Test
     @DisplayName("Returns 400 when reassigning an already-assigned check")
     fun `should return 400 when check already assigned`() {
       val check = createCreditWithCheck(CheckStatus.PENDING)
-      val savedCheck = securityCheckRepository.save(check.apply { assignedTo = uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AuthUser().apply { username = "existing_user" } })
+      val savedCheck = securityCheckRepository.save(check.apply { assignedTo = authUserRepository.findByUsername("prison-clerk") })
 
       webTestClient.patch()
         .uri("/security/checks/${savedCheck.id}/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"assigned_to": "other_user"}""")
+        .bodyValue("""{"assigned_to": "admin"}""")
         .exchange()
         .expectStatus().isBadRequest
     }
@@ -463,7 +464,7 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
     @DisplayName("Allows reassignment after clearing assigned_to with null")
     fun `should allow reassignment after clearing to null`() {
       val check = createCreditWithCheck(CheckStatus.PENDING)
-      securityCheckRepository.save(check.apply { assignedTo = uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AuthUser().apply { username = "existing_user" } })
+      securityCheckRepository.save(check.apply { assignedTo = authUserRepository.findByUsername("prison-clerk") })
 
       // Clear the assignment
       webTestClient.patch()
@@ -479,11 +480,12 @@ class SecurityCheckResourceTest : IntegrationTestBase() {
         .uri("/security/checks/${check.id}/")
         .headers(setAuthorisation(roles = listOf("ROLE_SECURITY_STAFF")))
         .header("Content-Type", "application/json")
-        .bodyValue("""{"assigned_to": "new_user"}""")
+        // Use a seeded username so the FK lookup resolves.
+        .bodyValue("""{"assigned_to": "admin"}""")
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.assigned_to").isEqualTo("new_user")
+        .jsonPath("$.assigned_to").isEqualTo("admin")
     }
 
     @Test

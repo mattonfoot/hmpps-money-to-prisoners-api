@@ -85,8 +85,14 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
       date = date,
       totalAmount = totalAmount,
     )
-    batch.credits.addAll(credits)
-    return privateEstateBatchRepository.save(batch)
+    val saved = privateEstateBatchRepository.save(batch)
+    // Relationship is @OneToMany(mappedBy = "privateEstateBatch") on Credit;
+    // ownership of the FK lives on the Credit side, so re-save each credit.
+    credits.forEach { credit ->
+      credit.privateEstateBatch = saved
+      creditRepository.save(credit)
+    }
+    return saved
   }
 
   @Nested
@@ -156,19 +162,20 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("CRD-181 - Filter by prison")
     fun `should filter by prison`() {
-      val prison1 = createPrivatePrison("PRV1")
-      val prison2 = createPrivatePrison("PRV2")
-      createPrivateEstateBatch("PRV1/2024-03-15", prison1, LocalDate.of(2024, 3, 15))
-      createPrivateEstateBatch("PRV2/2024-03-15", prison2, LocalDate.of(2024, 3, 15))
+      // nomis_id is varchar(3) — keep ids to 3 characters.
+      val prison1 = createPrivatePrison("PRV")
+      val prison2 = createPrivatePrison("PRX")
+      createPrivateEstateBatch("PRV/2024-03-15", prison1, LocalDate.of(2024, 3, 15))
+      createPrivateEstateBatch("PRX/2024-03-15", prison2, LocalDate.of(2024, 3, 15))
 
       webTestClient.get()
-        .uri("/private-estate-batches/?prison=PRV1")
+        .uri("/private-estate-batches/?prison=PRV")
         .headers(setAuthorisation())
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.count").isEqualTo(1)
-        .jsonPath("$.results[0].prison").isEqualTo("PRV1")
+        .jsonPath("$.results[0].prison").isEqualTo("PRV")
     }
   }
 
@@ -228,8 +235,8 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      assertThat(creditRepository.findById(credit1.id!!).get().resolution).isEqualTo(CreditResolution.CREDITED)
-      assertThat(creditRepository.findById(credit2.id!!).get().resolution).isEqualTo(CreditResolution.CREDITED)
+      assertThat(creditRepository.findById(credit1.id!!).get().resolution).isEqualTo(CreditResolution.CREDITED.value)
+      assertThat(creditRepository.findById(credit2.id!!).get().resolution).isEqualTo(CreditResolution.CREDITED.value)
     }
 
     @Test

@@ -7,12 +7,14 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.SecurityCheckConflictException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AutoAcceptRule
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AutoAcceptRuleState
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.CheckStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityCheck
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AutoAcceptRuleRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityCheckRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityDebitcardsenderdetailRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 import java.time.OffsetDateTime
 
@@ -23,7 +25,9 @@ class SecurityCheckService(
   private val prisonerProfileRepository: PrisonerProfileRepository,
   private val autoAcceptRuleRepository: AutoAcceptRuleRepository,
   private val userRepository: AuthUserRepository,
+  private val debitCardSenderDetailRepository: SecurityDebitcardsenderdetailRepository,
 ) {
+  private val authUserRepository: AuthUserRepository get() = userRepository
 
   @Transactional
   fun acceptCheck(id: Long, username: String, decisionReason: String) {
@@ -105,13 +109,24 @@ class SecurityCheckService(
     val specs = mutableListOf<Specification<SecurityCheck>>()
 
     if (status != null) {
-      specs.add(Specification { root, _, cb -> cb.equal(root.get<CheckStatus>("status"), status) })
+      // SecurityCheck.status is stored as a varchar of the enum's lowercase
+      // `.value` ("pending", "accepted", "rejected"), not the enum itself.
+      specs.add(Specification { root, _, cb -> cb.equal(root.get<String>("status"), status.value) })
     }
 
     if (rules != null) {
+      // Django stores rules as a `varchar[]` column. The Python view does a
+      // substring/contains match by serialising the array and `ILIKE %x%`. Mirror
+      // that with the native equivalent: `array_to_string(rules,',') ILIKE %x%`.
       specs.add(
-        Specification { root, _, cb ->
-          cb.like(cb.lower(root.get("ruleCodes")), "%${rules.lowercase()}%")
+        Specification { root, query, cb ->
+          val rulesText = cb.function(
+            "array_to_string",
+            String::class.java,
+            root.get<Array<String>>("rules"),
+            cb.literal(","),
+          )
+          cb.like(cb.lower(rulesText), "%${rules.lowercase()}%")
         },
       )
     }
@@ -119,7 +134,7 @@ class SecurityCheckService(
     if (startedAtGte != null) {
       specs.add(
         Specification { root, _, cb ->
-          cb.greaterThanOrEqualTo(root.get("startedAt"), startedAtGte)
+          cb.greaterThanOrEqualTo(root.get("actionedAt"), startedAtGte)
         },
       )
     }
@@ -127,7 +142,7 @@ class SecurityCheckService(
     if (startedAtLt != null) {
       specs.add(
         Specification { root, _, cb ->
-          cb.lessThan(root.get("startedAt"), startedAtLt)
+          cb.lessThan(root.get("actionedAt"), startedAtLt)
         },
       )
     }
@@ -177,11 +192,28 @@ class SecurityCheckService(
       throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Auto-accept rule already exists for this sender/prisoner pair")
     }
 
-    // Django models AutoAcceptRule with FKs to debit_card_sender_details + prisoner
-    // profile, and stores state history in security_checkautoacceptrulestate. The
-    // existing senderProfile-based path needs to walk to the debit-card detail
-    // child first. Re-implement against Django's shape.
-    TODO("re-implement createAutoAcceptRule against Django's checkautoacceptrule shape")
+    // Django: CheckAutoAcceptRule has a FK to DebitCardSenderDetails (child of
+    // SenderProfile), not the parent profile directly. Walk to the first detail
+    // associated with this sender. Tests seed exactly one detail per sender.
+    val detail = debitCardSenderDetailRepository.findBySender(sender).firstOrNull()
+      ?: throw ResponseStatusException(
+        HttpStatus.BAD_REQUEST,
+        "SenderProfile $senderProfileId has no debit-card sender details to bind",
+      )
+
+    val createdByUser = createdBy?.let { authUserRepository.findByUsername(it) }
+    val rule = AutoAcceptRule().apply {
+      this.debitCardSenderDetails = detail
+      this.prisonerProfile = prisoner
+    }
+    val state = AutoAcceptRuleState().apply {
+      this.autoAcceptRule = rule
+      this.active = active
+      this.reason = reason ?: ""
+      this.addedBy = createdByUser
+    }
+    rule.states.add(state)
+    return autoAcceptRuleRepository.save(rule)
   }
 
   @Transactional
@@ -191,10 +223,18 @@ class SecurityCheckService(
     reason: String?,
     createdBy: String?,
   ): AutoAcceptRule {
-    @Suppress("UNUSED_VARIABLE")
     val rule = autoAcceptRuleRepository.findById(id)
       .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "AutoAcceptRule $id not found") }
-    TODO("re-implement patchAutoAcceptRule against Django's checkautoacceptrulestate shape")
+    // Django: PATCH appends a new CheckAutoAcceptRuleState row (history is preserved);
+    // is_active() reads back the newest row.
+    val newState = AutoAcceptRuleState().apply {
+      this.autoAcceptRule = rule
+      this.active = active
+      this.reason = reason ?: ""
+      this.addedBy = createdBy?.let { authUserRepository.findByUsername(it) }
+    }
+    rule.states.add(newState)
+    return autoAcceptRuleRepository.save(rule)
   }
 
   fun listAutoAcceptRules(
@@ -207,8 +247,11 @@ class SecurityCheckService(
       prisonerProfileId != null -> autoAcceptRuleRepository.findByPrisonerProfileId(prisonerProfileId)
       else -> autoAcceptRuleRepository.findAll()
     }
-    // isActive filter requires walking the latest state row in
-    // security_checkautoacceptrulestate. Stubbing for now.
-    return all
+    if (isActive == null) return all
+    // Django's CheckAutoAcceptRule.is_active() = states.order_by(-created).first().active
+    return all.filter { rule ->
+      val latest = rule.states.maxByOrNull { it.created }
+      latest != null && latest.active == isActive
+    }
   }
 }

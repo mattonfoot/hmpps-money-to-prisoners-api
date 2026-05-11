@@ -30,19 +30,31 @@ data class RecipientProfile(
   val modified: OffsetDateTime?,
 ) {
   companion object {
-    fun from(profile: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.RecipientProfile, currentUsername: String? = null): RecipientProfile = RecipientProfile(
-      id = profile.id,
-      // Django stores sortCode/accountNumber on security_banktransferrecipientdetail
-      // children, not on the parent profile. These flat top-level fields are
-      // populated as null until per-detail rendering is wired in.
-      sortCode = null,
-      accountNumber = null,
-      bankTransferDetails = emptyList(),
-      // monitoringUsers also lives on per-detail children; emit empty for now.
-      monitoringUsers = emptyList(),
-      monitoring = null,
-      created = profile.created,
-      modified = profile.modified,
-    )
+    fun from(
+      profile: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.RecipientProfile,
+      currentUsername: String? = null,
+      details: List<uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityBanktransferrecipientdetail> = emptyList(),
+      isMonitoredByCurrentUser: Boolean? = null,
+    ): RecipientProfile {
+      val firstAccount = details.firstNotNullOfOrNull { it.recipientBankAccount }
+      return RecipientProfile(
+        id = profile.id,
+        // Django: flat sort_code/account_number on the response come from the
+        // first associated detail's bank account.
+        sortCode = firstAccount?.sortCode,
+        accountNumber = firstAccount?.accountNumber,
+        bankTransferDetails = details.mapNotNull { it.recipientBankAccount }.map { acc ->
+          BankTransferRecipientDetails(
+            recipientSortCode = acc.sortCode,
+            recipientAccountNumber = acc.accountNumber,
+            recipientRollNumber = acc.rollNumber.ifEmpty { null },
+          )
+        },
+        monitoringUsers = emptyList(),
+        monitoring = isMonitoredByCurrentUser,
+        created = profile.created,
+        modified = profile.modified,
+      )
+    }
   }
 }

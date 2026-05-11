@@ -116,6 +116,9 @@ class OpenApiDocsTest : IntegrationTestBase() {
 
   @Test
   fun `all endpoints have a security scheme defined`() {
+    // Public endpoints (e.g. `/ping.json`) declare `@SecurityRequirements` (empty)
+    // which emits `"security": []` rather than omitting the field, so the global
+    // "no operation may omit security" assertion still holds.
     webTestClient.get()
       .uri("/v3/api-docs")
       .accept(MediaType.APPLICATION_JSON)

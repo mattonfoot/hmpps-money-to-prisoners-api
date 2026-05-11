@@ -138,7 +138,7 @@ class PaymentsResource(
   fun listPayments(
     @Parameter(description = "Return only payments modified before this datetime (exclusive)", example = "2024-01-01T00:00:00")
     @RequestParam("modified__lt")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
     modifiedLt: OffsetDateTime? = null,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,

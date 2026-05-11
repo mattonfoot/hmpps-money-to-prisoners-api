@@ -19,6 +19,8 @@ class ResourceSecurityTest : IntegrationTestBase() {
     "GET /v3/api-docs",
     "GET /v3/api-docs/swagger-config",
     " /error",
+    // /ping.json mirrors Django's public health endpoint — intentionally unauthenticated.
+    "GET /ping.json",
   )
 
   @Test

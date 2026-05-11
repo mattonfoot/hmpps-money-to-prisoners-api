@@ -42,6 +42,33 @@ class SenderProfileResourceTest : IntegrationTestBase() {
 
   private fun createSenderProfile(): SenderProfile = senderProfileRepository.save(SenderProfile())
 
+  /**
+   * Persists a sender profile WITH a debit-card detail child and a monitoring
+   * row linking that detail to the given userId — mirroring Django's storage
+   * (monitoring lives on the detail child, not the parent profile).
+   */
+  private fun createSenderProfileMonitoredBy(userId: Long): SenderProfile = transactionTemplate.execute {
+    val profile = senderProfileRepository.save(SenderProfile())
+    jdbcTemplate.update(
+      """
+      INSERT INTO security_debitcardsenderdetails
+        (created, modified, sender_id, postcode)
+      VALUES (NOW(), NOW(), ?, '')
+      """.trimIndent(),
+      profile.id,
+    )
+    jdbcTemplate.update(
+      """
+      INSERT INTO security_debitcardsenderdetails_monitoring_users
+        (debitcardsenderdetails_id, user_id)
+      SELECT id, ? FROM security_debitcardsenderdetails WHERE sender_id = ?
+      """.trimIndent(),
+      userId,
+      profile.id,
+    )
+    profile
+  }!!
+
   @Nested
   @DisplayName("GET /security/senders/ (SEC-070 to SEC-080)")
   inner class ListSenderProfiles {
@@ -89,7 +116,15 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("SEC-060 - Adds current user to monitoring for sender")
     fun `should add user to monitoring`() {
+      // monitor() walks debit-card detail children; the sender needs at least one.
       val profile = createSenderProfile()
+      jdbcTemplate.update(
+        """
+        INSERT INTO security_debitcardsenderdetails (created, modified, sender_id, postcode)
+        VALUES (NOW(), NOW(), ?, '')
+        """.trimIndent(),
+        profile.id,
+      )
 
       webTestClient.post()
         .uri("/senders/${profile.id}/monitor/")
@@ -97,21 +132,23 @@ class SenderProfileResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isNoContent
 
-      val monitoringUsers = transactionTemplate.execute {
-        val p = senderProfileRepository.findById(profile.id!!).get()
-        p.monitoringUsers.toSet() // initialize lazy collection within tx
-      }!!
-      assertThat(monitoringUsers).contains(8)
+      val monitoringUserIds = jdbcTemplate.queryForList(
+        """
+        SELECT m.user_id
+        FROM security_debitcardsenderdetails_monitoring_users m
+        JOIN security_debitcardsenderdetails d ON d.id = m.debitcardsenderdetails_id
+        WHERE d.sender_id = ?
+        """.trimIndent(),
+        Long::class.java,
+        profile.id,
+      )
+      assertThat(monitoringUserIds).contains(8L)
     }
 
     @Test
     @DisplayName("SEC-061 - Removes current user from monitoring for sender")
     fun `should remove user from monitoring`() {
-      val saved = transactionTemplate.execute {
-        val p = SenderProfile()
-        p.monitoringUsers.add(8)
-        senderProfileRepository.save(p)
-      }!!
+      val saved = createSenderProfileMonitoredBy(userId = 8L)
 
       webTestClient.post()
         .uri("/senders/${saved.id}/unmonitor/")
@@ -119,11 +156,17 @@ class SenderProfileResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isNoContent
 
-      val monitoringUsers = transactionTemplate.execute {
-        val p = senderProfileRepository.findById(saved.id!!).get()
-        p.monitoringUsers.toSet()
-      }!!
-      assertThat(monitoringUsers).doesNotContain(8)
+      val monitoringUserIds = jdbcTemplate.queryForList(
+        """
+        SELECT m.user_id
+        FROM security_debitcardsenderdetails_monitoring_users m
+        JOIN security_debitcardsenderdetails d ON d.id = m.debitcardsenderdetails_id
+        WHERE d.sender_id = ?
+        """.trimIndent(),
+        Long::class.java,
+        saved.id,
+      )
+      assertThat(monitoringUserIds).doesNotContain(8L)
     }
   }
 
@@ -134,11 +177,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("Filters by monitoring=true returns only senders monitored by current user")
     fun `should filter by monitoring true`() {
-      val monitoredProfile = transactionTemplate.execute {
-        val p = SenderProfile()
-        p.monitoringUsers.add(8)
-        senderProfileRepository.save(p)
-      }!!
+      val monitoredProfile = createSenderProfileMonitoredBy(userId = 8L)
       createSenderProfile()
       createSenderProfile()
 
@@ -155,11 +194,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("Filters by monitoring=false returns senders NOT monitored by current user")
     fun `should filter by monitoring false`() {
-      transactionTemplate.execute {
-        val p = SenderProfile()
-        p.monitoringUsers.add(8)
-        senderProfileRepository.save(p)
-      }
+      createSenderProfileMonitoredBy(userId = 8L)
       createSenderProfile()
       createSenderProfile()
 
@@ -175,11 +210,7 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("Returns monitoring field as true when current user monitors the sender")
     fun `should include monitoring field in detail view`() {
-      val profile = transactionTemplate.execute {
-        val p = SenderProfile()
-        p.monitoringUsers.add(8)
-        senderProfileRepository.save(p)
-      }!!
+      val profile = createSenderProfileMonitoredBy(userId = 8L)
 
       webTestClient.get()
         .uri("/senders/${profile.id}/")
@@ -209,10 +240,12 @@ class SenderProfileResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("SEC-075 - Returns credits for sender profile")
     fun `should return credits for sender profile`() {
-      val credit = creditRepository.save(Credit(amount = 5000, resolution = CreditResolution.PENDING))
-      val profile = SenderProfile()
-      profile.credits.add(credit)
-      val saved = senderProfileRepository.save(profile)
+      // SenderProfile.credits is @OneToMany(mappedBy = "senderProfile"); the
+      // owning side is Credit's sender_profile_id FK.
+      val saved = senderProfileRepository.save(SenderProfile())
+      val credit = Credit(amount = 5000, resolution = CreditResolution.PENDING)
+      credit.senderProfile = saved
+      creditRepository.save(credit)
 
       webTestClient.get()
         .uri("/senders/${saved.id}/credits/")

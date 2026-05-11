@@ -10,9 +10,11 @@ import org.springframework.transaction.support.TransactionTemplate
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AutoAcceptRule
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AutoAcceptRuleState
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerProfile
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SecurityDebitcardsenderdetail
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.SenderProfile
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AutoAcceptRuleRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SecurityDebitcardsenderdetailRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.SenderProfileRepository
 
 class SecurityAutoAcceptResourceTest : IntegrationTestBase() {
@@ -27,21 +29,34 @@ class SecurityAutoAcceptResourceTest : IntegrationTestBase() {
   private lateinit var prisonerProfileRepository: PrisonerProfileRepository
 
   @Autowired
+  private lateinit var debitCardSenderDetailRepository: SecurityDebitcardsenderdetailRepository
+
+  @Autowired
   private lateinit var transactionTemplate: TransactionTemplate
 
-  @BeforeEach
-  fun setUp() {
-    autoAcceptRuleRepository.deleteAll()
-    senderProfileRepository.deleteAll()
-    prisonerProfileRepository.deleteAll()
-  }
+  // wipeDataTables() in IntegrationTestBase handles cleanup.
 
-  private fun createSenderProfile(): SenderProfile = senderProfileRepository.save(SenderProfile())
+  private fun createSenderProfile(): SenderProfile {
+    val sender = senderProfileRepository.save(SenderProfile())
+    // Django: CheckAutoAcceptRule keys off debit_card_sender_details_id, not
+    // sender_profile_id directly. Build the per-card child so the rule can FK
+    // to it. Empty postcode mirrors the schema default.
+    debitCardSenderDetailRepository.save(
+      SecurityDebitcardsenderdetail().apply {
+        this.sender = sender
+        this.postcode = ""
+      },
+    )
+    return sender
+  }
 
   private fun createPrisonerProfile(prisonerNumber: String = "A1234BC"): PrisonerProfile = prisonerProfileRepository.save(PrisonerProfile(prisonerNumber = prisonerNumber, prisonerName = "John Smith"))
 
   private fun createRule(sender: SenderProfile, prisoner: PrisonerProfile, active: Boolean = true, reason: String? = "Known sender"): AutoAcceptRule = transactionTemplate.execute {
-    val rule = AutoAcceptRule(senderProfile = sender, prisonerProfile = prisoner)
+    val detail = debitCardSenderDetailRepository.findBySender(sender).first()
+    val rule = AutoAcceptRule(senderProfile = sender, prisonerProfile = prisoner).apply {
+      this.debitCardSenderDetails = detail
+    }
     val state = AutoAcceptRuleState(rule = rule, active = active, reason = reason, createdBy = "test_user")
     rule.states.add(state)
     autoAcceptRuleRepository.save(rule)
@@ -217,7 +232,7 @@ class SecurityAutoAcceptResourceTest : IntegrationTestBase() {
 
       webTestClient.post()
         .uri("/security/checks/auto-accept/")
-        .headers(setAuthorisation(username = "test-security", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(username = "security-staff", roles = listOf("ROLE_SECURITY_STAFF")))
         .header("Content-Type", "application/json")
         .bodyValue(
           """
@@ -236,7 +251,7 @@ class SecurityAutoAcceptResourceTest : IntegrationTestBase() {
         .jsonPath("$.is_active").isEqualTo(true)
         .jsonPath("$.states[0].active").isEqualTo(true)
         .jsonPath("$.states[0].reason").isEqualTo("Known sender")
-        .jsonPath("$.states[0].created_by").isEqualTo("test-security")
+        .jsonPath("$.states[0].created_by").isEqualTo("security-staff")
 
       assertThat(autoAcceptRuleRepository.count()).isEqualTo(1L)
     }
@@ -317,7 +332,7 @@ class SecurityAutoAcceptResourceTest : IntegrationTestBase() {
 
       webTestClient.patch()
         .uri("/security/checks/auto-accept/${rule.id}/")
-        .headers(setAuthorisation(username = "test-security", roles = listOf("ROLE_SECURITY_STAFF")))
+        .headers(setAuthorisation(username = "security-staff", roles = listOf("ROLE_SECURITY_STAFF")))
         .header("Content-Type", "application/json")
         .bodyValue("""{"states": [{"active": false, "reason": "Revoked"}]}""")
         .exchange()
@@ -327,7 +342,7 @@ class SecurityAutoAcceptResourceTest : IntegrationTestBase() {
         .jsonPath("$.states.length()").isEqualTo(2)
         .jsonPath("$.states[1].active").isEqualTo(false)
         .jsonPath("$.states[1].reason").isEqualTo("Revoked")
-        .jsonPath("$.states[1].created_by").isEqualTo("test-security")
+        .jsonPath("$.states[1].created_by").isEqualTo("security-staff")
     }
 
     @Test
