@@ -242,6 +242,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         Disbursement(
           amount = 5000,
           method = DisbursementMethod.BANK_TRANSFER,
+          resolution = uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution.PENDING,
           prison = "LEI",
           sortCode = "112233",
           accountNumber = "12345678",
@@ -251,6 +252,7 @@ class RecipientProfileResourceTest : IntegrationTestBase() {
         Disbursement(
           amount = 2000,
           method = DisbursementMethod.BANK_TRANSFER,
+          resolution = uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.DisbursementResolution.PENDING,
           prison = "LEI",
           sortCode = "445566",
           accountNumber = "99999999",

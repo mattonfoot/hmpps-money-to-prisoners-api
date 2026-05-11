@@ -45,6 +45,7 @@ data class PrisonerProfile(
       disbursements: List<Disbursement> = emptyList(),
       senderCount: Int? = null,
       recipientCount: Int? = null,
+      currentUserId: Long? = null,
     ): PrisonerProfile {
       val credits = profile.credits
       val mostCommonDob = credits.mapNotNull { it.prisonerDob }
@@ -66,11 +67,9 @@ data class PrisonerProfile(
         prisons = credits.mapNotNull { it.prison?.nomisId }.distinct(),
         currentPrison = latestPrison?.nomisId,
         providedNames = credits.mapNotNull { it.prisonerName }.distinct(),
-        // monitoringUsers are stored as auth_user IDs in Django; the legacy
-        // contract surfaces usernames. Conversion lives in the service layer
-        // — emit empty here to keep the DTO schema-stable.
-        monitoringUsers = emptyList(),
-        monitoring = null,
+        // monitoringUsers persisted on the ElementCollection — emit them.
+        monitoringUsers = profile.monitoringUsers.map { it.toString() },
+        monitoring = currentUserId?.let { uid -> profile.monitoringUsers.any { it.toLong() == uid } },
         created = profile.created,
         modified = profile.modified,
       )

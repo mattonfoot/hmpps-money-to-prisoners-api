@@ -116,7 +116,8 @@ open class DisbursementDisbursement {
   @Size(max = 50)
   @NotNull
   @Column(name = "resolution", nullable = false, length = 50)
-  open var resolution: String = ""
+  // Django: `resolution = models.CharField(default=DISBURSEMENT_RESOLUTION.PENDING)`.
+  open var resolution: String = "pending"
 
   @Size(max = 50)
   @NotNull

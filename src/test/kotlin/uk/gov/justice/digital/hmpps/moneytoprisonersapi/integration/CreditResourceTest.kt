@@ -1034,7 +1034,8 @@ class CreditResourceTest : IntegrationTestBase() {
       val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
       val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
       securityCheckRepository.save(SecurityCheck(credit = credit1, actionedBy = null))
-      securityCheckRepository.save(SecurityCheck(credit = credit2, actionedBy = "admin1"))
+      // "admin" is seeded — pass a real user reference so the FK resolves.
+      securityCheckRepository.save(SecurityCheck(credit = credit2, actionedBy = "admin"))
 
       webTestClient.get()
         .uri("/credits/?security_check__actioned_by__isnull=true")
@@ -1067,19 +1068,42 @@ class CreditResourceTest : IntegrationTestBase() {
     @Test
     @DisplayName("CRD-090 - Filter monitored=true returns credits linked to monitored profiles")
     fun `should filter monitored credits`() {
+      // CreditCredit.{sender,prisoner}_profile_id FKs own the relationship —
+      // the @OneToMany on each profile is the inverse side. Set the FK on
+      // each credit, then attach monitoring to the profile via the actual
+      // junction table Django uses.
       val credit1 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
       val credit2 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
-      val credit3 = createAndSaveCredit(resolution = CreditResolution.CREDITED)
+      createAndSaveCredit(resolution = CreditResolution.CREDITED) // unmonitored
 
-      val senderProfile = SenderProfile()
-      senderProfile.credits.add(credit1)
-      senderProfile.monitoringUsers.add(1)
-      senderProfileRepository.save(senderProfile)
+      val senderProfile = senderProfileRepository.save(SenderProfile())
+      credit1.senderProfile = senderProfile
+      creditRepository.save(credit1)
+      jdbcTemplate.update(
+        """
+        INSERT INTO security_debitcardsenderdetails (created, modified, sender_id, postcode)
+        VALUES (NOW(), NOW(), ?, '')
+        """.trimIndent(),
+        senderProfile.id,
+      )
+      jdbcTemplate.update(
+        """
+        INSERT INTO security_debitcardsenderdetails_monitoring_users (debitcardsenderdetails_id, user_id)
+        SELECT id, 1 FROM security_debitcardsenderdetails WHERE sender_id = ?
+        """.trimIndent(),
+        senderProfile.id,
+      )
 
-      val prisonerProfile = PrisonerProfile(prisonerNumber = "A1234BC")
-      prisonerProfile.credits.add(credit2)
-      prisonerProfile.monitoringUsers.add(2)
-      prisonerProfileRepository.save(prisonerProfile)
+      val prisonerProfile = prisonerProfileRepository.save(PrisonerProfile(prisonerNumber = "A1234BC"))
+      credit2.prisonerProfile = prisonerProfile
+      creditRepository.save(credit2)
+      jdbcTemplate.update(
+        """
+        INSERT INTO security_prisonerprofile_monitoring_users (prisonerprofile_id, user_id)
+        VALUES (?, 2)
+        """.trimIndent(),
+        prisonerProfile.id,
+      )
 
       webTestClient.get()
         .uri("/credits/?monitored=true")

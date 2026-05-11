@@ -95,7 +95,12 @@ data class Credit(
       prisonerDob = credit.prisonerDob,
       prison = credit.prison?.nomisId,
       resolution = CreditResolution.fromValue(credit.resolution),
-      source = CreditSource.UNKNOWN, // Django schema has no `source` column on credit_credit
+      // Django derives source from whether a transaction or payment is linked.
+      source = when {
+        credit.transaction != null -> CreditSource.BANK_TRANSFER
+        credit.payment != null -> CreditSource.ONLINE
+        else -> CreditSource.UNKNOWN
+      },
       status = computeFrom(credit),
       owner = credit.owner?.username,
       ownerName = credit.owner?.username?.let { ownerNameMap[it] },

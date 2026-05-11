@@ -27,6 +27,7 @@ class PrisonersResource(
   private val disbursementRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.DisbursementRepository,
   private val prisonRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository,
   private val prisonerProfileRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonerProfileRepository,
+  private val authUserRepository: uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository,
 ) {
 
   private fun prisonNameMap(): Map<String, String> = prisonRepository.findAll().associate { it.nomisId to it.name }
@@ -78,6 +79,7 @@ class PrisonersResource(
       disbursements = disbursements,
       senderCount = senderCount,
       recipientCount = recipientCount,
+      currentUserId = authUserRepository.findByUsername(username)?.id,
     )
   }
 
