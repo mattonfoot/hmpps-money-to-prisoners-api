@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Disbursement
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PrisonerProfile
 
 @Repository
 interface DisbursementRepository : JpaRepository<Disbursement, Long> {
@@ -15,4 +16,6 @@ interface DisbursementRepository : JpaRepository<Disbursement, Long> {
   fun findByIdInWithLock(ids: List<Long>): List<Disbursement>
 
   fun findByPrisonerNumber(prisonerNumber: String): List<Disbursement>
+
+  fun findByPrisonerProfile(prisonerProfile: PrisonerProfile): List<Disbursement>
 }
