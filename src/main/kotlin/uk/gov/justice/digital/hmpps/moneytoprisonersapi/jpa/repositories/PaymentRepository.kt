@@ -11,4 +11,5 @@ interface PaymentRepository : JpaRepository<Payment, UUID> {
   fun findByCreditId(creditId: Long): Payment?
   fun findByStatus(status: String): List<Payment>
   fun findByStatusAndModifiedBefore(status: String, modified: OffsetDateTime): List<Payment>
+  fun findByModifiedBefore(modified: OffsetDateTime): List<Payment>
 }
