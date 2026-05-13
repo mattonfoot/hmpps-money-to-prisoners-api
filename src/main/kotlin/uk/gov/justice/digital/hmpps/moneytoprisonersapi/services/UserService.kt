@@ -20,16 +20,33 @@ class UserService(
 
   /**
    * AUTH-010: Lists users, optionally filtered by role name or prison.
+   *
+   * `role` is not a real column on `auth_user`: Django assigns roles via
+   * `auth_user_groups` → `mtp_auth_role.key_group_id`. To filter by role name
+   * we resolve the role's key-group first and filter users by group membership.
+   * Same story for prison — the user-prison link is `mtp_auth_prisonusermapping`.
    */
   @Transactional(readOnly = true)
   fun listUsers(roleName: String? = null, prisonId: String? = null): List<Pair<MtpUser, Boolean>> {
     var spec: Specification<MtpUser> = Specification.where { _, _, cb -> cb.conjunction() }
     if (roleName != null) {
-      spec = spec.and { root, _, cb -> cb.equal(root.join<MtpUser, MtpRole>("role").get<String>("name"), roleName) }
+      // No role with this name → empty result set (mirrors Python's queryset filter)
+      val role = mtpRoleRepository.findByName(roleName)
+      val keyGroupId = role?.keyGroup?.id
+      spec = spec.and { root, _, cb ->
+        if (keyGroupId == null) {
+          cb.disjunction() // forces empty result set
+        } else {
+          val groupsJoin = root.join<Any, Any>("groups", jakarta.persistence.criteria.JoinType.INNER)
+          cb.equal(groupsJoin.get<Long>("id"), keyGroupId)
+        }
+      }
     }
     if (prisonId != null) {
-      spec = spec.and { root, _, _ ->
-        root.join<MtpUser, Prison>("prisons").get<String>("nomisId").`in`(prisonId)
+      spec = spec.and { root, _, cb ->
+        val mappingJoin = root.join<Any, Any>("prisonUserMapping", jakarta.persistence.criteria.JoinType.INNER)
+        val prisonsJoin = mappingJoin.join<Any, Any>("prisons", jakarta.persistence.criteria.JoinType.INNER)
+        cb.equal(prisonsJoin.get<String>("nomisId"), prisonId)
       }
     }
     return mtpUserRepository.findAll(spec).map { user ->

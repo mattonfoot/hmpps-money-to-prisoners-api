@@ -35,7 +35,9 @@ class ResourceServerConfiguration(
     "/service-availability/**",
     "/notifications/**",
     "/reset_password/**",
-    "/change_password/**",
+    // POST /change_password/ requires auth (Python's ChangePasswordView) —
+    // only the code-based reset flow at /change_password/{code}/ is public.
+    "/change_password/*/**",
     "/requests/**",
   )
 

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
@@ -35,16 +36,18 @@ class ChangePasswordResource(
   @Operation(
     summary = "Change password using reset token",
     description = "Completes a password reset using the UUID token issued by POST /reset_password/. " +
-      "No authentication required (AUTH-045).",
+      "Authentication required to match Python's ChangePasswordView contract (AUTH-045). " +
+      "The token-only anonymous flow lives at POST /change_password/{code}/.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "204", description = "Password changed successfully"),
       ApiResponse(responseCode = "400", description = "Invalid, missing, or already-used token", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
+      ApiResponse(responseCode = "401", description = "Authentication required", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
-  @SecurityRequirements
-  @PreAuthorize("permitAll()")
+  @SecurityRequirement(name = "oauth2_provider")
+  @PreAuthorize("isAuthenticated()")
   @PostMapping("/change_password/")
   fun changePasswordByToken(
     @RequestBody request: ChangePasswordByTokenRequest,

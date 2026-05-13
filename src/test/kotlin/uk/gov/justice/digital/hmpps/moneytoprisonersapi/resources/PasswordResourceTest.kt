@@ -60,14 +60,14 @@ class PasswordResourceTest {
     }
 
     @Test
-    fun `returns 404 when user not found`() {
+    fun `returns 400 when user not found (matches Python)`() {
       whenever(passwordService.initiatePasswordReset("unknown", null, "cashbook"))
         .thenReturn(PasswordResetResult.UserNotFound)
 
       val request = ResetPasswordRequest(username = "unknown", application = "cashbook")
       val response = resetPasswordResource.resetPassword(request)
 
-      assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+      assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
 
     @Test

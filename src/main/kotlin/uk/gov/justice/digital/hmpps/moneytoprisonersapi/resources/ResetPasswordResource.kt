@@ -33,14 +33,13 @@ class ResetPasswordResource(
   @Operation(
     summary = "Initiate a password reset",
     description = "Initiates a password reset by username or email. " +
-      "Returns 204 if reset initiated, 404 if user not found, 400 if locked/no-email/ambiguous (AUTH-043 to AUTH-049). " +
+      "Returns 204 if reset initiated; 400 for any failure (user not found, locked, no email, ambiguous — AUTH-043 to AUTH-049). " +
       "No authentication required.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "204", description = "Reset initiated — token created (email would be sent in production)"),
-      ApiResponse(responseCode = "400", description = "Account locked, no email, or multiple users", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
-      ApiResponse(responseCode = "404", description = "User not found", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
+      ApiResponse(responseCode = "400", description = "User not found, account locked, no email, or multiple users", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
     ],
   )
   @SecurityRequirements
@@ -50,15 +49,21 @@ class ResetPasswordResource(
     @RequestBody request: ResetPasswordRequest,
   ): ResponseEntity<Any> {
     if (request.username.isNullOrBlank() && request.email.isNullOrBlank()) {
-      return ResponseEntity.badRequest().body(mapOf("error" to listOf("Provide username or email")))
+      return ResponseEntity.badRequest().body(mapOf("errors" to mapOf("username" to listOf("This field is required"))))
     }
     val application = request.application ?: ""
+    // Mirrors Python's ResetPasswordView: all failure modes return 400 with an
+    // `errors.<field>: [<message>]` body keyed by the `username` form field.
     return when (passwordService.initiatePasswordReset(request.username, request.email, application)) {
       is PasswordResetResult.TokenCreated -> ResponseEntity.noContent().build()
-      is PasswordResetResult.UserNotFound -> ResponseEntity.notFound().build()
-      is PasswordResetResult.AccountLocked -> ResponseEntity.badRequest().body(mapOf("error" to listOf("Account is locked")))
-      is PasswordResetResult.NoEmail -> ResponseEntity.badRequest().body(mapOf("error" to listOf("Account has no email address")))
-      is PasswordResetResult.MultipleUsers -> ResponseEntity.badRequest().body(mapOf("error" to listOf("Multiple accounts with that email — please provide username")))
+      is PasswordResetResult.UserNotFound -> badRequest("Username doesn't match any user account")
+      is PasswordResetResult.AccountLocked -> badRequest("Your account is locked, please contact the person who set it up")
+      is PasswordResetResult.NoEmail -> badRequest("We don't have your email address, please contact the person who set up the account")
+      is PasswordResetResult.MultipleUsers -> badRequest("That email address matches multiple user accounts, please enter your unique username")
     }
   }
+
+  private fun badRequest(message: String): ResponseEntity<Any> = ResponseEntity
+    .badRequest()
+    .body(mapOf("errors" to mapOf("username" to listOf(message))))
 }

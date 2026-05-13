@@ -55,7 +55,7 @@ class RequestsResource(
     ],
   )
   @SecurityRequirement(name = "oauth2_provider")
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("permitAll()")
   @GetMapping("/requests/")
   fun listRequests(
     @Parameter(description = "Ordering: omit for oldest-first, use -created for newest-first")
@@ -63,7 +63,18 @@ class RequestsResource(
     ordering: String?,
     @RequestParam("limit", defaultValue = "20") limit: Int = 20,
     @RequestParam("offset", defaultValue = "0") offset: Int = 0,
-  ): ResponseEntity<PaginatedResponse<AccountRequest>> {
+    authentication: org.springframework.security.core.Authentication?,
+  ): ResponseEntity<Any> {
+    val authenticated = authentication != null &&
+      authentication.isAuthenticated &&
+      authentication !is org.springframework.security.authentication.AnonymousAuthenticationToken
+    // Python's AccountRequestViewSet.list returns just `{"count": N}` for
+    // anonymous callers (account-create funnel uses it to display number of
+    // pending requests without exposing them).
+    if (!authenticated) {
+      val pendingCount = accountRequestService.listPendingRequests(ordering).size
+      return ResponseEntity.ok(mapOf("count" to pendingCount))
+    }
     val requests = accountRequestService.listPendingRequests(ordering)
       .map { AccountRequest.from(it) }
     return ResponseEntity.ok(PaginatedResponse.fromList(requests, limit = limit, offset = offset))

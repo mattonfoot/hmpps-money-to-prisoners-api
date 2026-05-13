@@ -23,6 +23,9 @@ sealed class PasswordChangeResult {
   object InvalidToken : PasswordChangeResult()
 }
 
+/** AUTH-046: usernames that cannot be reset via this endpoint (service / shared accounts). */
+internal val IMMUTABLE_USERS: Set<String> = setOf("transaction-uploader", "send-money")
+
 @Service
 class PasswordService(
   private val mtpUserRepository: MtpUserRepository,
@@ -32,7 +35,8 @@ class PasswordService(
 
   /**
    * AUTH-043: Initiates a password reset for the user identified by [username] or [email].
-   * AUTH-046: Immutable/service accounts are not supported (handled by excluding service accounts from tracking).
+   * AUTH-046: Immutable/service accounts (send-money, transaction-uploader) are
+   * treated as not-found to mirror Python's ResetPasswordView behaviour.
    * AUTH-047: Returns AccountLocked if the account is locked.
    * AUTH-048: Returns NoEmail if the user has no email.
    * AUTH-049: Returns MultipleUsers when multiple accounts share the same email.
@@ -54,6 +58,7 @@ class PasswordService(
     if (candidates.size > 1) return PasswordResetResult.MultipleUsers
 
     val user = candidates.first()
+    if (user.username in IMMUTABLE_USERS) return PasswordResetResult.UserNotFound
     if (loginTrackingService.isLocked(user, application)) return PasswordResetResult.AccountLocked
     if (user.email.isBlank()) return PasswordResetResult.NoEmail
 

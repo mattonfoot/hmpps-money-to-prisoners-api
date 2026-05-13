@@ -18,4 +18,6 @@ interface FileDownloadRepository : JpaRepository<FileDownload, Long> {
     @Param("label") label: String,
     @Param("dates") dates: List<LocalDate>,
   ): List<LocalDate>
+
+  fun existsByLabelAndDate(label: String, date: LocalDate): Boolean
 }

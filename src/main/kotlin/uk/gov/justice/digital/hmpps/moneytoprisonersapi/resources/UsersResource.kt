@@ -136,6 +136,12 @@ class UsersResource(
       return ResponseEntity.badRequest().body(mapOf("email" to listOf("This field is required")))
     }
     val role = userService.findRoleByName(request.roleName)
+    // Mirror Python's UserSerializer: if a role name is supplied but doesn't
+    // resolve, reject the request. Otherwise the user would be created with no
+    // role and no group membership — useless for the cashbook/noms-ops apps.
+    if (!request.roleName.isNullOrBlank() && role == null) {
+      return ResponseEntity.badRequest().body(mapOf("role" to listOf("Invalid role: ${request.roleName}")))
+    }
     val prisons = userService.findPrisonsByIds(request.prisonIds ?: emptyList())
     return try {
       val user = userService.createUser(

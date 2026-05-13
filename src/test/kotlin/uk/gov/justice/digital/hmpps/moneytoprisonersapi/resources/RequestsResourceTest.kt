@@ -38,15 +38,23 @@ class RequestsResourceTest {
   @DisplayName("GET /requests/ (AUTH-061)")
   inner class ListRequests {
 
+    private fun authenticatedToken() = org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+      "compat-user",
+      null,
+      listOf(org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")),
+    )
+
     @Test
     fun `AUTH-061 returns paginated list of pending requests`() {
       val requests = listOf(makeRequest(id = 1L), makeRequest(id = 2L))
       whenever(accountRequestService.listPendingRequests(null)).thenReturn(requests)
 
-      val response = resource.listRequests(ordering = null)
+      val response = resource.listRequests(ordering = null, authentication = authenticatedToken())
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-      assertThat(response.body?.count).isEqualTo(2)
+      @Suppress("UNCHECKED_CAST")
+      val body = response.body as uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse<*>
+      assertThat(body.count).isEqualTo(2)
     }
 
     @Test
@@ -54,10 +62,26 @@ class RequestsResourceTest {
       val requests = listOf(makeRequest(id = 2L), makeRequest(id = 1L))
       whenever(accountRequestService.listPendingRequests("-created")).thenReturn(requests)
 
-      val response = resource.listRequests(ordering = "-created")
+      val response = resource.listRequests(ordering = "-created", authentication = authenticatedToken())
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-      assertThat(response.body?.count).isEqualTo(2)
+      @Suppress("UNCHECKED_CAST")
+      val body = response.body as uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse<*>
+      assertThat(body.count).isEqualTo(2)
+    }
+
+    @Test
+    fun `AUTH-061 anonymous request returns count-only body`() {
+      whenever(accountRequestService.listPendingRequests(null))
+        .thenReturn(listOf(makeRequest(id = 1L), makeRequest(id = 2L), makeRequest(id = 3L)))
+
+      val response = resource.listRequests(ordering = null, authentication = null)
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+      @Suppress("UNCHECKED_CAST")
+      val body = response.body as Map<String, Any>
+      assertThat(body["count"]).isEqualTo(3)
+      assertThat(body).doesNotContainKey("results")
     }
   }
 
