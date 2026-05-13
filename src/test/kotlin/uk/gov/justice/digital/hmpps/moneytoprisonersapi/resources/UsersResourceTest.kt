@@ -130,7 +130,7 @@ class UsersResourceTest {
         username = "newuser",
         email = "new@example.com",
         roleName = "PRISON_CLERK",
-        prisonIds = listOf("LEI"),
+        prisonsRaw = listOf("LEI"),
       )
       val response = userResource.createUser(request)
 

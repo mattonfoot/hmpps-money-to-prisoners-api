@@ -23,7 +23,21 @@ data class CreateUserRequest(
   @JsonProperty("role")
   val roleName: String? = null,
 
-  @Schema(description = "NOMIS IDs of prisons to assign to the user")
+  @Schema(description = "Prisons to assign to the user. Accepts either NOMIS ID strings or {nomis_id} objects.")
   @JsonProperty("prisons")
-  val prisonIds: List<String>? = null,
-)
+  val prisonsRaw: List<Any>? = null,
+) {
+  /**
+   * Normalises `prisons` to a list of NOMIS IDs. Accepts either:
+   *   * `["IXB", "BWI"]` — list of strings (Kotlin-native shorthand), or
+   *   * `[{"nomis_id": "IXB"}, ...]` — list of objects (Python's UserSerializer shape).
+   */
+  val prisonIds: List<String>?
+    get() = prisonsRaw?.mapNotNull { element ->
+      when (element) {
+        is String -> element
+        is Map<*, *> -> (element["nomis_id"] as? String)
+        else -> null
+      }
+    }
+}
