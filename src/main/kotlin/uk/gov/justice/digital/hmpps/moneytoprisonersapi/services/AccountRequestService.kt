@@ -4,11 +4,22 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UserDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AccountRequest
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpRole
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AccountRequestRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpRoleRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+
+/**
+ * Validation failures for the AccountRequest create path. Each variant carries
+ * the data the resource needs to render Python's response-body shape.
+ */
+sealed class CreateAccountRequestResult {
+  data class Created(val request: AccountRequest, val existingUser: UserDto?) : CreateAccountRequestResult()
+  object SuperUserRejected : CreateAccountRequestResult()
+  data class UserExists(val rolesForUser: List<MtpRole>) : CreateAccountRequestResult()
+}
 
 @Service
 class AccountRequestService(
@@ -32,6 +43,12 @@ class AccountRequestService(
   /**
    * AUTH-060: Creates a new account request.
    * AUTH-062: Returns the existing user (if any) alongside the created request.
+   *
+   * Mirrors Python's `AccountRequestViewSet.perform_create` validation:
+   *   - if the username matches a superuser → SuperUserRejected
+   *   - if the user already has a role AND `changeRole` is not "true" → UserExists
+   *   - otherwise create the request (copying first_name/last_name/email from
+   *     the existing user if any, matching Python's behaviour).
    */
   @Transactional
   fun createRequest(
@@ -41,24 +58,50 @@ class AccountRequestService(
     email: String,
     roleName: String?,
     prisonId: String?,
-  ): Pair<AccountRequest, UserDto?> {
+    changeRole: Boolean = false,
+  ): CreateAccountRequestResult {
     val role = roleName?.let { mtpRoleRepository.findByName(it) }
     val prison = prisonId?.let { prisonRepository.findById(it).orElse(null) }
     val existingMtpUser = mtpUserRepository.findByUsernameIgnoreCase(username)
 
+    if (existingMtpUser != null) {
+      if (existingMtpUser.isSuperuser) {
+        return CreateAccountRequestResult.SuperUserRejected
+      }
+      val rolesForUser = rolesFor(existingMtpUser)
+      if (rolesForUser.isNotEmpty() && !changeRole) {
+        return CreateAccountRequestResult.UserExists(rolesForUser)
+      }
+    }
+
+    // Match Python: copy preserved details from existing user where present.
+    val effectiveFirstName = existingMtpUser?.firstName ?: firstName
+    val effectiveLastName = existingMtpUser?.lastName ?: lastName
+    val effectiveEmail = existingMtpUser?.email ?: email
+
     val request = accountRequestRepository.save(
       AccountRequest().apply {
         this.username = username.lowercase()
-        this.firstName = firstName
-        this.lastName = lastName
-        this.email = email
+        this.firstName = effectiveFirstName
+        this.lastName = effectiveLastName
+        this.email = effectiveEmail
         this.role = role
         this.prison = prison
       },
     )
-
     val existingUser = existingMtpUser?.let { UserDto.from(it, false) }
-    return request to existingUser
+    return CreateAccountRequestResult.Created(request, existingUser)
+  }
+
+  /**
+   * Returns the [MtpRole]s the user is in (via the role's `key_group`).
+   * Mirrors Python's `Role.objects.get_roles_for_user`.
+   */
+  @Transactional(readOnly = true)
+  fun rolesFor(user: MtpUser): List<MtpRole> {
+    val groupIds = user.groups.mapNotNull { it.id }
+    if (groupIds.isEmpty()) return emptyList()
+    return mtpRoleRepository.findAll().filter { role -> role.keyGroup?.id in groupIds }
   }
 
   /**

@@ -110,7 +110,7 @@ class AccountRequestServiceTest {
       val saved = makeRequest()
       whenever(accountRequestRepository.save(any())).thenReturn(saved)
 
-      val (request, existingUser) = service.createRequest(
+      val result = service.createRequest(
         username = "newuser",
         firstName = "New",
         lastName = "User",
@@ -119,8 +119,10 @@ class AccountRequestServiceTest {
         prisonId = "LEI",
       )
 
-      assertThat(request.username).isEqualTo("newuser")
-      assertThat(existingUser).isNull()
+      assertThat(result).isInstanceOf(CreateAccountRequestResult.Created::class.java)
+      val created = result as CreateAccountRequestResult.Created
+      assertThat(created.request.username).isEqualTo("newuser")
+      assertThat(created.existingUser).isNull()
     }
 
     @Test
@@ -134,7 +136,7 @@ class AccountRequestServiceTest {
       val saved = makeRequest()
       whenever(accountRequestRepository.save(any())).thenReturn(saved)
 
-      val (_, existingUser) = service.createRequest(
+      val result = service.createRequest(
         username = "newuser",
         firstName = "New",
         lastName = "User",
@@ -143,8 +145,10 @@ class AccountRequestServiceTest {
         prisonId = "LEI",
       )
 
-      assertThat(existingUser).isNotNull
-      assertThat(existingUser!!.username).isEqualTo("newuser")
+      assertThat(result).isInstanceOf(CreateAccountRequestResult.Created::class.java)
+      val created = result as CreateAccountRequestResult.Created
+      assertThat(created.existingUser).isNotNull
+      assertThat(created.existingUser!!.username).isEqualTo("newuser")
     }
   }
 

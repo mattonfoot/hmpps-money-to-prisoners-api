@@ -109,15 +109,38 @@ class RequestsResource(
     if (request.username.isNullOrBlank()) {
       return ResponseEntity.badRequest().body(mapOf("username" to listOf("This field is required")))
     }
-    val (saved, existingUser) = accountRequestService.createRequest(
-      username = request.username,
-      firstName = request.firstName ?: "",
-      lastName = request.lastName ?: "",
-      email = request.email ?: "",
-      roleName = request.role,
-      prisonId = request.prison,
-    )
-    return ResponseEntity.status(HttpStatus.CREATED).body(AccountRequest.from(saved, existingUser))
+    return when (
+      val result = accountRequestService.createRequest(
+        username = request.username,
+        firstName = request.firstName ?: "",
+        lastName = request.lastName ?: "",
+        email = request.email ?: "",
+        roleName = request.role,
+        prisonId = request.prison,
+        changeRole = request.changeRole.equals("true", ignoreCase = true),
+      )
+    ) {
+      is uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.Created ->
+        ResponseEntity.status(HttpStatus.CREATED).body(AccountRequest.from(result.request, result.existingUser))
+      is uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.SuperUserRejected ->
+        ResponseEntity.badRequest().body(mapOf("non_field_errors" to "Super users cannot be edited"))
+      is uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.UserExists ->
+        ResponseEntity.badRequest().body(
+          mapOf(
+            "__mtp__" to mapOf(
+              "condition" to "user-exists",
+              "roles" to result.rolesForUser.map { role ->
+                mapOf(
+                  "role" to role.name,
+                  "application" to (role.application?.name ?: ""),
+                  "login_url" to role.loginUrl,
+                )
+              },
+            ),
+            "non_field_errors" to "This username already exists",
+          ),
+        )
+    }
   }
 
   // -------------------------------------------------------------------------

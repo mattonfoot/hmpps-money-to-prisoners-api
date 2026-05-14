@@ -92,8 +92,10 @@ class RequestsResourceTest {
     @Test
     fun `AUTH-060 returns 201 with created request`() {
       val request = makeRequest()
-      whenever(accountRequestService.createRequest(any(), any(), any(), any(), any(), any()))
-        .thenReturn(request to null)
+      whenever(accountRequestService.createRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(
+          uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.Created(request, null),
+        )
 
       val body = CreateAccountRequestRequest(
         username = "newuser",
@@ -145,8 +147,10 @@ class RequestsResourceTest {
         userAdmin = false,
         isLocked = false,
       )
-      whenever(accountRequestService.createRequest(any(), any(), any(), any(), any(), any()))
-        .thenReturn(request to existingUser)
+      whenever(accountRequestService.createRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(
+          uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.Created(request, existingUser),
+        )
 
       val body = CreateAccountRequestRequest(
         username = "newuser",

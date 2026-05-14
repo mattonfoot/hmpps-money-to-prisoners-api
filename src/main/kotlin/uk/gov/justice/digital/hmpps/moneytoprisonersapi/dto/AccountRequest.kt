@@ -64,9 +64,11 @@ data class CreateAccountRequestRequest(
   val username: String?,
 
   @Schema(description = "First name")
+  @com.fasterxml.jackson.annotation.JsonProperty("first_name")
   val firstName: String?,
 
   @Schema(description = "Last name")
+  @com.fasterxml.jackson.annotation.JsonProperty("last_name")
   val lastName: String?,
 
   @Schema(description = "Email address")
@@ -77,4 +79,8 @@ data class CreateAccountRequestRequest(
 
   @Schema(description = "Prison NOMIS ID being requested")
   val prison: String?,
+
+  @Schema(description = "Set to 'true' to allow a request for a username that already has a role (changes their role).")
+  @com.fasterxml.jackson.annotation.JsonProperty("change-role")
+  val changeRole: String? = null,
 )
