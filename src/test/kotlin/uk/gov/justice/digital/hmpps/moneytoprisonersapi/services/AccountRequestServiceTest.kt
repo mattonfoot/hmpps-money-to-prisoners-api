@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.Account
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpRoleRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonUserMappingRepository
 import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
@@ -37,6 +38,9 @@ class AccountRequestServiceTest {
 
   @Mock
   private lateinit var prisonRepository: PrisonRepository
+
+  @Mock
+  private lateinit var prisonUserMappingRepository: PrisonUserMappingRepository
 
   @InjectMocks
   private lateinit var service: AccountRequestService
@@ -173,7 +177,8 @@ class AccountRequestServiceTest {
 
       assertThat(result).isNotNull
       val captor = argumentCaptor<MtpUser>()
-      verify(mtpUserRepository).save(captor.capture())
+      // First save creates the user; second adds the role's key group via user.groups.
+      verify(mtpUserRepository, org.mockito.Mockito.atLeastOnce()).save(captor.capture())
       assertThat(captor.firstValue.username).isEqualTo("brandnew")
       verify(accountRequestRepository).delete(request)
     }
@@ -189,7 +194,7 @@ class AccountRequestServiceTest {
       val result = service.acceptRequest(1L)
 
       assertThat(result).isNotNull
-      verify(mtpUserRepository).save(existing)
+      verify(mtpUserRepository, org.mockito.Mockito.atLeastOnce()).save(existing)
       verify(accountRequestRepository).delete(request)
     }
   }

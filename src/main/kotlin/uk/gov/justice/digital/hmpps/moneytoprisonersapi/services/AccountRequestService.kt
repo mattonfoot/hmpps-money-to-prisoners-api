@@ -6,10 +6,12 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.UserDto
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AccountRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpRole
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpAuthPrisonusermapping
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AccountRequestRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpRoleRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonUserMappingRepository
 
 /**
  * Validation failures for the AccountRequest create path. Each variant carries
@@ -27,6 +29,7 @@ class AccountRequestService(
   private val mtpUserRepository: MtpUserRepository,
   private val mtpRoleRepository: MtpRoleRepository,
   private val prisonRepository: PrisonRepository,
+  private val prisonUserMappingRepository: PrisonUserMappingRepository,
 ) {
 
   /**
@@ -117,14 +120,10 @@ class AccountRequestService(
     // (Django has no status column — presence-of-row IS the pending state).
     val request = accountRequestRepository.findById(id).orElse(null) ?: return null
 
-    val existing = mtpUserRepository.findByUsernameIgnoreCase(request.username)
-    if (existing != null) {
-      // role change isn't directly settable on AuthUser — Role->Group association
-      // applies via mtp_auth_role.other_groups. Stub the role-update path until we
-      // wire in the role-to-group mapping helpers.
-      // request.role?.let { /* TODO: update group memberships */ }
-      mtpUserRepository.save(existing)
-    } else {
+    val user = mtpUserRepository.findByUsernameIgnoreCase(request.username)?.also {
+      it.isActive = true
+      mtpUserRepository.save(it)
+    } ?: run {
       val newUser = MtpUser().apply {
         this.username = request.username
         this.firstName = request.firstName
@@ -133,8 +132,26 @@ class AccountRequestService(
         this.isActive = true
       }
       mtpUserRepository.save(newUser)
-      // request.prison/role assignment via PrisonUserMapping + group joins is a
-      // multi-step Django flow; stubbed for now.
+    }
+    // Mirror Python's `role.assign_to_user`: add the role's key_group (and
+    // any other_groups) to the user's groups.
+    request.role?.let { role ->
+      val keyGroup = role.keyGroup
+      if (keyGroup != null && user.groups.none { it.id == keyGroup.id }) {
+        user.groups.add(keyGroup)
+      }
+      role.otherGroups.forEach { group ->
+        if (user.groups.none { it.id == group.id }) user.groups.add(group)
+      }
+      mtpUserRepository.save(user)
+    }
+    // Mirror Python's `PrisonUserMapping.assign_prisons_to_user`: ensure a
+    // mapping exists and that exactly the request's prison is associated.
+    request.prison?.let { prison ->
+      val mapping = prisonUserMappingRepository.findByUser(user)
+        ?: MtpAuthPrisonusermapping().apply { this.user = user }
+      mapping.prisons = mutableSetOf(prison)
+      prisonUserMappingRepository.save(mapping)
     }
 
     accountRequestRepository.delete(request)
