@@ -33,6 +33,9 @@ class PasswordService(
   private val loginTrackingService: LoginTrackingService,
 ) {
 
+  /** Token-id generator. Tests can override (e.g. for determinism). */
+  internal var tokenIdSupplier: () -> UUID = { UUID.randomUUID() }
+
   /**
    * AUTH-043: Initiates a password reset for the user identified by [username] or [email].
    * AUTH-046: Immutable/service accounts (send-money, transaction-uploader) are
@@ -62,8 +65,15 @@ class PasswordService(
     if (loginTrackingService.isLocked(user, application)) return PasswordResetResult.AccountLocked
     if (user.email.isBlank()) return PasswordResetResult.NoEmail
 
+    // Django generates `code` (the UUID id) via `default=uuid.uuid4`; the
+    // Kotlin entity has no @GeneratedValue, so we must assign one explicitly
+    // before persistence — otherwise Hibernate refuses with
+    // "Identifier of entity ... must be manually assigned before calling 'persist()'".
     val resetToken = passwordResetTokenRepository.save(
-      PasswordResetToken().apply { this.user = user },
+      PasswordResetToken().apply {
+        this.id = tokenIdSupplier()
+        this.user = user
+      },
     )
     return PasswordResetResult.TokenCreated(resetToken)
   }
