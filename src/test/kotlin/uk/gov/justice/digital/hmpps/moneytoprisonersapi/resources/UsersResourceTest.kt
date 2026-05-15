@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
@@ -87,8 +88,10 @@ class UsersResourceTest {
     fun `AUTH-011 returns user with lock status`() {
       val user = makeUser(role = makeRole())
       whenever(userService.getUserByUsername("testuser")).thenReturn(user to true)
+      whenever(userService.findByUsername("testuser")).thenReturn(user)
+      whenever(userService.canManage(any(), any())).thenReturn(true)
 
-      val response = userResource.getUser("testuser")
+      val response = userResource.getUser("testuser", java.security.Principal { "testuser" })
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
       assertThat(response.body?.username).isEqualTo("testuser")
@@ -99,7 +102,7 @@ class UsersResourceTest {
     fun `returns 404 when user not found`() {
       whenever(userService.getUserByUsername("nonexistent")).thenReturn(null)
 
-      val response = userResource.getUser("nonexistent")
+      val response = userResource.getUser("nonexistent", java.security.Principal { "anyone" })
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -187,6 +190,7 @@ class UsersResourceTest {
       whenever(userService.findRoleByName(null)).thenReturn(null)
       whenever(userService.findPrisonsByIds(emptyList())).thenReturn(emptySet())
       whenever(userService.findByUsername("testuser")).thenReturn(user)
+      whenever(userService.canManage(any(), any())).thenReturn(true)
       whenever(
         userService.updateUser(
           id = 1L,
@@ -224,6 +228,7 @@ class UsersResourceTest {
       whenever(userService.findRoleByName(null)).thenReturn(null)
       whenever(userService.findPrisonsByIds(emptyList())).thenReturn(emptySet())
       whenever(userService.findByUsername("testuser")).thenReturn(user)
+      whenever(userService.canManage(any(), any())).thenReturn(true)
       whenever(
         userService.updateUser(
           id = 1L,
@@ -252,9 +257,10 @@ class UsersResourceTest {
     fun `AUTH-014 returns 204 and deactivates user`() {
       val user = makeUser()
       whenever(userService.findByUsername("testuser")).thenReturn(user)
+      whenever(userService.canManage(any(), any())).thenReturn(true)
       whenever(userService.deactivateUser(1L)).thenReturn(user)
 
-      val response = userResource.deleteUser("testuser")
+      val response = userResource.deleteUser("testuser", java.security.Principal { "testuser" })
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
     }
@@ -263,7 +269,7 @@ class UsersResourceTest {
     fun `returns 404 when user not found`() {
       whenever(userService.findByUsername("nonexistent")).thenReturn(null)
 
-      val response = userResource.deleteUser("nonexistent")
+      val response = userResource.deleteUser("nonexistent", java.security.Principal { "anyone" })
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }

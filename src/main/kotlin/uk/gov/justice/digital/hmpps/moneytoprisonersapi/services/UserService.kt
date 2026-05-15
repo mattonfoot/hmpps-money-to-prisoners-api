@@ -168,4 +168,43 @@ class UserService(
   fun findRoleByName(name: String?): MtpRole? = if (name == null) null else mtpRoleRepository.findByName(name)
 
   fun findPrisonsByIds(ids: List<String>): Set<Prison> = prisonRepository.findAllById(ids).toSet()
+
+  /**
+   * Returns true when [requester] is permitted to GET/PATCH/DELETE [target] via
+   * the `/users/{username}/` endpoints. Mirrors Python's
+   * `mtp_auth/views.py::get_managed_user_queryset` + `UserViewSet.get_object`:
+   *
+   *   * the requester can always act on themselves;
+   *   * superusers and users with ≠1 role key_group can only act on themselves;
+   *   * otherwise the target must (a) share the same role key_group, and
+   *     (b) share at least one prison from the requester's `PrisonUserMapping`
+   *     (no prison filter for FIU requesters).
+   */
+  @Transactional(readOnly = true)
+  fun canManage(requester: MtpUser, target: MtpUser): Boolean {
+    if (requester.id == target.id) return true
+
+    // Identify the requester's role key_group(s).
+    val allRoles = mtpRoleRepository.findAll()
+    val keyGroupIds = allRoles.mapNotNull { it.keyGroup?.id }.toSet()
+    val requesterKeyGroups = requester.groups.mapNotNull { it.id }.filter { it in keyGroupIds }
+    if (requesterKeyGroups.size != 1 || requester.isSuperuser) return false
+    val requesterKeyGroup = requesterKeyGroups.single()
+
+    // Target must share the same key_group and not be a superuser.
+    if (target.isSuperuser) return false
+    if (target.groups.none { it.id == requesterKeyGroup }) return false
+
+    // FIU users skip the prison filter; others must overlap at least one prison.
+    val isFiu = requester.groups.any { it.name == "FIU" }
+    if (isFiu) return true
+
+    val requesterPrisons = requester.prisonUserMapping?.prisons.orEmpty().mapNotNull { it.nomisId }.toSet()
+    val targetPrisons = target.prisonUserMapping?.prisons.orEmpty().mapNotNull { it.nomisId }.toSet()
+    if (requesterPrisons.isEmpty()) {
+      // Requester has no prison set → target must also have no prison set.
+      return targetPrisons.isEmpty()
+    }
+    return requesterPrisons.intersect(targetPrisons).isNotEmpty()
+  }
 }

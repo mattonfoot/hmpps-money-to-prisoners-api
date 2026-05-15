@@ -46,6 +46,12 @@ class UsersResource(
 
   private fun flagsFor(user: MtpUser): List<String> = userFlagRepository.findByUser(user).map { it.name }
 
+  /** Wrapper around `UserService.canManage` keyed on the principal's username. */
+  private fun callerCanManage(principal: Principal, target: MtpUser): Boolean {
+    val requester = userService.findByUsername(principal.name) ?: return false
+    return userService.canManage(requester, target)
+  }
+
   // -------------------------------------------------------------------------
   // AUTH-010: GET /users/
   // -------------------------------------------------------------------------
@@ -100,8 +106,10 @@ class UsersResource(
   @GetMapping("/users/{username}/")
   fun getUser(
     @Parameter(description = "User ID") @PathVariable("username") username: String,
+    principal: Principal,
   ): ResponseEntity<UserDto> {
     val (user, locked) = userService.getUserByUsername(username) ?: return ResponseEntity.notFound().build()
+    if (!callerCanManage(principal, user)) return ResponseEntity.notFound().build()
     return ResponseEntity.ok(UserDto.from(user, locked, flags = flagsFor(user)))
   }
 
@@ -189,6 +197,7 @@ class UsersResource(
     val prisons = request.prisonIds?.let { userService.findPrisonsByIds(it) }
     return try {
       val targetUser = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
+      if (!callerCanManage(principal, targetUser)) return ResponseEntity.notFound().build()
       val isSelf = targetUser.username.equals(principal.name, ignoreCase = true)
       val updated = userService.updateUser(
         id = targetUser.id!!,
@@ -225,8 +234,10 @@ class UsersResource(
   @DeleteMapping("/users/{username}/")
   fun deleteUser(
     @Parameter(description = "User ID") @PathVariable("username") username: String,
+    principal: Principal,
   ): ResponseEntity<Any> {
     val user = userService.findByUsername(username) ?: return ResponseEntity.notFound().build()
+    if (!callerCanManage(principal, user)) return ResponseEntity.notFound().build()
     userService.deactivateUser(user.id!!) ?: return ResponseEntity.notFound().build()
     return ResponseEntity.noContent().build()
   }
