@@ -214,7 +214,7 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
   inner class PatchPrivateEstateBatch {
 
     @Test
-    @DisplayName("CRD-184 - PATCH credits all credit_pending credits in batch")
+    @DisplayName("CRD-184 - PATCH with credited=true credits all credit_pending credits in batch and returns 204")
     fun `should credit all credit_pending credits in batch`() {
       val prison = createPrivatePrison()
       val credit1 = createAndSaveCredit(prison = "PRV", resolution = CreditResolution.PENDING)
@@ -231,12 +231,50 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
         .uri("/private-estate-batches/PRV/2024-03-15/")
         .headers(setAuthorisation(username = "bankadmin"))
         .header("Content-Type", "application/json")
-        .bodyValue("{}")
+        .bodyValue("""{"credited": true}""")
         .exchange()
-        .expectStatus().isOk
+        .expectStatus().isNoContent
 
       assertThat(creditRepository.findById(credit1.id!!).get().resolution).isEqualTo(CreditResolution.CREDITED.value)
       assertThat(creditRepository.findById(credit2.id!!).get().resolution).isEqualTo(CreditResolution.CREDITED.value)
+    }
+
+    @Test
+    @DisplayName("CRD-184b - PATCH without credited flag returns 400 and does not change resolution")
+    fun `should return 400 when credited flag missing`() {
+      val prison = createPrivatePrison()
+      val credit = createAndSaveCredit(prison = "PRV", resolution = CreditResolution.PENDING)
+      createPrivateEstateBatch(
+        "PRV/2024-03-15",
+        prison,
+        LocalDate.of(2024, 3, 15),
+        credits = listOf(credit),
+      )
+
+      webTestClient.patch()
+        .uri("/private-estate-batches/PRV/2024-03-15/")
+        .headers(setAuthorisation(username = "bankadmin"))
+        .header("Content-Type", "application/json")
+        .bodyValue("{}")
+        .exchange()
+        .expectStatus().isBadRequest
+
+      assertThat(creditRepository.findById(credit.id!!).get().resolution).isEqualTo(CreditResolution.PENDING.value)
+    }
+
+    @Test
+    @DisplayName("CRD-184c - PUT returns 405 (only PATCH is permitted)")
+    fun `should return 405 for PUT method`() {
+      val prison = createPrivatePrison()
+      createPrivateEstateBatch("PRV/2024-03-15", prison, LocalDate.of(2024, 3, 15))
+
+      webTestClient.put()
+        .uri("/private-estate-batches/PRV/2024-03-15/")
+        .headers(setAuthorisation(username = "bankadmin"))
+        .header("Content-Type", "application/json")
+        .bodyValue("""{"credited": true}""")
+        .exchange()
+        .expectStatus().isEqualTo(405)
     }
 
     @Test
@@ -246,7 +284,7 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
         .uri("/private-estate-batches/UNKNOWN/2024-03-15/")
         .headers(setAuthorisation())
         .header("Content-Type", "application/json")
-        .bodyValue("{}")
+        .bodyValue("""{"credited": true}""")
         .exchange()
         .expectStatus().isNotFound
     }

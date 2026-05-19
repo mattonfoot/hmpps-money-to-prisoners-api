@@ -13,10 +13,10 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_PRIVATE_ESTATE_BATCHES
@@ -129,13 +129,17 @@ class PrivateEstateBatchesResource(
 
   @Operation(
     summary = "Credit all credit_pending credits in a private estate batch",
-    description = "Transitions all credit_pending credits in the batch to credited state. " +
-      "Creates a CREDITED log entry for each credit. Returns 200 OK with updated batch.",
+    description = "Partial-update endpoint: when the body contains a truthy `credited` flag, " +
+      "transitions all credit_pending credits in the batch to credited state and creates a " +
+      "CREDITED log entry for each. Returns 204 No Content on success. " +
+      "Returns 400 if `credited` is not truthy. Returns 405 for PUT.",
   )
   @ApiResponses(
     value = [
-      ApiResponse(responseCode = "200", description = "Batch processed successfully"),
+      ApiResponse(responseCode = "204", description = "Batch processed successfully"),
+      ApiResponse(responseCode = "400", description = "`credited` not provided or not truthy"),
       ApiResponse(responseCode = "404", description = "Batch not found"),
+      ApiResponse(responseCode = "405", description = "PUT not allowed; use PATCH"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized",
@@ -144,20 +148,25 @@ class PrivateEstateBatchesResource(
     ],
   )
   @PreAuthorize("isAuthenticated()")
-  @RequestMapping(value = ["/{prison}/{date}/"], method = [RequestMethod.PATCH, RequestMethod.PUT])
+  @PatchMapping("/{prison}/{date}/")
   @Transactional
   fun patchPrivateEstateBatch(
     @PathVariable prison: String,
     @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
-    @RequestBody(required = false) _body: Map<String, Any>?,
+    @RequestBody(required = false) body: Map<String, Any>?,
     principal: Principal,
-  ): ResponseEntity<PrivateEstateBatch> {
+  ): ResponseEntity<Void> {
     val prisonEntity = prisonRepository.findById(prison).orElse(null)
       ?: return ResponseEntity.notFound().build()
     val batch = privateEstateBatchRepository.findByPrisonAndDate(prisonEntity, date)
       ?: return ResponseEntity.notFound().build()
-    val owner = userRepository.findByUsername(principal.name)
 
+    // Python: `if (request.data or {}).get('credited'):` — anything non-truthy → 400.
+    if (!isTruthy(body?.get("credited"))) {
+      return ResponseEntity.badRequest().build()
+    }
+
+    val owner = userRepository.findByUsername(principal.name)
     for (credit in batch.credits) {
       if (credit.prison != null &&
         !credit.blocked &&
@@ -174,7 +183,17 @@ class PrivateEstateBatchesResource(
       }
     }
 
-    return ResponseEntity.ok(PrivateEstateBatch.from(batch))
+    return ResponseEntity.noContent().build()
+  }
+
+  private fun isTruthy(value: Any?): Boolean = when (value) {
+    null -> false
+    is Boolean -> value
+    is Number -> value.toLong() != 0L
+    is String -> value.isNotEmpty() && !value.equals("false", ignoreCase = true) && value != "0"
+    is Collection<*> -> value.isNotEmpty()
+    is Map<*, *> -> value.isNotEmpty()
+    else -> true
   }
 
   @Operation(
