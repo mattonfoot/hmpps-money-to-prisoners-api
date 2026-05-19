@@ -16,12 +16,6 @@ class FileDownloadService(
 ) {
 
   /**
-   * COR-001: Lists all file downloads, newest first.
-   */
-  @Transactional(readOnly = true)
-  fun listDownloads(): List<FileDownload> = fileDownloadRepository.findAllByOrderByDateDesc()
-
-  /**
    * COR-002: Creates a new file download record (label + date must be unique).
    * Mirrors Python's `unique_together(label, date)` validation by rejecting
    * duplicates with a 400 rather than letting the DB constraint surface as 500.

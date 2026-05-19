@@ -9,8 +9,10 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.dao.DataIntegrityViolationException
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.JobInformation
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.JobInformationRepository
@@ -37,7 +39,6 @@ class JobInformationServiceTest {
       prisonEstate = "HMPPS",
       tasks = "Processing payments",
     )
-    whenever(jobInformationRepository.findByUserId(1L)).thenReturn(null)
     whenever(jobInformationRepository.save(any())).thenReturn(saved)
 
     val result = service.createJobInformation(
@@ -55,7 +56,6 @@ class JobInformationServiceTest {
   @Test
   fun `AUTH-071 links job information to the provided user`() {
     val user = makeUser()
-    whenever(jobInformationRepository.findByUserId(1L)).thenReturn(null)
     whenever(jobInformationRepository.save(any())).thenAnswer { it.arguments[0] }
 
     service.createJobInformation(
@@ -71,22 +71,19 @@ class JobInformationServiceTest {
   }
 
   @Test
-  fun `AUTH-072 upserts existing job information for same user`() {
-    // mtp_auth_jobinformation has UNIQUE(user_id); a re-POST should update the
-    // existing row in place rather than insert a duplicate.
+  fun `AUTH-072 duplicate create for same user propagates unique constraint failure`() {
     val user = makeUser()
-    val existing = JobInformation(id = 99L, user = user, name = "Old Title", prisonEstate = "Old", tasks = "Old")
-    whenever(jobInformationRepository.findByUserId(1L)).thenReturn(existing)
-    whenever(jobInformationRepository.save(any())).thenAnswer { it.arguments[0] }
+    whenever(jobInformationRepository.save(any())).thenThrow(DataIntegrityViolationException("duplicate key value"))
 
-    val result = service.createJobInformation(
-      user = user,
-      title = "New Title",
-      prisonEstate = "New",
-      tasks = "New",
-    )
+    org.junit.jupiter.api.assertThrows<DataIntegrityViolationException> {
+      service.createJobInformation(
+        user = user,
+        title = "New Title",
+        prisonEstate = "New",
+        tasks = "New",
+      )
+    }
 
-    assertThat(result.id).isEqualTo(99L)
-    assertThat(result.title).isEqualTo("New Title")
+    verify(jobInformationRepository, never()).findByUserId(any())
   }
 }

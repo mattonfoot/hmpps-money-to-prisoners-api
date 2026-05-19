@@ -45,6 +45,7 @@ private val GROUP_TO_EXTRA_AUTHORITY = mapOf(
  */
 class DjangoOAuth2Authentication(
   private val username: String,
+  val clientId: String?,
   authorities: Collection<GrantedAuthority>,
 ) : AbstractAuthenticationToken(authorities) {
   init {
@@ -111,6 +112,7 @@ class DjangoOAuth2AuthenticationFilter(
 
     return DjangoOAuth2Authentication(
       username = user?.username ?: "anonymous",
+      clientId = token.application?.clientId,
       authorities = authorities,
     )
   }

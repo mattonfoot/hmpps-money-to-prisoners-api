@@ -22,9 +22,7 @@ class JobInformationService(
     prisonEstate: String,
     tasks: String,
   ): JobInformation {
-    // mtp_auth_jobinformation has UNIQUE(user_id) so a re-POST replaces the row.
-    val existing = user.id?.let { jobInformationRepository.findByUserId(it) }
-    val info = existing ?: JobInformation().apply { this.user = user }
+    val info = JobInformation().apply { this.user = user }
     info.title = title
     info.prisonEstate = prisonEstate
     info.tasks = tasks

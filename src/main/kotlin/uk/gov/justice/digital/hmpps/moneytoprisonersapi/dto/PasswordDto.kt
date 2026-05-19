@@ -16,9 +16,6 @@ data class ResetPasswordRequest(
 
 @Schema(name = "ChangePasswordWithCode", description = "Request body for completing a password reset via token")
 data class ChangePasswordByTokenRequest(
-  @Schema(description = "Password reset token (UUID)", required = true)
-  val token: String?,
-
   @Schema(description = "New password", required = true)
   val newPassword: String?,
 )

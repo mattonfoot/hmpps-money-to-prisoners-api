@@ -38,33 +38,6 @@ class FileDownloadsResourceTest {
   }
 
   @Nested
-  @DisplayName("GET /file-downloads/ (COR-001)")
-  inner class ListFileDownloads {
-
-    @Test
-    fun `COR-001 returns paginated list of file downloads`() {
-      val downloads = listOf(makeDownload(id = 1L), makeDownload(id = 2L))
-      whenever(fileDownloadService.listDownloads()).thenReturn(downloads)
-
-      val response = resource.listFileDownloads()
-
-      assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-      assertThat(response.body?.count).isEqualTo(2)
-      assertThat(response.body?.results).hasSize(2)
-    }
-
-    @Test
-    fun `returns empty list when no downloads exist`() {
-      whenever(fileDownloadService.listDownloads()).thenReturn(emptyList())
-
-      val response = resource.listFileDownloads()
-
-      assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-      assertThat(response.body?.count).isEqualTo(0)
-    }
-  }
-
-  @Nested
   @DisplayName("POST /file-downloads/ (COR-002)")
   inner class CreateFileDownload {
 

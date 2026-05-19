@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
-import io.swagger.v3.oas.annotations.media.Schema
 import com.fasterxml.jackson.annotation.JsonProperty
+import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AccountRequestStatus
 import java.time.OffsetDateTime
 

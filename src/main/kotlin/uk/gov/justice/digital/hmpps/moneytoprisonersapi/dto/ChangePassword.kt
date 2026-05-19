@@ -6,9 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 /**
  * Authenticated password change request body.
  * Mirrors Python's `ChangePassword` schema.
- *
- * Note: the Kotlin API doesn't currently expose an authenticated password-change
- * endpoint, but the schema is provided for client-SDK parity with Python.
  */
 @Schema(name = "ChangePassword", description = "Authenticated password change request")
 data class ChangePassword(

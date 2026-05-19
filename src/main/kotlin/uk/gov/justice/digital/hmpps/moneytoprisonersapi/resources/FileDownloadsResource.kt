@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.TAG_FILE_DOWNLOADS
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.CreateFileDownloadRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.FileDownload
-import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.PaginatedResponse
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.FileDownloadService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.LocalDate
@@ -33,35 +32,6 @@ import java.time.format.DateTimeParseException
 class FileDownloadsResource(
   private val fileDownloadService: FileDownloadService,
 ) {
-
-  // -------------------------------------------------------------------------
-  // COR-001: GET /file-downloads/
-  // -------------------------------------------------------------------------
-
-  @Operation(
-    summary = "List file download records",
-    description = "Returns all file download records, ordered by date descending (COR-001).",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Paginated list of file download records",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = FileDownloadPaginatedResponse::class))],
-      ),
-      ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content(schema = Schema(implementation = ErrorResponse::class))]),
-    ],
-  )
-  @SecurityRequirement(name = "oauth2_provider")
-  @PreAuthorize("isAuthenticated()")
-  @GetMapping("/file-downloads/")
-  fun listFileDownloads(
-    @RequestParam("limit", defaultValue = "20") limit: Int = 20,
-    @RequestParam("offset", defaultValue = "0") offset: Int = 0,
-  ): ResponseEntity<PaginatedResponse<FileDownload>> {
-    val downloads = fileDownloadService.listDownloads().map { FileDownload.from(it) }
-    return ResponseEntity.ok(PaginatedResponse.fromList(downloads, limit = limit, offset = offset))
-  }
 
   // -------------------------------------------------------------------------
   // COR-002: POST /file-downloads/
@@ -144,15 +114,3 @@ class FileDownloadsResource(
     return ResponseEntity.ok(missing.map { it.toString() })
   }
 }
-
-@Schema(name = "PaginatedResponseFileDownload", description = "Paginated response containing file download records")
-private class FileDownloadPaginatedResponse(
-  @Schema(description = "Total number of results")
-  val count: Int,
-  @Schema(description = "URL of the next page, or null", nullable = true)
-  val next: String?,
-  @Schema(description = "URL of the previous page, or null", nullable = true)
-  val previous: String?,
-  @Schema(description = "List of file download records")
-  val results: List<FileDownload>,
-)

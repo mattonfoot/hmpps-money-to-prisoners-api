@@ -31,12 +31,15 @@ A Kotlin Spring Boot microservice and internal admin interface for the Prisoner 
 *   **Isolation**: Tests must be unit-tested in isolation where possible.
 
 ### Workflow Commands
-*   Run tests: `./gradlew test`
-*   Run linter: `./gradlew ktlintFormat`
+*   Format Kotlin code before testing: `./gradlew ktlintFormat`
+*   Run tests after formatting: `./gradlew test`
+*   Require lint to pass before committing: `./gradlew ktlintCheck`
 
 ### Guidelines
 *   Think deeply before making any edits.
 *   If you find yourself writing production code without a failing test, STOP immediately and write the test first.
+*   Always run `./gradlew ktlintFormat` before running tests for changed code.
+*   Do not commit unless `./gradlew ktlintCheck` passes.
 
 ## Common Commands
 

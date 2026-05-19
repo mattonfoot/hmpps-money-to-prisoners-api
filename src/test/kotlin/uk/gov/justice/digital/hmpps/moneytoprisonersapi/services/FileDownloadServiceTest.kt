@@ -33,22 +33,6 @@ class FileDownloadServiceTest {
   ) = FileDownload(id = id, label = label, date = date)
 
   @Nested
-  @DisplayName("listDownloads")
-  inner class ListDownloads {
-
-    @Test
-    fun `returns all downloads ordered by date descending`() {
-      val downloads = listOf(makeDownload(id = 2L, date = LocalDate.of(2024, 1, 16)), makeDownload())
-      whenever(fileDownloadRepository.findAllByOrderByDateDesc()).thenReturn(downloads)
-
-      val result = service.listDownloads()
-
-      assertThat(result).hasSize(2)
-      assertThat(result[0].date).isAfter(result[1].date)
-    }
-  }
-
-  @Nested
   @DisplayName("createDownload")
   inner class CreateDownload {
 

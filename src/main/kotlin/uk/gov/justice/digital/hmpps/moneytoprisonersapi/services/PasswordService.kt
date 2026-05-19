@@ -6,7 +6,12 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PasswordResetToken
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.MtpUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PasswordResetTokenRepository
+import java.security.MessageDigest
+import java.security.SecureRandom
+import java.util.Base64
 import java.util.UUID
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 
 /** Result type for initiating a password reset (AUTH-043 to AUTH-049). */
 sealed class PasswordResetResult {
@@ -23,8 +28,59 @@ sealed class PasswordChangeResult {
   object InvalidToken : PasswordChangeResult()
 }
 
+/** Result type for authenticated password changes via old_password/new_password. */
+sealed class AuthenticatedPasswordChangeResult {
+  data class Success(val user: MtpUser) : AuthenticatedPasswordChangeResult()
+  object IncorrectPassword : AuthenticatedPasswordChangeResult()
+}
+
 /** AUTH-046: usernames that cannot be reset via this endpoint (service / shared accounts). */
 internal val IMMUTABLE_USERS: Set<String> = setOf("transaction-uploader", "send-money")
+
+private const val DJANGO_PBKDF2_SHA256 = "pbkdf2_sha256"
+private const val DEFAULT_DJANGO_ITERATIONS = 600000
+private const val DJANGO_DKLEN_BITS = 256
+private const val DJANGO_SALT_LENGTH = 12
+private const val DJANGO_SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+private object DjangoPasswordHasher {
+  private val secureRandom = SecureRandom()
+
+  fun matches(rawPassword: String, encodedPassword: String): Boolean {
+    val parts = encodedPassword.split('$')
+    if (parts.size != 4 || parts[0] != DJANGO_PBKDF2_SHA256) return false
+    val iterations = parts[1].toIntOrNull() ?: return false
+    val salt = parts[2]
+    val expected = Base64.getDecoder().decode(parts[3])
+    val actual = Base64.getDecoder().decode(pbkdf2(rawPassword, salt, iterations))
+    return MessageDigest.isEqual(actual, expected)
+  }
+
+  fun encode(rawPassword: String, referenceHash: String? = null): String {
+    val iterations = parseIterations(referenceHash) ?: DEFAULT_DJANGO_ITERATIONS
+    val salt = randomSalt()
+    val hash = pbkdf2(rawPassword, salt, iterations)
+    return listOf(DJANGO_PBKDF2_SHA256, iterations.toString(), salt, hash).joinToString("$")
+  }
+
+  private fun parseIterations(referenceHash: String?): Int? {
+    val parts = referenceHash?.split('$') ?: return null
+    if (parts.size != 4 || parts[0] != DJANGO_PBKDF2_SHA256) return null
+    return parts[1].toIntOrNull()
+  }
+
+  private fun randomSalt(): String = buildString(DJANGO_SALT_LENGTH) {
+    repeat(DJANGO_SALT_LENGTH) {
+      append(DJANGO_SALT_CHARS[secureRandom.nextInt(DJANGO_SALT_CHARS.length)])
+    }
+  }
+
+  private fun pbkdf2(password: String, salt: String, iterations: Int): String {
+    val keySpec = PBEKeySpec(password.toCharArray(), salt.toByteArray(), iterations, DJANGO_DKLEN_BITS)
+    val secret = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(keySpec)
+    return Base64.getEncoder().encodeToString(secret.encoded)
+  }
+}
 
 @Service
 class PasswordService(
@@ -65,10 +121,6 @@ class PasswordService(
     if (loginTrackingService.isLocked(user, application)) return PasswordResetResult.AccountLocked
     if (user.email.isBlank()) return PasswordResetResult.NoEmail
 
-    // Django generates `code` (the UUID id) via `default=uuid.uuid4`; the
-    // Kotlin entity has no @GeneratedValue, so we must assign one explicitly
-    // before persistence — otherwise Hibernate refuses with
-    // "Identifier of entity ... must be manually assigned before calling 'persist()'".
     val resetToken = passwordResetTokenRepository.save(
       PasswordResetToken().apply {
         this.id = tokenIdSupplier()
@@ -79,23 +131,40 @@ class PasswordService(
   }
 
   /**
+   * AUTH-045: Changes an authenticated user's password using their current password.
+   */
+  @Transactional
+  fun changePassword(
+    username: String,
+    oldPassword: String,
+    newPassword: String,
+    application: String,
+  ): AuthenticatedPasswordChangeResult {
+    val user = mtpUserRepository.findByUsernameIgnoreCase(username) ?: return AuthenticatedPasswordChangeResult.IncorrectPassword
+    if (loginTrackingService.isLocked(user, application)) {
+      return AuthenticatedPasswordChangeResult.IncorrectPassword
+    }
+    if (!DjangoPasswordHasher.matches(oldPassword, user.password)) {
+      loginTrackingService.recordFailedLogin(user, application)
+      return AuthenticatedPasswordChangeResult.IncorrectPassword
+    }
+    loginTrackingService.clearFailedAttempts(user, application)
+    user.password = DjangoPasswordHasher.encode(newPassword, user.password)
+    mtpUserRepository.save(user)
+    return AuthenticatedPasswordChangeResult.Success(user)
+  }
+
+  /**
    * AUTH-045: Changes the user's password using a one-time reset [token].
    * AUTH-042: Clears failed login attempts on success.
-   *
-   * Django models a password-change "used" state by deleting the row, not by a
-   * boolean flag. Mirror that behaviour: lookup by id, delete on consumption.
    */
   @Transactional
   fun changePasswordByToken(token: UUID, newPassword: String): PasswordChangeResult {
     val resetToken = passwordResetTokenRepository.findById(token).orElse(null)
       ?: return PasswordChangeResult.InvalidToken
     val owner = resetToken.user ?: return PasswordChangeResult.InvalidToken
-    passwordResetTokenRepository.delete(resetToken)
-    // Password storage is delegated to HMPPS Auth in the production system;
-    // here we record the cleared attempts as the side-effect.
-    // Application context is no longer carried on the change-request row in
-    // Django's schema — pass null and let LoginTrackingService treat it as
-    // application-agnostic.
+    owner.password = DjangoPasswordHasher.encode(newPassword, owner.password)
+    mtpUserRepository.save(owner)
     loginTrackingService.clearFailedAttempts(owner, application = null)
     return PasswordChangeResult.Success(owner)
   }

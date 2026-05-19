@@ -10,10 +10,14 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.config.DjangoOAuth2Authentication
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ChangePassword
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ChangePasswordByTokenRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.ResetPasswordRequest
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpUser
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.PasswordResetToken
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.AuthenticatedPasswordChangeResult
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PasswordChangeResult
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PasswordResetResult
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.PasswordService
@@ -42,6 +46,18 @@ class PasswordResourceTest {
     id = UUID.randomUUID()
     this.user = user
   }
+
+  private fun authenticatedCashbookToken(username: String = "testuser") = DjangoOAuth2Authentication(
+    username = username,
+    clientId = "cashbook",
+    authorities = listOf(SimpleGrantedAuthority("ROLE_PRISON_CLERK")),
+  )
+
+  private fun authenticatedSendMoneyToken(username: String = "testuser") = DjangoOAuth2Authentication(
+    username = username,
+    clientId = "send-money",
+    authorities = listOf(SimpleGrantedAuthority("ROLE_SEND_MONEY")),
+  )
 
   @Nested
   @DisplayName("POST /reset_password/ (AUTH-043)")
@@ -113,48 +129,115 @@ class PasswordResourceTest {
   }
 
   @Nested
-  @DisplayName("POST /change_password/ via token (AUTH-045)")
-  inner class ChangePasswordByToken {
+  @DisplayName("POST /change_password/ authenticated change (AUTH-045)")
+  inner class ChangePassword {
 
     @Test
     fun `AUTH-045 returns 204 on success`() {
       val user = makeUser()
-      val token = UUID.randomUUID()
-      whenever(passwordService.changePasswordByToken(token, "newpass123"))
-        .thenReturn(PasswordChangeResult.Success(user))
+      whenever(passwordService.changePassword("testuser", "oldpass123", "newpass123", "cashbook"))
+        .thenReturn(AuthenticatedPasswordChangeResult.Success(user))
 
-      val request = ChangePasswordByTokenRequest(token = token.toString(), newPassword = "newpass123")
-      val response = changePasswordResource.changePasswordByToken(request)
+      val request = ChangePassword(oldPassword = "oldpass123", newPassword = "newpass123")
+      val response = changePasswordResource.changePassword(request, authenticatedCashbookToken())
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
     }
 
     @Test
-    fun `returns 400 for invalid token`() {
-      val token = UUID.randomUUID()
-      whenever(passwordService.changePasswordByToken(token, "newpass"))
-        .thenReturn(PasswordChangeResult.InvalidToken)
+    fun `returns 400 with Python error envelope for incorrect old password`() {
+      whenever(passwordService.changePassword("testuser", "wrong", "freshpass", "cashbook"))
+        .thenReturn(AuthenticatedPasswordChangeResult.IncorrectPassword)
 
-      val request = ChangePasswordByTokenRequest(token = token.toString(), newPassword = "newpass")
-      val response = changePasswordResource.changePasswordByToken(request)
+      val request = ChangePassword(oldPassword = "wrong", newPassword = "freshpass")
+      val response = changePasswordResource.changePassword(request, authenticatedCashbookToken())
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(response.body).isEqualTo(
+        mapOf(
+          "errors" to mapOf(
+            "old_password" to listOf("You’ve entered an incorrect password"),
+          ),
+        ),
+      )
     }
 
     @Test
-    fun `returns 400 when token is missing`() {
-      val request = ChangePasswordByTokenRequest(token = null, newPassword = "newpass")
-      val response = changePasswordResource.changePasswordByToken(request)
+    fun `returns 400 when old password is missing`() {
+      val request = ChangePassword(oldPassword = "", newPassword = "newpass")
+      val response = changePasswordResource.changePassword(request, authenticatedCashbookToken())
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(response.body).isEqualTo(
+        mapOf(
+          "errors" to mapOf(
+            "old_password" to listOf("This field is required."),
+          ),
+        ),
+      )
     }
 
     @Test
     fun `returns 400 when newPassword is missing`() {
-      val request = ChangePasswordByTokenRequest(token = UUID.randomUUID().toString(), newPassword = null)
-      val response = changePasswordResource.changePasswordByToken(request)
+      val request = ChangePassword(oldPassword = "oldpass123", newPassword = "")
+      val response = changePasswordResource.changePassword(request, authenticatedCashbookToken())
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(response.body).isEqualTo(
+        mapOf(
+          "errors" to mapOf(
+            "new_password" to listOf("This field is required."),
+          ),
+        ),
+      )
+    }
+
+    @Test
+    fun `returns 403 when client application is not allowed`() {
+      val request = ChangePassword(oldPassword = "oldpass123", newPassword = "newpass123")
+
+      val response = changePasswordResource.changePassword(request, authenticatedSendMoneyToken())
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.FORBIDDEN)
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /change_password/{code}/ via reset code")
+  inner class ChangePasswordByCode {
+
+    @Test
+    fun `returns 204 when password is changed with code`() {
+      val token = UUID.randomUUID()
+      val user = makeUser()
+      whenever(passwordService.changePasswordByToken(token, "newpass123"))
+        .thenReturn(PasswordChangeResult.Success(user))
+
+      val request = ChangePasswordByTokenRequest(newPassword = "newpass123")
+      val response = changePasswordResource.changePasswordByCode(token.toString(), request)
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+    }
+
+    @Test
+    fun `returns 400 with Python error envelope when new_password is missing`() {
+      val response = changePasswordResource.changePasswordByCode(UUID.randomUUID().toString(), ChangePasswordByTokenRequest(newPassword = null))
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(response.body).isEqualTo(
+        mapOf(
+          "errors" to mapOf(
+            "new_password" to listOf("This field is required."),
+          ),
+        ),
+      )
+    }
+
+    @Test
+    fun `returns 404 when code is not a UUID`() {
+      val response = changePasswordResource.changePasswordByCode("not-a-uuid", ChangePasswordByTokenRequest(newPassword = "newpass123"))
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
   }
 }
