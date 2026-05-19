@@ -107,7 +107,7 @@ src/
       jpa/repositories/     # Unit tests for Spring Data JPA repositories
       resources/            # Unit tests for REST controllers (account, credit, disbursement,
                             #   payment, prison, security, transaction, etc.)
-      services/             # Unit tests for Business logic services
+      services/              # Unit tests for Business logic services
 helm_deploy/                # Helm chart + values-{dev,preprod,prod}.yaml
 build.gradle.kts            # Build configuration and dependencies
 docker-compose.yml          # Local dev services (app, auth, database)
