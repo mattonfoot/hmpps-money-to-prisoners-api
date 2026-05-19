@@ -100,23 +100,27 @@ class TransactionService(
    */
   @Transactional
   fun refundTransactions(transactionIds: List<Long>): List<Long> {
-    val transactions = transactionRepository.findByIdIn(transactionIds)
-    val conflictIds = mutableListOf<Long>()
+    val requestedIds = transactionIds.distinct()
+    val transactionsById = transactionRepository.findByIdIn(requestedIds)
+      .filter { it.id != null }
+      .associateBy { it.id!! }
 
-    for (txn in transactions) {
-      val credit = txn.credit
-      if (credit == null || TransactionStatus.computeFrom(txn) != TransactionStatus.REFUNDABLE) {
-        conflictIds.add(txn.id!!)
-        continue
-      }
-      try {
-        credit.transitionResolution(CreditResolution.REFUNDED)
-        creditRepository.save(credit)
-      } catch (e: Exception) {
-        conflictIds.add(txn.id!!)
-      }
+    val refundableTransactions = requestedIds.mapNotNull { id ->
+      val transaction = transactionsById[id] ?: return@mapNotNull null
+      val credit = transaction.credit ?: return@mapNotNull null
+      if (TransactionStatus.computeFrom(transaction) != TransactionStatus.REFUNDABLE) return@mapNotNull null
+      transaction to credit
     }
-    return conflictIds
+
+    val refundableIds = refundableTransactions.map { (transaction, _) -> transaction.id!! }.toSet()
+    val conflictIds = requestedIds.filterNot(refundableIds::contains).sorted()
+    if (conflictIds.isNotEmpty()) return conflictIds
+
+    refundableTransactions.forEach { (_, credit) ->
+      credit.transitionResolution(CreditResolution.REFUNDED)
+      creditRepository.save(credit)
+    }
+    return emptyList()
   }
 
   /**

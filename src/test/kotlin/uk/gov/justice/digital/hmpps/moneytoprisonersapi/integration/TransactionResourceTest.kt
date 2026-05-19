@@ -386,7 +386,64 @@ class TransactionResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isEqualTo(409)
         .expectBody()
-        .jsonPath("$.conflict_ids[0]").isEqualTo(savedTxn.id!!)
+        .jsonPath("$.errors[0].msg").isEqualTo("Some transactions could not be updated")
+        .jsonPath("$.errors[0].ids[0]").isEqualTo(savedTxn.id!!)
+    }
+
+    @Test
+    @DisplayName("TXN-024 - Mixed valid and invalid refunds return Python conflict payload and roll back all updates")
+    fun `should not partially refund when any transaction is invalid`() {
+      val refundableCredit = Credit(amount = 1000L, prison = null, blocked = false, resolution = CreditResolution.PENDING)
+      refundableCredit.source = CreditSource.BANK_TRANSFER
+      val savedRefundableCredit = creditRepository.save(refundableCredit)
+
+      val refundableTransaction = transactionRepository.save(
+        Transaction(
+          amount = 1000L,
+          category = TransactionCategory.CREDIT,
+          source = TransactionSource.BANK_TRANSFER,
+          incompleteSenderInfo = false,
+          credit = savedRefundableCredit,
+        ),
+      )
+
+      if (!prisonRepository.existsById("LEI")) {
+        prisonRepository.save(Prison(nomisId = "LEI", name = "Leeds"))
+      }
+
+      val nonRefundableCredit = Credit(amount = 2000L, prison = "LEI", blocked = false, resolution = CreditResolution.PENDING)
+      nonRefundableCredit.source = CreditSource.BANK_TRANSFER
+      val savedNonRefundableCredit = creditRepository.save(nonRefundableCredit)
+
+      val nonRefundableTransaction = transactionRepository.save(
+        Transaction(
+          amount = 2000L,
+          category = TransactionCategory.CREDIT,
+          source = TransactionSource.BANK_TRANSFER,
+          incompleteSenderInfo = false,
+          credit = savedNonRefundableCredit,
+        ),
+      )
+
+      webTestClient.patch()
+        .uri("/transactions/")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
+        .header("Content-Type", "application/json")
+        .bodyValue(
+          """[
+            {"id": ${refundableTransaction.id}, "refunded": true},
+            {"id": ${nonRefundableTransaction.id}, "refunded": true}
+          ]""",
+        )
+        .exchange()
+        .expectStatus().isEqualTo(409)
+        .expectBody()
+        .jsonPath("$.errors[0].msg").isEqualTo("Some transactions could not be updated")
+        .jsonPath("$.errors[0].ids.length()").isEqualTo(1)
+        .jsonPath("$.errors[0].ids[0]").isEqualTo(nonRefundableTransaction.id!!)
+
+      val refundableCreditAfterConflict = creditRepository.findById(savedRefundableCredit.id!!).get()
+      assertThat(refundableCreditAfterConflict.resolution).isEqualTo(CreditResolution.PENDING.value)
     }
 
     @Test

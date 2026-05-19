@@ -176,7 +176,16 @@ class TransactionsResource(
       ResponseEntity.ok(items)
     } else {
       ResponseEntity.status(HttpStatus.CONFLICT)
-        .body(mapOf("errors" to listOf("Cannot refund transactions: $conflictIds"), "conflict_ids" to conflictIds))
+        .body(
+          mapOf(
+            "errors" to listOf(
+              mapOf(
+                "msg" to "Some transactions could not be updated",
+                "ids" to conflictIds,
+              ),
+            ),
+          ),
+        )
     }
   }
 
