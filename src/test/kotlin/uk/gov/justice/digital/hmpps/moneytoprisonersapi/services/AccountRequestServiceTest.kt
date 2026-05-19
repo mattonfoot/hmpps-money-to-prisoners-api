@@ -69,6 +69,8 @@ class AccountRequestServiceTest {
     this.firstName = "New"
     this.lastName = "User"
     this.email = "new@example.com"
+    this.reason = "Need access"
+    this.managerEmail = "manager@example.com"
     this.role = makeRole()
     this.prison = makePrison()
   }
@@ -119,6 +121,8 @@ class AccountRequestServiceTest {
         firstName = "New",
         lastName = "User",
         email = "new@example.com",
+        reason = "Need access",
+        managerEmail = "manager@example.com",
         roleName = "PRISON_CLERK",
         prisonId = "LEI",
       )
@@ -126,6 +130,8 @@ class AccountRequestServiceTest {
       assertThat(result).isInstanceOf(CreateAccountRequestResult.Created::class.java)
       val created = result as CreateAccountRequestResult.Created
       assertThat(created.request.username).isEqualTo("newuser")
+      assertThat(created.request.reason).isEqualTo("Need access")
+      assertThat(created.request.managerEmail).isEqualTo("manager@example.com")
       assertThat(created.existingUser).isNull()
     }
 
@@ -145,6 +151,8 @@ class AccountRequestServiceTest {
         firstName = "New",
         lastName = "User",
         email = "new@example.com",
+        reason = "Need access",
+        managerEmail = "manager@example.com",
         roleName = "PRISON_CLERK",
         prisonId = "LEI",
       )
@@ -153,6 +161,35 @@ class AccountRequestServiceTest {
       val created = result as CreateAccountRequestResult.Created
       assertThat(created.existingUser).isNotNull
       assertThat(created.existingUser!!.username).isEqualTo("newuser")
+    }
+
+    @Test
+    fun `persists reason and manager email`() {
+      val role = makeRole(name = "security")
+      val existing = makeRequest().apply {
+        this.role = role
+        this.prison = null
+        this.reason = "Need access"
+        this.managerEmail = "manager@example.com"
+      }
+      whenever(mtpRoleRepository.findByName("security")).thenReturn(role)
+      whenever(accountRequestRepository.save(any())).thenReturn(existing)
+
+      service.createRequest(
+        username = "newuser",
+        firstName = "New",
+        lastName = "User",
+        email = "new@example.com",
+        reason = "Need access",
+        managerEmail = "manager@example.com",
+        roleName = "security",
+        prisonId = null,
+      )
+
+      val captor = argumentCaptor<AccountRequest>()
+      verify(accountRequestRepository).save(captor.capture())
+      assertThat(captor.firstValue.reason).isEqualTo("Need access")
+      assertThat(captor.firstValue.managerEmail).isEqualTo("manager@example.com")
     }
   }
 

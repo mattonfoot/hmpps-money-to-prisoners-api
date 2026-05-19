@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import com.fasterxml.jackson.annotation.JsonProperty
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.AccountRequestStatus
 import java.time.OffsetDateTime
 
@@ -20,6 +21,13 @@ data class AccountRequest(
 
   @Schema(description = "Email address")
   val email: String,
+
+  @Schema(description = "Reason for requesting access")
+  val reason: String,
+
+  @Schema(description = "Manager email address for security requests")
+  @JsonProperty("manager_email")
+  val managerEmail: String?,
 
   @Schema(description = "Requested role name, or null if none")
   val role: String?,
@@ -46,6 +54,8 @@ data class AccountRequest(
       firstName = request.firstName,
       lastName = request.lastName,
       email = request.email,
+      reason = request.reason,
+      managerEmail = request.managerEmail,
       role = request.role?.name,
       prison = request.prison?.nomisId,
       // Django has no `status` column on mtp_auth_accountrequest — presence-of-row
@@ -74,11 +84,18 @@ data class CreateAccountRequestRequest(
   @Schema(description = "Email address")
   val email: String?,
 
+  @Schema(description = "Reason for requesting access")
+  val reason: String? = null,
+
   @Schema(description = "Role name being requested")
   val role: String?,
 
   @Schema(description = "Prison NOMIS ID being requested")
   val prison: String?,
+
+  @Schema(description = "Manager email address for security requests")
+  @com.fasterxml.jackson.annotation.JsonProperty("manager_email")
+  val managerEmail: String? = null,
 
   @Schema(description = "Set to 'true' to allow a request for a username that already has a role (changes their role).")
   @com.fasterxml.jackson.annotation.JsonProperty("change-role")

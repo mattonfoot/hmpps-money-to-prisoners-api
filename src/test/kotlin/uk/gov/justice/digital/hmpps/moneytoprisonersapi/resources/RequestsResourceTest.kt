@@ -9,6 +9,11 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.dto.AccountRequest
@@ -32,6 +37,8 @@ class RequestsResourceTest {
     this.firstName = "New"
     this.lastName = "User"
     this.email = "new@example.com"
+    this.reason = "Need access"
+    this.managerEmail = "manager@example.com"
   }
 
   @Nested
@@ -92,16 +99,26 @@ class RequestsResourceTest {
     @Test
     fun `AUTH-060 returns 201 with created request`() {
       val request = makeRequest()
-      whenever(accountRequestService.createRequest(any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(
-          uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.Created(request, null),
-        )
+      doReturn(
+        uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.Created(request, null),
+      ).whenever(accountRequestService).createRequest(
+        eq("newuser"),
+        eq("New"),
+        eq("User"),
+        eq("new@example.com"),
+        eq("Need access"),
+        isNull(),
+        eq("PRISON_CLERK"),
+        eq("LEI"),
+        eq(false),
+      )
 
       val body = CreateAccountRequestRequest(
         username = "newuser",
         firstName = "New",
         lastName = "User",
         email = "new@example.com",
+        reason = "Need access",
         role = "PRISON_CLERK",
         prison = "LEI",
       )
@@ -111,6 +128,8 @@ class RequestsResourceTest {
       assertThat(response.statusCode).isEqualTo(HttpStatus.CREATED)
       val dto = response.body as? AccountRequest
       assertThat(dto?.username).isEqualTo("newuser")
+      assertThat(dto?.reason).isEqualTo("Need access")
+      assertThat(dto?.managerEmail).isEqualTo("manager@example.com")
     }
 
     @Test
@@ -127,6 +146,42 @@ class RequestsResourceTest {
       val response = resource.createRequest(body)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+    }
+
+    @Test
+    fun `returns 400 when prison is missing for non-security role`() {
+      val body = CreateAccountRequestRequest(
+        username = "newuser",
+        firstName = "New",
+        lastName = "User",
+        email = "new@example.com",
+        role = "prison-clerk",
+        prison = null,
+      )
+
+      val response = resource.createRequest(body)
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(response.body).isEqualTo(mapOf("prison" to "Prison must be specified"))
+      verify(accountRequestService, never()).createRequest(any(), any(), any(), any(), any(), any(), any(), any(), any<Boolean>())
+    }
+
+    @Test
+    fun `returns 400 when manager email is missing for security role`() {
+      val body = CreateAccountRequestRequest(
+        username = "securityuser",
+        firstName = "Sec",
+        lastName = "User",
+        email = "security@example.com",
+        role = "security",
+        prison = null,
+      )
+
+      val response = resource.createRequest(body)
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(response.body).isEqualTo(mapOf("manager_email" to "Manager's email must be specified"))
+      verify(accountRequestService, never()).createRequest(any(), any(), any(), any(), any(), any(), any(), any(), any<Boolean>())
     }
 
     @Test
@@ -147,10 +202,19 @@ class RequestsResourceTest {
         userAdmin = false,
         isLocked = false,
       )
-      whenever(accountRequestService.createRequest(any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(
-          uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.Created(request, existingUser),
-        )
+      doReturn(
+        uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.Created(request, existingUser),
+      ).whenever(accountRequestService).createRequest(
+        eq("newuser"),
+        eq("New"),
+        eq("User"),
+        eq("new@example.com"),
+        eq(""),
+        isNull(),
+        eq("PRISON_CLERK"),
+        eq("LEI"),
+        eq(false),
+      )
 
       val body = CreateAccountRequestRequest(
         username = "newuser",

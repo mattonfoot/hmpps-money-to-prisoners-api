@@ -109,12 +109,21 @@ class RequestsResource(
     if (request.username.isNullOrBlank()) {
       return ResponseEntity.badRequest().body(mapOf("username" to listOf("This field is required")))
     }
+    val isSecurityRequest = request.role.equals("security", ignoreCase = true)
+    if (!isSecurityRequest && request.prison.isNullOrBlank()) {
+      return ResponseEntity.badRequest().body(mapOf("prison" to "Prison must be specified"))
+    }
+    if (isSecurityRequest && request.managerEmail.isNullOrBlank()) {
+      return ResponseEntity.badRequest().body(mapOf("manager_email" to "Manager's email must be specified"))
+    }
     return when (
       val result = accountRequestService.createRequest(
         username = request.username,
         firstName = request.firstName ?: "",
         lastName = request.lastName ?: "",
         email = request.email ?: "",
+        reason = request.reason ?: "",
+        managerEmail = request.managerEmail,
         roleName = request.role,
         prisonId = request.prison,
         changeRole = request.changeRole.equals("true", ignoreCase = true),

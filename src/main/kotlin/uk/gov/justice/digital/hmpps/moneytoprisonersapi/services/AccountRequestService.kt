@@ -59,6 +59,8 @@ class AccountRequestService(
     firstName: String,
     lastName: String,
     email: String,
+    reason: String = "",
+    managerEmail: String? = null,
     roleName: String?,
     prisonId: String?,
     changeRole: Boolean = false,
@@ -88,6 +90,8 @@ class AccountRequestService(
         this.firstName = effectiveFirstName
         this.lastName = effectiveLastName
         this.email = effectiveEmail
+        this.reason = reason
+        this.managerEmail = managerEmail
         this.role = role
         this.prison = prison
       },
