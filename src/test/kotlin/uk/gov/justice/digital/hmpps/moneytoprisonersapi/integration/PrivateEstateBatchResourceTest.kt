@@ -95,6 +95,35 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
     return saved
   }
 
+  private fun createPrisonBankAccount(
+    prison: Prison,
+    postcode: String = "AB1 2CD",
+    accountNumber: String = "12345678",
+  ) {
+    jdbcTemplate.update(
+      """
+      INSERT INTO prison_prisonbankaccount
+        (address_line1, address_line2, city, postcode, sort_code, account_number, prison_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      """.trimIndent(),
+      "1 High Street",
+      "Business Park",
+      "Leeds",
+      postcode,
+      "112233",
+      accountNumber,
+      prison.nomisId,
+    )
+  }
+
+  private fun createRemittanceEmail(prison: Prison, email: String) {
+    jdbcTemplate.update(
+      "INSERT INTO prison_remittanceemail (email, prison_id) VALUES (?, ?)",
+      email,
+      prison.nomisId,
+    )
+  }
+
   @Nested
   @DisplayName("GET /private-estate-batches/ (CRD-180 to CRD-182)")
   inner class ListPrivateEstateBatches {
@@ -112,17 +141,39 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-180 - GET /private-estate-batches/ returns list")
     fun `should return list of private estate batches`() {
       val prison = createPrivatePrison()
+      createPrisonBankAccount(prison)
+      createRemittanceEmail(prison, "payments-1@example.com")
+      createRemittanceEmail(prison, "payments-2@example.com")
       createPrivateEstateBatch("PRV/2024-03-15", prison, LocalDate.of(2024, 3, 15))
 
       webTestClient.get()
         .uri("/private-estate-batches/")
-        .headers(setAuthorisation())
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.count").isEqualTo(1)
         .jsonPath("$.results").isArray
         .jsonPath("$.results.length()").isEqualTo(1)
+        .jsonPath("$.results[0].date").isEqualTo("2024-03-15")
+        .jsonPath("$.results[0].prison").isEqualTo("PRV")
+        .jsonPath("$.results[0].total_amount").isEqualTo(0)
+        .jsonPath("$.results[0].bank_account.postcode").isEqualTo("AB1 2CD")
+        .jsonPath("$.results[0].bank_account.account_number").isEqualTo("12345678")
+        .jsonPath("$.results[0].remittance_emails.length()").isEqualTo(2)
+    }
+
+    @Test
+    @DisplayName("CRD-180 - GET /private-estate-batches/ returns 403 without ROLE_BANK_ADMIN")
+    fun `should return 403 for non bank admin GET`() {
+      val prison = createPrivatePrison()
+      createPrivateEstateBatch("PRV/2024-03-15", prison, LocalDate.of(2024, 3, 15))
+
+      webTestClient.get()
+        .uri("/private-estate-batches/")
+        .headers(setAuthorisation(roles = listOf("ROLE_PRISON_CLERK")))
+        .exchange()
+        .expectStatus().isForbidden
     }
 
     @Test
@@ -134,12 +185,12 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/private-estate-batches/?date=2024-03-15")
-        .headers(setAuthorisation())
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.count").isEqualTo(1)
-        .jsonPath("$.results[0].ref").isEqualTo("PRV/2024-03-15")
+        .jsonPath("$.results[0].date").isEqualTo("2024-03-15")
     }
 
     @Test
@@ -152,7 +203,7 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/private-estate-batches/?date__gte=2024-03-15")
-        .headers(setAuthorisation())
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -170,7 +221,7 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/private-estate-batches/?prison=PRV")
-        .headers(setAuthorisation())
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -187,15 +238,20 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
     @DisplayName("CRD-183 - GET /private-estate-batches/{prison}/{date}/ returns single batch")
     fun `should return single batch by ref`() {
       val prison = createPrivatePrison()
+      createPrisonBankAccount(prison, postcode = "ZZ1 1ZZ", accountNumber = "87654321")
+      createRemittanceEmail(prison, "remit@example.com")
       createPrivateEstateBatch("PRV/2024-03-15", prison, LocalDate.of(2024, 3, 15))
 
       webTestClient.get()
         .uri("/private-estate-batches/PRV/2024-03-15/")
-        .headers(setAuthorisation())
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.ref").isEqualTo("PRV/2024-03-15")
+        .jsonPath("$.date").isEqualTo("2024-03-15")
+        .jsonPath("$.prison").isEqualTo("PRV")
+        .jsonPath("$.bank_account.postcode").isEqualTo("ZZ1 1ZZ")
+        .jsonPath("$.remittance_emails[0]").isEqualTo("remit@example.com")
     }
 
     @Test
@@ -203,7 +259,7 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
     fun `should return 404 for non-existent batch ref`() {
       webTestClient.get()
         .uri("/private-estate-batches/UNKNOWN/2024-03-15/")
-        .headers(setAuthorisation())
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -282,7 +338,7 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
     fun `should return 404 for non-existent batch on PATCH`() {
       webTestClient.patch()
         .uri("/private-estate-batches/UNKNOWN/2024-03-15/")
-        .headers(setAuthorisation())
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .header("Content-Type", "application/json")
         .bodyValue("""{"credited": true}""")
         .exchange()
@@ -309,12 +365,26 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/private-estate-batches/PRV/2024-03-15/credits/")
-        .headers(setAuthorisation())
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$").isArray
-        .jsonPath("$.length()").isEqualTo(2)
+        .jsonPath("$.count").isEqualTo(2)
+        .jsonPath("$.results.length()").isEqualTo(2)
+        .jsonPath("$.results[0].prison").isEqualTo("PRV")
+    }
+
+    @Test
+    @DisplayName("CRD-187 - GET credits returns 403 without ROLE_BANK_ADMIN")
+    fun `should return 403 for non bank admin batch credits`() {
+      val prison = createPrivatePrison()
+      createPrivateEstateBatch("PRV/2024-03-15", prison, LocalDate.of(2024, 3, 15))
+
+      webTestClient.get()
+        .uri("/private-estate-batches/PRV/2024-03-15/credits/")
+        .headers(setAuthorisation(roles = listOf("ROLE_PRISON_CLERK")))
+        .exchange()
+        .expectStatus().isForbidden
     }
 
     @Test
@@ -322,7 +392,7 @@ class PrivateEstateBatchResourceTest : IntegrationTestBase() {
     fun `should return 404 for non-existent batch credits`() {
       webTestClient.get()
         .uri("/private-estate-batches/UNKNOWN/2024-03-15/credits/")
-        .headers(setAuthorisation())
+        .headers(setAuthorisation(roles = listOf("ROLE_BANK_ADMIN")))
         .exchange()
         .expectStatus().isNotFound
     }

@@ -29,6 +29,8 @@ import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.LogAction
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.AuthUserRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.CreditRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.LogRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonBankAccountRepository
+import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRemittanceEmailRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrisonRepository
 import uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.repositories.PrivateEstateBatchRepository
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -44,6 +46,8 @@ class PrivateEstateBatchesResource(
   private val creditRepository: CreditRepository,
   private val logRepository: LogRepository,
   private val prisonRepository: PrisonRepository,
+  private val prisonBankAccountRepository: PrisonBankAccountRepository,
+  private val prisonRemittanceEmailRepository: PrisonRemittanceEmailRepository,
   private val userRepository: AuthUserRepository,
 ) {
 
@@ -61,7 +65,7 @@ class PrivateEstateBatchesResource(
       ),
     ],
   )
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("hasRole('BANK_ADMIN')")
   @GetMapping("/")
   fun listPrivateEstateBatches(
     @Parameter(description = "Filter by exact date (ISO format)", example = "2024-03-15")
@@ -95,7 +99,14 @@ class PrivateEstateBatchesResource(
       batches = batches.filter { it.prison?.nomisId == prison }
     }
 
-    val results = batches.map { PrivateEstateBatch.from(it) }
+    val results = batches.map { batch ->
+      val prisonEntity = batch.prison
+      PrivateEstateBatch.from(
+        batch = batch,
+        bankAccount = prisonEntity?.let { prisonBankAccountRepository.findByPrison(it) },
+        remittanceEmails = prisonEntity?.let { prisonRemittanceEmailRepository.findByPrisonOrderById(it).map { email -> email.email } } ?: emptyList(),
+      )
+    }
     return PaginatedResponse(count = results.size, results = results)
   }
 
@@ -114,7 +125,7 @@ class PrivateEstateBatchesResource(
       ),
     ],
   )
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("hasRole('BANK_ADMIN')")
   @GetMapping("/{prison}/{date}/")
   fun getPrivateEstateBatch(
     @PathVariable prison: String,
@@ -124,7 +135,13 @@ class PrivateEstateBatchesResource(
       ?: return ResponseEntity.notFound().build()
     val batch = privateEstateBatchRepository.findByPrisonAndDate(prisonEntity, date)
       ?: return ResponseEntity.notFound().build()
-    return ResponseEntity.ok(PrivateEstateBatch.from(batch))
+    return ResponseEntity.ok(
+      PrivateEstateBatch.from(
+        batch = batch,
+        bankAccount = prisonBankAccountRepository.findByPrison(prisonEntity),
+        remittanceEmails = prisonRemittanceEmailRepository.findByPrisonOrderById(prisonEntity).map { it.email },
+      ),
+    )
   }
 
   @Operation(
@@ -147,7 +164,7 @@ class PrivateEstateBatchesResource(
       ),
     ],
   )
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("hasRole('BANK_ADMIN')")
   @PatchMapping("/{prison}/{date}/")
   @Transactional
   fun patchPrivateEstateBatch(
@@ -211,16 +228,17 @@ class PrivateEstateBatchesResource(
       ),
     ],
   )
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("hasRole('BANK_ADMIN')")
   @GetMapping("/{prison}/{date}/credits/")
   fun getPrivateEstateBatchCredits(
     @PathVariable prison: String,
     @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
-  ): ResponseEntity<List<Credit>> {
+  ): ResponseEntity<PaginatedResponse<Credit>> {
     val prisonEntity = prisonRepository.findById(prison).orElse(null)
       ?: return ResponseEntity.notFound().build()
     val batch = privateEstateBatchRepository.findByPrisonAndDate(prisonEntity, date)
       ?: return ResponseEntity.notFound().build()
-    return ResponseEntity.ok(batch.credits.map { Credit.from(it) })
+    val results = batch.credits.map { Credit.from(it) }
+    return ResponseEntity.ok(PaginatedResponse(count = results.size, results = results))
   }
 }
