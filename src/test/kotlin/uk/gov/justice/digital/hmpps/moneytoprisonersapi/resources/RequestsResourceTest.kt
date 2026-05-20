@@ -162,7 +162,7 @@ class RequestsResourceTest {
       val response = resource.createRequest(body)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-      assertThat(response.body).isEqualTo(mapOf("prison" to "Prison must be specified"))
+      assertThat(response.body).isEqualTo(mapOf("prison" to listOf("Prison must be specified")))
       verify(accountRequestService, never()).createRequest(any(), any(), any(), any(), any(), any(), any(), any(), any<Boolean>())
     }
 
@@ -180,8 +180,91 @@ class RequestsResourceTest {
       val response = resource.createRequest(body)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-      assertThat(response.body).isEqualTo(mapOf("manager_email" to "Manager's email must be specified"))
+      assertThat(response.body).isEqualTo(mapOf("manager_email" to listOf("Manager's email must be specified")))
       verify(accountRequestService, never()).createRequest(any(), any(), any(), any(), any(), any(), any(), any(), any<Boolean>())
+    }
+
+    @Test
+    fun `returns 400 with Python user exists body when username already has a role`() {
+      val role = uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.MtpRole().apply {
+        name = "prison-clerk"
+        loginUrl = "http://cashbook"
+        application = uk.gov.justice.digital.hmpps.moneytoprisonersapi.jpa.entities.Oauth2ProviderApplication().apply {
+          name = "Cashbook"
+        }
+      }
+      doReturn(
+        uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.UserExists(listOf(role)),
+      ).whenever(accountRequestService).createRequest(
+        eq("existinguser"),
+        eq("New"),
+        eq("User"),
+        eq("new@example.com"),
+        eq(""),
+        isNull(),
+        eq("PRISON_CLERK"),
+        eq("LEI"),
+        eq(false),
+      )
+
+      val body = CreateAccountRequestRequest(
+        username = "existinguser",
+        firstName = "New",
+        lastName = "User",
+        email = "new@example.com",
+        role = "PRISON_CLERK",
+        prison = "LEI",
+      )
+
+      val response = resource.createRequest(body)
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(response.body).isEqualTo(
+        mapOf(
+          "__mtp__" to mapOf(
+            "condition" to "user-exists",
+            "roles" to listOf(
+              mapOf(
+                "role" to "prison-clerk",
+                "application" to "Cashbook",
+                "login_url" to "http://cashbook",
+              ),
+            ),
+          ),
+          "non_field_errors" to listOf("This username already exists"),
+        ),
+      )
+    }
+
+    @Test
+    fun `returns 400 with Python superuser body when username is a superuser`() {
+      doReturn(
+        uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.SuperUserRejected,
+      ).whenever(accountRequestService).createRequest(
+        eq("admin"),
+        eq("New"),
+        eq("User"),
+        eq("new@example.com"),
+        eq(""),
+        isNull(),
+        eq("PRISON_CLERK"),
+        eq("LEI"),
+        eq(false),
+      )
+
+      val body = CreateAccountRequestRequest(
+        username = "admin",
+        firstName = "New",
+        lastName = "User",
+        email = "new@example.com",
+        role = "PRISON_CLERK",
+        prison = "LEI",
+      )
+
+      val response = resource.createRequest(body)
+
+      assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+      assertThat(response.body).isEqualTo(mapOf("non_field_errors" to listOf("Super users cannot be edited")))
     }
 
     @Test

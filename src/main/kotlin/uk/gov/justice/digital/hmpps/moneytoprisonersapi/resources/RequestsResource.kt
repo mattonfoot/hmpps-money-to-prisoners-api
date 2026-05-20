@@ -111,10 +111,10 @@ class RequestsResource(
     }
     val isSecurityRequest = request.role.equals("security", ignoreCase = true)
     if (!isSecurityRequest && request.prison.isNullOrBlank()) {
-      return ResponseEntity.badRequest().body(mapOf("prison" to "Prison must be specified"))
+      return ResponseEntity.badRequest().body(mapOf("prison" to listOf("Prison must be specified")))
     }
     if (isSecurityRequest && request.managerEmail.isNullOrBlank()) {
-      return ResponseEntity.badRequest().body(mapOf("manager_email" to "Manager's email must be specified"))
+      return ResponseEntity.badRequest().body(mapOf("manager_email" to listOf("Manager's email must be specified")))
     }
     return when (
       val result = accountRequestService.createRequest(
@@ -132,7 +132,7 @@ class RequestsResource(
       is uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.Created ->
         ResponseEntity.status(HttpStatus.CREATED).body(AccountRequest.from(result.request, result.existingUser))
       is uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.SuperUserRejected ->
-        ResponseEntity.badRequest().body(mapOf("non_field_errors" to "Super users cannot be edited"))
+        ResponseEntity.badRequest().body(mapOf("non_field_errors" to listOf("Super users cannot be edited")))
       is uk.gov.justice.digital.hmpps.moneytoprisonersapi.services.CreateAccountRequestResult.UserExists ->
         ResponseEntity.badRequest().body(
           mapOf(
@@ -146,7 +146,7 @@ class RequestsResource(
                 )
               },
             ),
-            "non_field_errors" to "This username already exists",
+            "non_field_errors" to listOf("This username already exists"),
           ),
         )
     }
